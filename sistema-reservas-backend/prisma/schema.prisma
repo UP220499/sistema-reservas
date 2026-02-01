@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model bloqueo_calendario {
+  bloqueo_id          BigInt             @id @default(autoincrement())
+  ubicacion_id        BigInt
+  origen_bloqueo_code String
+  inicio_datetime     DateTime           @db.Timestamptz(6)
+  fin_datetime        DateTime           @db.Timestamptz(6)
+  estatus_bloqueo     String
+  external_uid        String?
+  raw_payload         String?
+  created_at          DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?          @db.Timestamptz(6)
+  cat_origen_bloqueo  cat_origen_bloqueo @relation(fields: [origen_bloqueo_code], references: [origen_bloqueo_code], onDelete: NoAction, onUpdate: NoAction)
+  ubicacion           ubicacion          @relation(fields: [ubicacion_id], references: [ubicacion_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([ubicacion_id, inicio_datetime, fin_datetime], map: "ix_bloqueo_ubicacion_fechas")
+}
+
+model cat_estatus_pago {
+  estatus_pago_code String  @id
+  nombre            String
+  activo            Boolean @default(true)
+}
+
+model cat_estatus_reserva {
+  estatus_reserva_code   String    @id
+  nombre                 String
+  bloquea_disponibilidad Boolean
+  reserva                reserva[]
+}
+
+model cat_metodo_pago {
+  metodo_pago_code String            @id
+  nombre           String
+  activo           Boolean           @default(true)
+  pago_movimiento  pago_movimiento[]
+}
+
+model cat_origen_bloqueo {
+  origen_bloqueo_code String               @id
+  nombre              String
+  activo              Boolean              @default(true)
+  bloqueo_calendario  bloqueo_calendario[]
+}
+
+model cat_origen_reserva {
+  origen_reserva_code String    @id
+  nombre              String
+  activo              Boolean   @default(true)
+  reserva             reserva[]
+}
+
+model cat_rol {
+  rol_code String    @id
+  nombre   String
+  activo   Boolean   @default(true)
+  usuario  usuario[]
+}
+
+model cat_tipo_pago_mov {
+  tipo_pago_mov_code String            @id
+  nombre             String
+  activo             Boolean           @default(true)
+  pago_movimiento    pago_movimiento[]
+}
+
+model cliente {
+  cliente_id       BigInt             @id @default(autoincrement())
+  nombre           String
+  correo           String?
+  activo           Boolean            @default(true)
+  cliente_telefono cliente_telefono[]
+  reserva          reserva[]
+}
+
+model cliente_telefono {
+  cliente_telefono_id BigInt  @id @default(autoincrement())
+  cliente_id          BigInt
+  telefono            String
+  es_principal        Boolean @default(false)
+  activo              Boolean @default(true)
+  cliente             cliente @relation(fields: [cliente_id], references: [cliente_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([cliente_id, telefono], map: "uq_cliente_tel")
+  @@index([telefono], map: "ix_cliente_telefono_telefono")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model historial_reserva_evento {
+  historial_evento_id BigInt   @id @default(autoincrement())
+  reserva_id          BigInt
+  usuario_id          BigInt
+  accion              String
+  campo               String?
+  valor_anterior      String?
+  valor_nuevo         String?
+  fecha_evento        DateTime @default(now()) @db.Timestamptz(6)
+  reserva             reserva  @relation(fields: [reserva_id], references: [reserva_id], onDelete: NoAction, onUpdate: NoAction)
+  usuario             usuario  @relation(fields: [usuario_id], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([reserva_id, fecha_evento], map: "ix_historial_reserva_fecha")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This table contains exclusion constraints and requires additional setup for migrations. Visit https://pris.ly/d/exclusion-constraints for more info.
+model ocupacion_ubicacion {
+  ocupacion_id BigInt                   @id @default(autoincrement())
+  ubicacion_id BigInt
+  fuente_tipo  String
+  fuente_id    BigInt
+  periodo      Unsupported("tstzrange")
+  activa       Boolean                  @default(true)
+  created_at   DateTime                 @default(now()) @db.Timestamptz(6)
+  ubicacion    ubicacion                @relation(fields: [ubicacion_id], references: [ubicacion_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([fuente_tipo, fuente_id], map: "ix_ocupacion_fuente")
+  @@index([ubicacion_id], map: "ix_ocupacion_ubicacion")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model pago_movimiento {
+  pago_movimiento_id BigInt            @id @default(autoincrement())
+  reserva_id         BigInt
+  tipo_pago_mov_code String
+  metodo_pago_code   String
+  monto              Decimal           @db.Decimal(12, 2)
+  fecha_pago         DateTime          @db.Timestamptz(6)
+  referencia         String?
+  notas              String?
+  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  created_by         BigInt?
+  usuario            usuario?          @relation(fields: [created_by], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction)
+  cat_metodo_pago    cat_metodo_pago   @relation(fields: [metodo_pago_code], references: [metodo_pago_code], onDelete: NoAction, onUpdate: NoAction)
+  reserva            reserva           @relation(fields: [reserva_id], references: [reserva_id], onDelete: NoAction, onUpdate: NoAction)
+  cat_tipo_pago_mov  cat_tipo_pago_mov @relation(fields: [tipo_pago_mov_code], references: [tipo_pago_mov_code], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([reserva_id, fecha_pago], map: "ix_pago_reserva_fecha")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model reserva {
+  reserva_id                          BigInt                     @id @default(autoincrement())
+  ubicacion_id                        BigInt
+  cliente_id                          BigInt
+  origen_reserva_code                 String
+  checkin_datetime                    DateTime                   @db.Timestamptz(6)
+  checkout_datetime                   DateTime                   @db.Timestamptz(6)
+  estatus_reserva_code                String
+  total_reserva                       Decimal?                   @db.Decimal(12, 2)
+  notas                               String?
+  created_at                          DateTime                   @default(now()) @db.Timestamptz(6)
+  created_by                          BigInt?
+  updated_at                          DateTime?                  @db.Timestamptz(6)
+  updated_by                          BigInt?
+  historial_reserva_evento            historial_reserva_evento[]
+  pago_movimiento                     pago_movimiento[]
+  cliente                             cliente                    @relation(fields: [cliente_id], references: [cliente_id], onDelete: NoAction, onUpdate: NoAction)
+  usuario_reserva_created_byTousuario usuario?                   @relation("reserva_created_byTousuario", fields: [created_by], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction)
+  cat_estatus_reserva                 cat_estatus_reserva        @relation(fields: [estatus_reserva_code], references: [estatus_reserva_code], onDelete: NoAction, onUpdate: NoAction)
+  cat_origen_reserva                  cat_origen_reserva         @relation(fields: [origen_reserva_code], references: [origen_reserva_code], onDelete: NoAction, onUpdate: NoAction)
+  ubicacion                           ubicacion                  @relation(fields: [ubicacion_id], references: [ubicacion_id], onDelete: NoAction, onUpdate: NoAction)
+  usuario_reserva_updated_byTousuario usuario?                   @relation("reserva_updated_byTousuario", fields: [updated_by], references: [usuario_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([estatus_reserva_code], map: "ix_reserva_estatus")
+  @@index([ubicacion_id, checkin_datetime, checkout_datetime], map: "ix_reserva_ubicacion_fechas")
+}
+
+model ubicacion {
+  ubicacion_id        BigInt                @id @default(autoincrement())
+  nombre              String                @unique(map: "uq_ubicacion_nombre")
+  activa              Boolean               @default(true)
+  bloqueo_calendario  bloqueo_calendario[]
+  ocupacion_ubicacion ocupacion_ubicacion[]
+  reserva             reserva[]
+}
+
+model usuario {
+  usuario_id                          BigInt                     @id @default(autoincrement())
+  rol_code                            String
+  nombre                              String
+  username                            String                     @unique
+  password_hash                       String
+  activo                              Boolean                    @default(true)
+  created_at                          DateTime                   @default(now()) @db.Timestamptz(6)
+  updated_at                          DateTime?                  @db.Timestamptz(6)
+  historial_reserva_evento            historial_reserva_evento[]
+  pago_movimiento                     pago_movimiento[]
+  reserva_reserva_created_byTousuario reserva[]                  @relation("reserva_created_byTousuario")
+  reserva_reserva_updated_byTousuario reserva[]                  @relation("reserva_updated_byTousuario")
+  cat_rol                             cat_rol                    @relation(fields: [rol_code], references: [rol_code], onDelete: NoAction, onUpdate: NoAction)
+}
