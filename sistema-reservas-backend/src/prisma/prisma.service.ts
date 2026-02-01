@@ -1,7 +1,4 @@
-/* eslint-disable
-  @typescript-eslint/no-unsafe-assignment,
-  @typescript-eslint/no-unsafe-call
-*/
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
 
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
@@ -14,10 +11,6 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    super();
-  }
-
-  async onModuleInit(): Promise<void> {
     const databaseUrl = process.env.DATABASE_URL;
 
     if (!databaseUrl) {
@@ -29,10 +22,12 @@ export class PrismaService
     };
 
     const pool = new Pool(poolConfig);
+    const adapter = new PrismaPg(pool);
 
-    // Prisma adapter runtime boundary
-    (this as unknown as { _engine: unknown })._engine = new PrismaPg(pool);
+    super({ adapter });
+  }
 
+  async onModuleInit(): Promise<void> {
     await this.$connect();
   }
 
