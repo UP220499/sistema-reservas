@@ -61,7 +61,7 @@ export class ReservationQueryDto {
   @IsOptional()
   @Transform(({ value }: { value: unknown }) => toOptionalString(value))
   @IsString()
-  estatus?: string;
+  estatus_reserva_code?: string;
 
   @IsOptional()
   @Transform(({ value }: { value: unknown }) => toOptionalString(value))

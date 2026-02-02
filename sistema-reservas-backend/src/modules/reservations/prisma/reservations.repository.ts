@@ -5,6 +5,22 @@ import { ReservationWithRelations } from '../mappers/reservation.mapper';
 
 type PrismaClientOrTx = PrismaService | Prisma.TransactionClient;
 
+const reservationInclude = {
+  cliente: {
+    select: {
+      cliente_id: true,
+      nombre: true,
+      correo: true,
+    },
+  },
+  ubicacion: {
+    select: {
+      ubicacion_id: true,
+      nombre: true,
+    },
+  },
+} as const;
+
 @Injectable()
 export class ReservationsRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -15,21 +31,7 @@ export class ReservationsRepository {
       skip,
       take,
       orderBy: { checkin_datetime: 'asc' },
-      include: {
-        cliente: {
-          select: {
-            cliente_id: true,
-            nombre: true,
-            correo: true,
-          },
-        },
-        ubicacion: {
-          select: {
-            ubicacion_id: true,
-            nombre: true,
-          },
-        },
-      },
+      include: reservationInclude,
     });
   }
 
@@ -39,6 +41,23 @@ export class ReservationsRepository {
 
   findById(reserva_id: bigint) {
     return this.findReservationWithRelations(reserva_id);
+  }
+
+  findByIdForUpdate(prismaClient: PrismaClientOrTx, reserva_id: bigint) {
+    return prismaClient.reserva.findUnique({
+      where: { reserva_id },
+      select: {
+        reserva_id: true,
+        cliente_id: true,
+        ubicacion_id: true,
+        checkin_datetime: true,
+        checkout_datetime: true,
+        estatus_reserva_code: true,
+        origen_reserva_code: true,
+        notas: true,
+        total_reserva: true,
+      },
+    });
   }
 
   findActiveClient(prismaClient: PrismaClientOrTx, cliente_id: bigint) {
@@ -106,24 +125,18 @@ export class ReservationsRepository {
     return prismaClient.historial_reserva_evento.create({ data });
   }
 
+  updateReservation(
+    prismaClient: Prisma.TransactionClient,
+    reserva_id: bigint,
+    data: Prisma.reservaUpdateInput,
+  ) {
+    return prismaClient.reserva.update({ where: { reserva_id }, data });
+  }
+
   findReservationWithRelations(reserva_id: bigint) {
     return this.prisma.reserva.findUnique({
       where: { reserva_id },
-      include: {
-        cliente: {
-          select: {
-            cliente_id: true,
-            nombre: true,
-            correo: true,
-          },
-        },
-        ubicacion: {
-          select: {
-            ubicacion_id: true,
-            nombre: true,
-          },
-        },
-      },
+      include: reservationInclude,
     }) as Promise<ReservationWithRelations | null>;
   }
 
