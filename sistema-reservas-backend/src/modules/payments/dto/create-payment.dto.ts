@@ -1,0 +1,48 @@
+import { Transform } from 'class-transformer';
+import {
+  IsISO8601,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
+
+function toNumber(value: unknown): number {
+  if (typeof value === 'number') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  throw new Error('Invalid number');
+}
+
+export class CreatePaymentDto {
+  @IsString()
+  tipo_pago_mov_code!: string;
+
+  @IsString()
+  metodo_pago_code!: string;
+
+  @Transform(({ value }) => toNumber(value))
+  @IsNumber({ allowInfinity: false, allowNaN: false })
+  @Min(0.01)
+  monto!: number;
+
+  @IsISO8601()
+  fecha_pago!: string;
+
+  @IsOptional()
+  @IsString()
+  referencia?: string;
+
+  @IsOptional()
+  @IsString()
+  notas?: string;
+}
