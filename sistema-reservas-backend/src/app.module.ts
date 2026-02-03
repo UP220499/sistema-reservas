@@ -9,6 +9,7 @@ import { ReservationsModule } from './modules/reservations/reservations.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { BlocksModule } from './modules/blocks/blocks.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
+import { IcalSyncModule } from './modules/ical_sync/ical-sync.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { AvailabilityModule } from './modules/availability/availability.module';
     PaymentsModule,
     BlocksModule,
     AvailabilityModule,
+    IcalSyncModule,
   ],
   controllers: [AppController],
   providers: [AppService],
