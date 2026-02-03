@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ClientsModule } from './modules/clients/clients.module';
-import { PaymentsModule } from './modules/payments/payments.module';
+
 import { PrismaModule } from './prisma/prisma.module';
+import { ClientsModule } from './modules/clients/clients.module';
 import { ReservationsModule } from './modules/reservations/reservations.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { BlocksModule } from './modules/blocks/blocks.module';
 
 @Module({
   imports: [
@@ -14,6 +16,7 @@ import { ReservationsModule } from './modules/reservations/reservations.module';
     ClientsModule,
     ReservationsModule,
     PaymentsModule,
+    BlocksModule,
   ],
   controllers: [AppController],
   providers: [AppService],
