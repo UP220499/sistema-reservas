@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { ReservationWithRelations } from '../mappers/reservation.mapper';
+import { HistoryAction, isHistoryAction } from '../constants/history-actions';
 
 type PrismaClientOrTx = PrismaService | Prisma.TransactionClient;
 
@@ -120,8 +121,16 @@ export class ReservationsRepository {
 
   createReservationHistory(
     prismaClient: Prisma.TransactionClient,
-    data: Prisma.historial_reserva_eventoCreateInput,
+    data: Omit<Prisma.historial_reserva_eventoCreateInput, 'accion'> & {
+      accion: HistoryAction;
+    },
   ) {
+    if (!isHistoryAction(data.accion)) {
+      throw new InternalServerErrorException(
+        `Unsupported history action: ${String(data.accion)}`,
+      );
+    }
+
     return prismaClient.historial_reserva_evento.create({ data });
   }
 
