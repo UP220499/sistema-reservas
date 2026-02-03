@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
@@ -11,6 +12,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { BlocksModule } from './modules/blocks/blocks.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { IcalSyncModule } from './modules/ical_sync/ical-sync.module';
+import { UserIdentityGuard } from './common/guards/user-identity.guard';
 
 @Module({
   imports: [
@@ -25,6 +27,12 @@ import { IcalSyncModule } from './modules/ical_sync/ical-sync.module';
     IcalSyncModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: UserIdentityGuard,
+    },
+  ],
 })
 export class AppModule {}

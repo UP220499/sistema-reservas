@@ -11,12 +11,9 @@ export class PaymentsService {
   async create(
     reservationId: string,
     dto: CreatePaymentDto,
-    userIdHeader?: string,
+    auditUserId?: bigint,
   ): Promise<PaymentResponse> {
     const reservaId = this.parseId(reservationId, 'reservation_id');
-    const auditUserId = userIdHeader
-      ? this.parseId(userIdHeader, 'x-user-id')
-      : undefined;
 
     await this.paymentsRepository.assertReservationExists(reservaId);
 

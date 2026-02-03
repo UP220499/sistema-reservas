@@ -1,6 +1,8 @@
-import { Body, Controller, Get, Headers, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { RequireUser } from '../../common/decorators/require-user.decorator';
+import { AuditUserId } from '../../common/decorators/audit-user.decorator';
 
 @Controller('reservations/:reservation_id/payments')
 export class PaymentsController {
@@ -16,20 +18,16 @@ export class PaymentsController {
       "referencia": "ABCD-1234",
       "notas": "Pago en mostrador"
     }
-    Optional header: x-user-id: 42
+    Required header: x-user-id: 42
   */
   @Post()
+  @RequireUser()
   create(
     @Param('reservation_id') reservationId: string,
     @Body() dto: CreatePaymentDto,
-    @Headers('x-user-id') userIdHeader?: string,
+    @AuditUserId() auditUserId?: bigint,
   ) {
-    const auditUserId = userIdHeader?.trim();
-    return this.paymentsService.create(
-      reservationId,
-      dto,
-      auditUserId ? auditUserId : undefined,
-    );
+    return this.paymentsService.create(reservationId, dto, auditUserId);
   }
 
   @Get()

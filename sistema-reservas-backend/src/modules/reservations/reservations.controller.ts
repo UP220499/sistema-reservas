@@ -2,7 +2,6 @@ import {
   Body,
   Controller,
   Get,
-  Headers,
   Param,
   Patch,
   Post,
@@ -14,6 +13,8 @@ import { ReservationQueryDto } from './dto/reservation-query.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { ChangeReservationStatusDto } from './dto/change-reservation-status.dto';
+import { RequireUser } from '../../common/decorators/require-user.decorator';
+import { AuditUserId } from '../../common/decorators/audit-user.decorator';
 
 @Controller('reservations')
 export class ReservationsController {
@@ -42,18 +43,15 @@ export class ReservationsController {
       "total_reserva": 1200,
       "notas": "Cliente frecuente"
     }
-    Optional header: x-user-id: 42
+    Required header: x-user-id: 42
   */
   @Post()
+  @RequireUser()
   create(
     @Body() dto: CreateReservationDto,
-    @Headers('x-user-id') userIdHeader?: string,
+    @AuditUserId() auditUserId?: bigint,
   ) {
-    const auditUserId = userIdHeader?.trim();
-    return this.reservationsService.create(
-      dto,
-      auditUserId ? auditUserId : undefined,
-    );
+    return this.reservationsService.create(dto, auditUserId);
   }
 
   /*
@@ -64,20 +62,16 @@ export class ReservationsController {
       "estatus_reserva_code": "CONFIRMADA",
       "notas": "Cliente solicitó cambio"
     }
-    Optional header: x-user-id: 42
+    Required header: x-user-id: 42
   */
   @Put(':reservation_id')
+  @RequireUser()
   update(
     @Param('reservation_id') reservationId: string,
     @Body() dto: UpdateReservationDto,
-    @Headers('x-user-id') userIdHeader?: string,
+    @AuditUserId() auditUserId?: bigint,
   ) {
-    const auditUserId = userIdHeader?.trim();
-    return this.reservationsService.update(
-      reservationId,
-      dto,
-      auditUserId ? auditUserId : undefined,
-    );
+    return this.reservationsService.update(reservationId, dto, auditUserId);
   }
 
   /*
@@ -85,19 +79,19 @@ export class ReservationsController {
     {
       "estatus_reserva_code": "CANCELADA"
     }
-    Optional header: x-user-id: 42
+    Required header: x-user-id: 42
   */
   @Patch(':reservation_id/status')
+  @RequireUser()
   changeStatus(
     @Param('reservation_id') reservationId: string,
     @Body() dto: ChangeReservationStatusDto,
-    @Headers('x-user-id') userIdHeader?: string,
+    @AuditUserId() auditUserId?: bigint,
   ) {
-    const auditUserId = userIdHeader?.trim();
     return this.reservationsService.changeStatus(
       reservationId,
       dto,
-      auditUserId ? auditUserId : undefined,
+      auditUserId,
     );
   }
 }

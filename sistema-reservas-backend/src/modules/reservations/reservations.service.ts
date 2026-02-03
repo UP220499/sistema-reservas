@@ -61,13 +61,10 @@ export class ReservationsService {
 
   async create(
     dto: CreateReservationDto,
-    userIdHeader?: string,
+    auditUserId?: bigint,
   ): Promise<ReservationDetail> {
     const clienteId = this.parseId(dto.cliente_id, 'cliente_id');
     const ubicacionId = this.parseId(dto.ubicacion_id, 'ubicacion_id');
-    const auditUserId = userIdHeader
-      ? this.parseId(userIdHeader, 'x-user-id')
-      : undefined;
 
     const checkin = this.parseDate(dto.checkin_datetime, 'checkin_datetime');
     const checkout = this.parseDate(dto.checkout_datetime, 'checkout_datetime');
@@ -162,12 +159,9 @@ export class ReservationsService {
   async update(
     reservationId: string,
     dto: UpdateReservationDto,
-    userIdHeader?: string,
+    auditUserId?: bigint,
   ): Promise<ReservationDetail> {
     const reservaId = this.parseId(reservationId, 'reservation_id');
-    const auditUserId = userIdHeader
-      ? this.parseId(userIdHeader, 'x-user-id')
-      : undefined;
 
     const prisma = this.reservationsRepository.prismaClient;
 
@@ -302,12 +296,9 @@ export class ReservationsService {
   async changeStatus(
     reservationId: string,
     dto: ChangeReservationStatusDto,
-    userIdHeader?: string,
+    auditUserId?: bigint,
   ): Promise<ReservationDetail> {
     const reservaId = this.parseId(reservationId, 'reservation_id');
-    const auditUserId = userIdHeader
-      ? this.parseId(userIdHeader, 'x-user-id')
-      : undefined;
 
     const prisma = this.reservationsRepository.prismaClient;
 
