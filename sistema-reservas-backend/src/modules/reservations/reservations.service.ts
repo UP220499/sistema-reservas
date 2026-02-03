@@ -15,6 +15,7 @@ import {
   toReservationDetail,
   toReservationSummary,
 } from './mappers/reservation.mapper';
+import { HISTORY_ACTION } from './constants/history-actions';
 
 @Injectable()
 export class ReservationsService {
@@ -63,6 +64,10 @@ export class ReservationsService {
     dto: CreateReservationDto,
     auditUserId?: bigint,
   ): Promise<ReservationDetail> {
+    if (auditUserId === undefined) {
+      throw new BadRequestException('Audit user is required');
+    }
+
     const clienteId = this.parseId(dto.cliente_id, 'cliente_id');
     const ubicacionId = this.parseId(dto.ubicacion_id, 'ubicacion_id');
 
@@ -125,21 +130,22 @@ export class ReservationsService {
           origen_reserva_code: dto.origen_reserva_code,
           total_reserva: totalReservaDecimal,
           notas: dto.notas ?? null,
-          created_by: auditUserId ?? undefined,
+          created_by: auditUserId,
         },
       );
 
-      if (auditUserId !== undefined) {
-        await this.reservationsRepository.createReservationHistory(tx, {
-          reserva: {
-            connect: { reserva_id: reservation.reserva_id },
-          },
-          usuario: {
-            connect: { usuario_id: auditUserId },
-          },
-          accion: 'CREAR',
-        });
-      }
+      await this.reservationsRepository.createReservationHistory(tx, {
+        reserva: {
+          connect: { reserva_id: reservation.reserva_id },
+        },
+        usuario: {
+          connect: { usuario_id: auditUserId },
+        },
+        accion: HISTORY_ACTION.CREAR,
+        campo: null,
+        valor_anterior: null,
+        valor_nuevo: null,
+      });
 
       return reservation;
     });
@@ -161,6 +167,10 @@ export class ReservationsService {
     dto: UpdateReservationDto,
     auditUserId?: bigint,
   ): Promise<ReservationDetail> {
+    if (auditUserId === undefined) {
+      throw new BadRequestException('Audit user is required');
+    }
+
     const reservaId = this.parseId(reservationId, 'reservation_id');
 
     const prisma = this.reservationsRepository.prismaClient;
@@ -175,12 +185,15 @@ export class ReservationsService {
         throw new NotFoundException('Reservation not found');
       }
 
-      const nextCheckin = dto.checkin_datetime
+      const providedCheckin = dto.checkin_datetime
         ? this.parseDate(dto.checkin_datetime, 'checkin_datetime')
-        : existing.checkin_datetime;
-      const nextCheckout = dto.checkout_datetime
+        : undefined;
+      const providedCheckout = dto.checkout_datetime
         ? this.parseDate(dto.checkout_datetime, 'checkout_datetime')
-        : existing.checkout_datetime;
+        : undefined;
+
+      const nextCheckin = providedCheckin ?? existing.checkin_datetime;
+      const nextCheckout = providedCheckout ?? existing.checkout_datetime;
 
       if (nextCheckout <= nextCheckin) {
         throw new BadRequestException(
@@ -200,8 +213,11 @@ export class ReservationsService {
         throw new BadRequestException('Invalid estatus_reserva_code');
       }
 
-      const datesChanged =
-        existing.checkin_datetime.getTime() !== nextCheckin.getTime() ||
+      const checkinChanged =
+        providedCheckin !== undefined &&
+        existing.checkin_datetime.getTime() !== nextCheckin.getTime();
+      const checkoutChanged =
+        providedCheckout !== undefined &&
         existing.checkout_datetime.getTime() !== nextCheckout.getTime();
       const statusChanged =
         dto.estatus_reserva_code !== undefined &&
@@ -209,7 +225,7 @@ export class ReservationsService {
 
       if (
         statusRecord.bloquea_disponibilidad &&
-        (datesChanged || statusChanged)
+        (checkinChanged || checkoutChanged || statusChanged)
       ) {
         const overlapping =
           await this.reservationsRepository.findOverlappingReservation(tx, {
@@ -226,60 +242,119 @@ export class ReservationsService {
         }
       }
 
-      const data: Prisma.reservaUpdateInput = {};
+      const now = new Date();
 
-      if (dto.checkin_datetime) {
+      const data: Prisma.reservaUpdateInput = {
+        updated_at: now,
+        usuario_reserva_updated_byTousuario: {
+          connect: { usuario_id: auditUserId },
+        },
+      };
+
+      const historyEntries: Array<
+        Omit<Prisma.historial_reserva_eventoCreateInput, 'accion'>
+      > = [];
+
+      if (checkinChanged) {
         data.checkin_datetime = nextCheckin;
+        historyEntries.push({
+          reserva: { connect: { reserva_id: reservaId } },
+          usuario: { connect: { usuario_id: auditUserId } },
+          campo: 'checkin_datetime',
+          valor_anterior: existing.checkin_datetime.toISOString(),
+          valor_nuevo: nextCheckin.toISOString(),
+        });
       }
 
-      if (dto.checkout_datetime) {
+      if (checkoutChanged) {
         data.checkout_datetime = nextCheckout;
+        historyEntries.push({
+          reserva: { connect: { reserva_id: reservaId } },
+          usuario: { connect: { usuario_id: auditUserId } },
+          campo: 'checkout_datetime',
+          valor_anterior: existing.checkout_datetime.toISOString(),
+          valor_nuevo: nextCheckout.toISOString(),
+        });
       }
 
-      if (dto.estatus_reserva_code) {
+      if (statusChanged && dto.estatus_reserva_code) {
         data.cat_estatus_reserva = {
           connect: { estatus_reserva_code: dto.estatus_reserva_code },
         };
+        historyEntries.push({
+          reserva: { connect: { reserva_id: reservaId } },
+          usuario: { connect: { usuario_id: auditUserId } },
+          campo: 'estatus_reserva_code',
+          valor_anterior: existing.estatus_reserva_code,
+          valor_nuevo: dto.estatus_reserva_code,
+        });
       }
 
-      if (dto.origen_reserva_code) {
+      if (
+        dto.origen_reserva_code !== undefined &&
+        dto.origen_reserva_code !== existing.origen_reserva_code
+      ) {
         data.cat_origen_reserva = {
           connect: { origen_reserva_code: dto.origen_reserva_code },
         };
+        historyEntries.push({
+          reserva: { connect: { reserva_id: reservaId } },
+          usuario: { connect: { usuario_id: auditUserId } },
+          campo: 'origen_reserva_code',
+          valor_anterior: existing.origen_reserva_code,
+          valor_nuevo: dto.origen_reserva_code,
+        });
       }
 
       if (dto.total_reserva !== undefined) {
-        data.total_reserva = this.parseDecimal(
-          dto.total_reserva,
-          'total_reserva',
-        );
+        const nextTotal = this.parseDecimal(dto.total_reserva, 'total_reserva');
+        const previousTotalString = existing.total_reserva
+          ? existing.total_reserva.toString()
+          : null;
+        const nextTotalString = nextTotal.toString();
+
+        if (previousTotalString !== nextTotalString) {
+          data.total_reserva = nextTotal;
+          historyEntries.push({
+            reserva: { connect: { reserva_id: reservaId } },
+            usuario: { connect: { usuario_id: auditUserId } },
+            campo: 'total_reserva',
+            valor_anterior: previousTotalString,
+            valor_nuevo: nextTotalString,
+          });
+        }
       }
 
       if (dto.notas !== undefined) {
-        data.notas = dto.notas;
-      }
+        const previousNotas = existing.notas ?? null;
+        const nextNotas = dto.notas ?? null;
 
-      if (Object.keys(data).length === 0) {
-        return;
+        if (previousNotas !== nextNotas) {
+          data.notas = dto.notas;
+          historyEntries.push({
+            reserva: { connect: { reserva_id: reservaId } },
+            usuario: { connect: { usuario_id: auditUserId } },
+            campo: 'notas',
+            valor_anterior: previousNotas,
+            valor_nuevo: nextNotas,
+          });
+        }
       }
 
       await this.reservationsRepository.updateReservation(tx, reservaId, data);
 
-      if (auditUserId !== undefined) {
-        const action = datesChanged ? 'REAGENDAR' : 'ACTUALIZAR';
+      if (historyEntries.length > 0) {
+        const historyAction =
+          checkinChanged || checkoutChanged
+            ? HISTORY_ACTION.REAGENDAR
+            : HISTORY_ACTION.EDITAR;
 
-        await this.reservationsRepository.createReservationHistory(tx, {
-          reserva: { connect: { reserva_id: reservaId } },
-          usuario: { connect: { usuario_id: auditUserId } },
-          accion: action,
-          campo: datesChanged ? 'fechas' : undefined,
-          valor_anterior: datesChanged
-            ? `${existing.checkin_datetime.toISOString()}|${existing.checkout_datetime.toISOString()}`
-            : undefined,
-          valor_nuevo: datesChanged
-            ? `${nextCheckin.toISOString()}|${nextCheckout.toISOString()}`
-            : undefined,
-        });
+        for (const history of historyEntries) {
+          await this.reservationsRepository.createReservationHistory(tx, {
+            ...history,
+            accion: historyAction,
+          });
+        }
       }
     });
 
@@ -298,6 +373,10 @@ export class ReservationsService {
     dto: ChangeReservationStatusDto,
     auditUserId?: bigint,
   ): Promise<ReservationDetail> {
+    if (auditUserId === undefined) {
+      throw new BadRequestException('Audit user is required');
+    }
+
     const reservaId = this.parseId(reservationId, 'reservation_id');
 
     const prisma = this.reservationsRepository.prismaClient;
@@ -325,21 +404,36 @@ export class ReservationsService {
       }
 
       if (existing.estatus_reserva_code !== dto.estatus_reserva_code) {
+        const now = new Date();
+
+        const updateData: Prisma.reservaUpdateInput = {
+          cat_estatus_reserva: {
+            connect: { estatus_reserva_code: dto.estatus_reserva_code },
+          },
+          updated_at: now,
+          usuario_reserva_updated_byTousuario: {
+            connect: { usuario_id: auditUserId },
+          },
+        };
+
         await tx.reserva.update({
           where: { reserva_id: reservaId },
-          data: { estatus_reserva_code: dto.estatus_reserva_code },
+          data: updateData,
         });
 
-        if (auditUserId !== undefined) {
-          await this.reservationsRepository.createReservationHistory(tx, {
-            reserva: { connect: { reserva_id: reservaId } },
-            usuario: { connect: { usuario_id: auditUserId } },
-            accion: 'CAMBIAR_ESTATUS',
-            campo: 'estatus_reserva_code',
-            valor_anterior: existing.estatus_reserva_code,
-            valor_nuevo: dto.estatus_reserva_code,
-          });
-        }
+        const historyAction =
+          dto.estatus_reserva_code === 'CANCELADA'
+            ? HISTORY_ACTION.CANCELAR
+            : HISTORY_ACTION.EDITAR;
+
+        await this.reservationsRepository.createReservationHistory(tx, {
+          reserva: { connect: { reserva_id: reservaId } },
+          usuario: { connect: { usuario_id: auditUserId } },
+          accion: historyAction,
+          campo: 'estatus_reserva_code',
+          valor_anterior: existing.estatus_reserva_code,
+          valor_nuevo: dto.estatus_reserva_code,
+        });
       }
     });
 

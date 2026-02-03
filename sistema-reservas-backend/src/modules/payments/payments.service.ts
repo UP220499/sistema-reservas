@@ -13,6 +13,10 @@ export class PaymentsService {
     dto: CreatePaymentDto,
     auditUserId?: bigint,
   ): Promise<PaymentResponse> {
+    if (auditUserId === undefined) {
+      throw new BadRequestException('Audit user is required');
+    }
+
     const reservaId = this.parseId(reservationId, 'reservation_id');
 
     await this.paymentsRepository.assertReservationExists(reservaId);
@@ -32,9 +36,7 @@ export class PaymentsService {
       fecha_pago: fechaPago,
       referencia: dto.referencia ?? null,
       notas: dto.notas ?? null,
-      ...(auditUserId !== undefined
-        ? { usuario: { connect: { usuario_id: auditUserId } } }
-        : {}),
+      usuario: { connect: { usuario_id: auditUserId } },
     });
 
     return toPaymentResponse(created);
