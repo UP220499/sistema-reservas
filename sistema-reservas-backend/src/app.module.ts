@@ -8,6 +8,7 @@ import { ClientsModule } from './modules/clients/clients.module';
 import { ReservationsModule } from './modules/reservations/reservations.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { BlocksModule } from './modules/blocks/blocks.module';
+import { AvailabilityModule } from './modules/availability/availability.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { BlocksModule } from './modules/blocks/blocks.module';
     ReservationsModule,
     PaymentsModule,
     BlocksModule,
+    AvailabilityModule,
   ],
   controllers: [AppController],
   providers: [AppService],
