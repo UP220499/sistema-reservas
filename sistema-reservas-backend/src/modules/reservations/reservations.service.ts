@@ -9,12 +9,17 @@ import { ReservationQueryDto } from './dto/reservation-query.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { ChangeReservationStatusDto } from './dto/change-reservation-status.dto';
+import { ReservationHistoryQueryDto } from './dto/reservation-history-query.dto';
 import {
   ReservationDetail,
   ReservationSummary,
   toReservationDetail,
   toReservationSummary,
 } from './mappers/reservation.mapper';
+import {
+  ReservationHistoryEntry,
+  toReservationHistoryEntry,
+} from './mappers/reservation-history.mapper';
 import { HISTORY_ACTION } from './constants/history-actions';
 
 @Injectable()
@@ -22,6 +27,45 @@ export class ReservationsService {
   constructor(
     private readonly reservationsRepository: ReservationsRepository,
   ) {}
+
+  async findHistory(
+    reservationId: string,
+    query: ReservationHistoryQueryDto,
+  ): Promise<{
+    items: ReservationHistoryEntry[];
+    page: number;
+    page_size: number;
+    total: number;
+  }> {
+    const reservaId = this.parseId(reservationId, 'reservation_id');
+
+    const exists =
+      await this.reservationsRepository.reservationExists(reservaId);
+
+    if (!exists) {
+      throw new NotFoundException('Reservation not found');
+    }
+
+    const page = query.page ?? 1;
+    const pageSize = query.page_size ?? 20;
+    const skip = (page - 1) * pageSize;
+
+    const [items, total] = await Promise.all([
+      this.reservationsRepository.findReservationHistory(
+        reservaId,
+        skip,
+        pageSize,
+      ),
+      this.reservationsRepository.countReservationHistory(reservaId),
+    ]);
+
+    return {
+      items: items.map((item) => toReservationHistoryEntry(item)),
+      page,
+      page_size: pageSize,
+      total,
+    };
+  }
 
   async findAll(query: ReservationQueryDto): Promise<{
     items: ReservationSummary[];

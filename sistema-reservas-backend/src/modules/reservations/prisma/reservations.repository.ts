@@ -22,6 +22,16 @@ const reservationInclude = {
   },
 } as const;
 
+const historyInclude = {
+  usuario: {
+    select: {
+      usuario_id: true,
+      nombre: true,
+      username: true,
+    },
+  },
+} as const;
+
 @Injectable()
 export class ReservationsRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -147,6 +157,31 @@ export class ReservationsRepository {
       where: { reserva_id },
       include: reservationInclude,
     }) as Promise<ReservationWithRelations | null>;
+  }
+
+  async reservationExists(reserva_id: bigint): Promise<boolean> {
+    const found = await this.prisma.reserva.findUnique({
+      where: { reserva_id },
+      select: { reserva_id: true },
+    });
+
+    return found !== null;
+  }
+
+  findReservationHistory(reserva_id: bigint, skip: number, take: number) {
+    return this.prisma.historial_reserva_evento.findMany({
+      where: { reserva_id },
+      include: historyInclude,
+      orderBy: [{ fecha_evento: 'desc' }, { historial_evento_id: 'desc' }],
+      skip,
+      take,
+    });
+  }
+
+  countReservationHistory(reserva_id: bigint) {
+    return this.prisma.historial_reserva_evento.count({
+      where: { reserva_id },
+    });
   }
 
   get prismaClient() {

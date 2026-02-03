@@ -13,6 +13,7 @@ import { ReservationQueryDto } from './dto/reservation-query.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { ChangeReservationStatusDto } from './dto/change-reservation-status.dto';
+import { ReservationHistoryQueryDto } from './dto/reservation-history-query.dto';
 import { RequireUser } from '../../common/decorators/require-user.decorator';
 import { AuditUserId } from '../../common/decorators/audit-user.decorator';
 
@@ -29,6 +30,14 @@ export class ReservationsController {
   @Get(':reservation_id')
   findOne(@Param('reservation_id') reservationId: string) {
     return this.reservationsService.findOne(reservationId);
+  }
+
+  @Get(':reservation_id/history')
+  findHistory(
+    @Param('reservation_id') reservationId: string,
+    @Query() query: ReservationHistoryQueryDto,
+  ) {
+    return this.reservationsService.findHistory(reservationId, query);
   }
 
   /*
