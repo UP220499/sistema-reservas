@@ -18,6 +18,14 @@ export class IcalSyncRepository {
     });
   }
 
+  findActiveLocations(): Promise<LocationRecord[]> {
+    return this.prisma.ubicacion.findMany({
+      where: { activa: true },
+      select: { ubicacion_id: true },
+      orderBy: { ubicacion_id: 'asc' },
+    });
+  }
+
   async upsertAirbnbBlocks(
     ubicacionId: bigint,
     events: ParsedIcalEvent[],
