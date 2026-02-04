@@ -13,6 +13,7 @@ import { BlocksModule } from './modules/blocks/blocks.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { IcalSyncModule } from './modules/ical_sync/ical-sync.module';
 import { UserIdentityGuard } from './common/guards/user-identity.guard';
+import { CalendarModule } from './modules/calendar/calendar.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { UserIdentityGuard } from './common/guards/user-identity.guard';
     BlocksModule,
     AvailabilityModule,
     IcalSyncModule,
+    CalendarModule,
   ],
   controllers: [AppController],
   providers: [
