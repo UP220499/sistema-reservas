@@ -41,23 +41,35 @@ export class IcalSyncRepository {
       const eventsByUid = new Map<string, ParsedIcalEvent>();
 
       for (const event of events) {
-        const updateResult = await tx.bloqueo_calendario.updateMany({
-          where: {
-            ubicacion_id: ubicacionId,
-            origen_bloqueo_code: 'AIRBNB',
-            external_uid: event.uid,
-          },
-          data: {
-            inicio_datetime: event.start,
-            fin_datetime: event.end,
-            estatus_bloqueo: 'ACTIVO',
-            raw_payload: event.raw,
-            updated_at: updatedAt,
-          },
-        });
+        const trimmedUid = event.uid?.trim();
+        if (!trimmedUid) {
+          continue;
+        }
 
-        if (updated.count > 0) {
-          affected += 1;
+        if (!eventsByUid.has(trimmedUid)) {
+          eventsByUid.set(trimmedUid, { ...event, uid: trimmedUid });
+        }
+      }
+
+      for (const [uid, event] of eventsByUid.entries()) {
+        const updateResult: Prisma.BatchPayload =
+          await tx.bloqueo_calendario.updateMany({
+            where: {
+              ubicacion_id: ubicacionId,
+              origen_bloqueo_code: 'AIRBNB',
+              external_uid: uid,
+            },
+            data: {
+              inicio_datetime: event.start,
+              fin_datetime: event.end,
+              estatus_bloqueo: 'ACTIVO',
+              raw_payload: event.raw,
+              updated_at: updatedAt,
+            },
+          });
+
+        if (updateResult.count > 0) {
+          affected += updateResult.count;
           continue;
         }
 
@@ -70,8 +82,9 @@ export class IcalSyncRepository {
             inicio_datetime: event.start,
             fin_datetime: event.end,
             estatus_bloqueo: 'ACTIVO',
-            external_uid: event.uid,
+            external_uid: uid,
             raw_payload: event.raw,
+            updated_at: updatedAt,
           },
         });
         affected += 1;
