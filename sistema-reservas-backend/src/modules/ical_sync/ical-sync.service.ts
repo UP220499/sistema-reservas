@@ -2,14 +2,17 @@ import {
   BadGatewayException,
   BadRequestException,
   ConflictException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { IcalSyncRepository } from './prisma/ical-sync.repository';
 import { IcalSyncQueryDto } from './dto/ical-sync-query.dto';
 import { parseIcalEvents } from './ical.parser';
+import { extractIcalErrorInfo } from './utils/error-info.util';
 
 interface IcalSyncResult {
   ubicacion_id: string;
@@ -20,33 +23,38 @@ interface IcalSyncResult {
 
 @Injectable()
 export class IcalSyncService {
+  private readonly logger = new Logger(IcalSyncService.name);
+
   constructor(private readonly icalSyncRepository: IcalSyncRepository) {}
 
   async syncAirbnbCalendar(query: IcalSyncQueryDto): Promise<IcalSyncResult> {
-    const ubicacionId = this.parseBigInt(query.ubicacion_id, 'ubicacion_id');
-
-    const location = await this.icalSyncRepository.findLocation(ubicacionId);
-    if (!location) {
-      throw new NotFoundException('Location not found');
-    }
-
-    const envKey = `AIRBNB_ICAL_URL_${ubicacionId.toString()}`;
-    const icalUrl = process.env[envKey];
-    if (!icalUrl) {
-      throw new BadRequestException(
-        'Airbnb iCal URL is not configured for this location',
-      );
-    }
-
-    const response = await this.safeFetch(icalUrl);
-    if (!response.ok) {
-      throw new BadGatewayException('Unable to fetch iCal feed');
-    }
-
-    const icsContent = await response.text();
-    const events = parseIcalEvents(icsContent);
+    const rawUbicacionId = query.ubicacion_id;
+    let ubicacionId: bigint | undefined;
 
     try {
+      ubicacionId = this.parseBigInt(query.ubicacion_id, 'ubicacion_id');
+
+      const location = await this.icalSyncRepository.findLocation(ubicacionId);
+      if (!location) {
+        throw new NotFoundException('Location not found');
+      }
+
+      const envKey = `AIRBNB_ICAL_URL_${ubicacionId.toString()}`;
+      const icalUrl = process.env[envKey];
+      if (!icalUrl) {
+        throw new BadRequestException(
+          'Airbnb iCal URL is not configured for this location',
+        );
+      }
+
+      const response = await this.safeFetch(icalUrl);
+      if (!response.ok) {
+        throw new BadGatewayException('Unable to fetch iCal feed');
+      }
+
+      const icsContent = await response.text();
+      const events = parseIcalEvents(icsContent);
+
       const upserted = await this.icalSyncRepository.upsertAirbnbBlocks(
         ubicacionId,
         events,
@@ -66,7 +74,11 @@ export class IcalSyncService {
         deactivated,
       };
     } catch (error: unknown) {
-      return this.handlePrismaErrors(error);
+      const ubicacionForLog =
+        ubicacionId?.toString() ?? rawUbicacionId ?? 'unknown';
+
+      this.logSyncError(ubicacionForLog, error);
+      this.normalizeAndRethrow(error);
     }
   }
 
@@ -89,19 +101,67 @@ export class IcalSyncService {
   private async safeFetch(url: string): Promise<Response> {
     try {
       return await fetch(url);
-    } catch {
-      throw new BadGatewayException('Unable to fetch iCal feed');
+    } catch (error: unknown) {
+      const normalizedError =
+        error instanceof Error ? error : new Error(String(error));
+
+      throw new BadGatewayException('Unable to fetch iCal feed', {
+        cause: normalizedError,
+      });
     }
   }
 
-  private handlePrismaErrors(error: unknown): never {
-    if (error instanceof PrismaClientKnownRequestError) {
-      if (this.isExclusionConstraintError(error)) {
-        throw new ConflictException('Availability conflict while syncing iCal');
-      }
+  private logSyncError(ubicacionId: string, error: unknown): void {
+    const info = extractIcalErrorInfo(error);
+
+    const messageParts = [
+      `Failed to sync Airbnb calendar for location ${ubicacionId}`,
+      `type=${info.error_type}`,
+      `message=${info.message}`,
+    ];
+
+    if (info.prisma_code) {
+      messageParts.push(`prisma_code=${info.prisma_code}`);
     }
 
-    throw new InternalServerErrorException('Internal server error');
+    if (info.prisma_meta_cause) {
+      messageParts.push(`prisma_meta_cause=${info.prisma_meta_cause}`);
+    }
+
+    if (info.postgres_code) {
+      messageParts.push(`postgres_code=${info.postgres_code}`);
+    }
+
+    const logMessage = messageParts.join(' ');
+    this.logger.error(logMessage, info.stack ?? info.message);
+  }
+
+  private normalizeAndRethrow(error: unknown): never {
+    if (error instanceof HttpException) {
+      throw error;
+    }
+
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (this.isExclusionConstraintError(error)) {
+        throw new ConflictException(
+          'Availability conflict while syncing iCal',
+          {
+            cause: error,
+          },
+        );
+      }
+
+      throw new InternalServerErrorException('Internal server error', {
+        cause: error,
+      });
+    }
+
+    const normalizedError =
+      error instanceof Error ? error : new Error(String(error));
+
+    throw new InternalServerErrorException('Internal server error', {
+      cause: normalizedError,
+    });
   }
 
   private isExclusionConstraintError(

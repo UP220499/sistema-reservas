@@ -41,22 +41,11 @@ export class IcalSyncRepository {
       const eventsByUid = new Map<string, ParsedIcalEvent>();
 
       for (const event of events) {
-        const trimmedUid = event.uid?.trim();
-        if (!trimmedUid) {
-          continue;
-        }
-
-        if (!eventsByUid.has(trimmedUid)) {
-          eventsByUid.set(trimmedUid, { ...event, uid: trimmedUid });
-        }
-      }
-
-      for (const [uid, event] of eventsByUid.entries()) {
         const updateResult = await tx.bloqueo_calendario.updateMany({
           where: {
             ubicacion_id: ubicacionId,
             origen_bloqueo_code: 'AIRBNB',
-            external_uid: uid,
+            external_uid: event.uid,
           },
           data: {
             inicio_datetime: event.start,
@@ -67,8 +56,8 @@ export class IcalSyncRepository {
           },
         });
 
-        if (updateResult.count > 0) {
-          affected += updateResult.count;
+        if (updated.count > 0) {
+          affected += 1;
           continue;
         }
 
@@ -81,9 +70,8 @@ export class IcalSyncRepository {
             inicio_datetime: event.start,
             fin_datetime: event.end,
             estatus_bloqueo: 'ACTIVO',
-            external_uid: uid,
+            external_uid: event.uid,
             raw_payload: event.raw,
-            updated_at: updatedAt,
           },
         });
         affected += 1;
