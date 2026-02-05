@@ -29,15 +29,10 @@ export class IcalSyncRepository {
   async upsertAirbnbBlocks(
     ubicacionId: bigint,
     events: ParsedIcalEvent[],
-  ): Promise<number> {
-    if (events.length === 0) {
-      return 0;
-    }
-
+  ): Promise<{ created: number; reactivated: number; deactivated: number }> {
     const updatedAt = new Date();
-    return this.prisma.$transaction(async (tx) => {
-      let affected = 0;
 
+    return this.prisma.$transaction(async (tx) => {
       const eventsByUid = new Map<string, ParsedIcalEvent>();
 
       for (const event of events) {
@@ -50,6 +45,22 @@ export class IcalSyncRepository {
           eventsByUid.set(trimmedUid, { ...event, uid: trimmedUid });
         }
       }
+
+      const deactivatedResult: Prisma.BatchPayload =
+        await tx.bloqueo_calendario.updateMany({
+          where: {
+            ubicacion_id: ubicacionId,
+            origen_bloqueo_code: 'AIRBNB',
+            estatus_bloqueo: 'ACTIVO',
+          },
+          data: {
+            estatus_bloqueo: 'INACTIVO',
+            updated_at: updatedAt,
+          },
+        });
+
+      let created = 0;
+      let reactivated = 0;
 
       for (const [uid, event] of eventsByUid.entries()) {
         const updateResult: Prisma.BatchPayload =
@@ -69,7 +80,7 @@ export class IcalSyncRepository {
           });
 
         if (updateResult.count > 0) {
-          affected += updateResult.count;
+          reactivated += updateResult.count;
           continue;
         }
 
@@ -87,35 +98,14 @@ export class IcalSyncRepository {
             updated_at: updatedAt,
           },
         });
-        affected += 1;
+        created += 1;
       }
 
-      return affected;
+      return {
+        created,
+        reactivated,
+        deactivated: deactivatedResult.count,
+      };
     });
-  }
-
-  async deactivateMissingAirbnbBlocks(
-    ubicacionId: bigint,
-    uids: string[],
-  ): Promise<number> {
-    const where: Prisma.bloqueo_calendarioWhereInput = {
-      ubicacion_id: ubicacionId,
-      origen_bloqueo_code: 'AIRBNB',
-      estatus_bloqueo: 'ACTIVO',
-    };
-
-    if (uids.length > 0) {
-      where.external_uid = { notIn: uids };
-    }
-
-    const result = await this.prisma.bloqueo_calendario.updateMany({
-      where,
-      data: {
-        estatus_bloqueo: 'INACTIVO',
-        updated_at: new Date(),
-      },
-    });
-
-    return result.count;
   }
 }

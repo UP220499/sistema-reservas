@@ -55,17 +55,15 @@ export class IcalSyncService {
       const icsContent = await response.text();
       const events = parseIcalEvents(icsContent);
 
-      const upserted = await this.icalSyncRepository.upsertAirbnbBlocks(
-        ubicacionId,
-        events,
-      );
+      const { created, reactivated, deactivated } =
+        await this.icalSyncRepository.upsertAirbnbBlocks(ubicacionId, events);
 
-      const uids = events.map((event) => event.uid);
-      const deactivated =
-        await this.icalSyncRepository.deactivateMissingAirbnbBlocks(
-          ubicacionId,
-          uids,
-        );
+      const upserted = created + reactivated;
+
+      this.logger.log(
+        `Replaced Airbnb blocks for location ${ubicacionId.toString()}: ` +
+          `created=${created} reactivated=${reactivated} deactivated=${deactivated}`,
+      );
 
       return {
         ubicacion_id: ubicacionId.toString(),
@@ -144,7 +142,7 @@ export class IcalSyncService {
     if (error instanceof PrismaClientKnownRequestError) {
       if (this.isExclusionConstraintError(error)) {
         throw new ConflictException(
-          'Availability conflict while syncing iCal',
+          'Overlap conflict while syncing Airbnb blocks',
           {
             cause: error,
           },
