@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { IcalSyncService } from './ical-sync.service';
 import { IcalSyncRepository } from './prisma/ical-sync.repository';
+import { extractIcalErrorInfo } from './utils/error-info.util';
 
 const DEFAULT_CRON_EXPRESSION = '*/15 * * * *';
 
@@ -87,14 +88,20 @@ export class IcalSyncCron {
         }
       } catch (error: unknown) {
         totals.failed += 1;
-        const message =
-          error instanceof Error ? error.message : 'Unknown error';
+        const errorInfo = extractIcalErrorInfo(error);
+        const codePart =
+          errorInfo.prisma_code ?? errorInfo.postgres_code ?? 'n/a';
+        const failureMessage = `[IcalSyncCron] Failed location ${locationId}: ${errorInfo.error_name} ${codePart} ${errorInfo.message}`;
+
+        this.logger.error(failureMessage, errorInfo.stack ?? undefined);
+
         if (verbose) {
-          this.logger.error(
-            `Failed to sync location ${locationId}: ${message}.`,
+          this.logger.debug(
+            `Detailed failure (${locationId}): type=${errorInfo.error_type} prisma_code=${errorInfo.prisma_code ?? 'n/a'} postgres_code=${errorInfo.postgres_code ?? 'n/a'}.`,
           );
         }
-        failureSummaries.push(`${locationId}:${message}`);
+
+        failureSummaries.push(`${locationId}:${errorInfo.message}`);
       }
     }
 

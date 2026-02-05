@@ -38,41 +38,82 @@ export class IcalSyncRepository {
     return this.prisma.$transaction(async (tx) => {
       let affected = 0;
 
-      for (const event of events) {
-        const updateResult = await tx.bloqueo_calendario.updateMany({
-          where: {
-            ubicacion_id: ubicacionId,
-            origen_bloqueo_code: 'AIRBNB',
-            external_uid: event.uid,
-          },
-          data: {
-            inicio_datetime: event.start,
-            fin_datetime: event.end,
-            estatus_bloqueo: 'ACTIVO',
-            raw_payload: event.raw,
-            updated_at: updatedAt,
-          },
-        });
+      const eventsByUid = new Map<string, ParsedIcalEvent>();
 
-        if (updateResult.count > 0) {
-          affected += updateResult.count;
+      for (const event of events) {
+        const externalUid = event.uid?.trim();
+        if (!externalUid) {
           continue;
         }
 
-        await tx.bloqueo_calendario.create({
-          data: {
-            ubicacion: { connect: { ubicacion_id: ubicacionId } },
-            cat_origen_bloqueo: {
-              connect: { origen_bloqueo_code: 'AIRBNB' },
-            },
-            inicio_datetime: event.start,
-            fin_datetime: event.end,
-            estatus_bloqueo: 'ACTIVO',
-            external_uid: event.uid,
-            raw_payload: event.raw,
-          },
+        if (!eventsByUid.has(externalUid)) {
+          eventsByUid.set(externalUid, { ...event, uid: externalUid });
+        }
+      }
+
+      for (const [uid, event] of eventsByUid.entries()) {
+        const where = {
+          ubicacion_id: ubicacionId,
+          origen_bloqueo_code: 'AIRBNB',
+          external_uid: uid,
+        };
+
+        const data = {
+          inicio_datetime: event.start,
+          fin_datetime: event.end,
+          estatus_bloqueo: 'ACTIVO',
+          raw_payload: event.raw,
+          updated_at: updatedAt,
+        } satisfies Prisma.bloqueo_calendarioUpdateInput;
+
+        const updated = await tx.bloqueo_calendario.updateMany({
+          where,
+          data,
         });
-        affected += 1;
+
+        if (updated.count > 0) {
+          affected += 1;
+          continue;
+        }
+
+        try {
+          await tx.bloqueo_calendario.create({
+            data: {
+              ubicacion: { connect: { ubicacion_id: ubicacionId } },
+              cat_origen_bloqueo: {
+                connect: { origen_bloqueo_code: 'AIRBNB' },
+              },
+              inicio_datetime: event.start,
+              fin_datetime: event.end,
+              estatus_bloqueo: 'ACTIVO',
+              external_uid: uid,
+              raw_payload: event.raw,
+              updated_at: updatedAt,
+            },
+          });
+          affected += 1;
+        } catch (error: unknown) {
+          if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === 'P2002'
+          ) {
+            const existing = await tx.bloqueo_calendario.findFirst({
+              where,
+              select: { bloqueo_id: true },
+            });
+
+            if (existing) {
+              await tx.bloqueo_calendario.update({
+                where: { bloqueo_id: existing.bloqueo_id },
+                data,
+              });
+              affected += 1;
+              continue;
+            }
+          }
+
+          throw error;
+        }
       }
 
       return affected;
