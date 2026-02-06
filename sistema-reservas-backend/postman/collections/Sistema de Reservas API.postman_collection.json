@@ -1,0 +1,860 @@
+{
+  "info": {
+    "_postman_id": "e3b7880f-88bb-473d-8e81-f091cbf9d40a",
+    "name": "Sistema de Reservas API",
+    "description": "API collection for the Sistema de Reservas backend (NestJS).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "App",
+      "item": [
+        {
+          "name": "Get Hello",
+          "id": "82638da5-d139-4452-895d-00fa8fe902f5",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}",
+              "host": [
+                "{{baseUrl}}"
+              ]
+            },
+            "description": "Returns a hello message from the app service."
+          },
+          "response": []
+        },
+        {
+          "name": "Database Health Check",
+          "id": "28eb4ef1-0cab-4b6f-9c50-469daaf039fe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/db",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health",
+                "db"
+              ]
+            },
+            "description": "Checks database connectivity by executing a simple query."
+          },
+          "response": []
+        }
+      ],
+      "id": "6815358d-eadb-4729-949a-c59f51c835b0",
+      "description": "Root application endpoints"
+    },
+    {
+      "name": "Availability",
+      "item": [
+        {
+          "name": "Check Availability",
+          "id": "6c215ac2-d4ef-4bd9-ac58-db350c85ae2a",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/availability?ubicacion_id={{ubicacion_id}}&from=2026-02-01T00:00:00.000Z&to=2026-02-10T00:00:00.000Z",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "availability"
+              ],
+              "query": [
+                {
+                  "key": "ubicacion_id",
+                  "value": "{{ubicacion_id}}",
+                  "description": "Location ID (required)",
+                  "uuid": "3157c42e-7ba0-4e5f-9044-68939756153d"
+                },
+                {
+                  "key": "from",
+                  "value": "2026-02-01T00:00:00.000Z",
+                  "description": "Start date in ISO8601 format (required)",
+                  "uuid": "366b953b-eff3-4dbf-b333-981c486df565"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-02-10T00:00:00.000Z",
+                  "description": "End date in ISO8601 format (required)",
+                  "uuid": "37bcd320-3b35-4424-97f5-c5c8d3f887d4"
+                }
+              ]
+            },
+            "description": "Check availability for a specific location within a date range."
+          },
+          "response": []
+        }
+      ],
+      "id": "dd0ac98e-404f-48b1-8a64-436910d8eaa9",
+      "description": "Check availability for locations within date ranges"
+    },
+    {
+      "name": "Blocks",
+      "item": [
+        {
+          "name": "Create Block",
+          "id": "f5a343e8-f6c1-4143-99d8-ede1178bc219",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ubicacion_id\": \"1\",\n  \"origen_bloqueo_code\": \"MANUAL\",\n  \"inicio_datetime\": \"2026-02-15T00:00:00.000Z\",\n  \"fin_datetime\": \"2026-02-20T00:00:00.000Z\",\n  \"estatus_bloqueo\": \"ACTIVO\",\n  \"external_uid\": \"\",\n  \"raw_payload\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/blocks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blocks"
+              ]
+            },
+            "description": "Create a new block for a location."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Blocks",
+          "id": "d433f7b6-eac9-432e-9da8-2dac460b3a0e",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/blocks?page=1&page_size=20&ubicacion_id=1&from=2026-02-01T00:00:00.000Z&to=2026-02-28T00:00:00.000Z&estatus_bloqueo=ACTIVO",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blocks"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (optional, min: 1)"
+                },
+                {
+                  "key": "page_size",
+                  "value": "20",
+                  "description": "Items per page (optional, min: 1, max: 100)"
+                },
+                {
+                  "key": "ubicacion_id",
+                  "value": "1",
+                  "description": "Filter by location ID (optional)"
+                },
+                {
+                  "key": "from",
+                  "value": "2026-02-01T00:00:00.000Z",
+                  "description": "Filter from date in ISO8601 (optional)"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-02-28T00:00:00.000Z",
+                  "description": "Filter to date in ISO8601 (optional)"
+                },
+                {
+                  "key": "estatus_bloqueo",
+                  "value": "ACTIVO",
+                  "description": "Filter by block status (optional)"
+                }
+              ]
+            },
+            "description": "Retrieve all blocks with optional filters and pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Block by ID",
+          "id": "76138208-4563-4d05-b806-183c61add552",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/blocks/{{bloqueo_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blocks",
+                "{{bloqueo_id}}"
+              ]
+            },
+            "description": "Retrieve a specific block by its ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Block Status",
+          "id": "412c4edb-183c-4d71-8968-e2db702a3cf2",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estatus_bloqueo\": \"INACTIVO\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/blocks/{{bloqueo_id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "blocks",
+                "{{bloqueo_id}}",
+                "status"
+              ]
+            },
+            "description": "Change the status of a block."
+          },
+          "response": []
+        }
+      ],
+      "id": "3fa6f77c-84f6-4936-a368-75e2b50e5e43",
+      "description": "Manage calendar blocks (e.g., blocked dates for locations)"
+    },
+    {
+      "name": "Calendar",
+      "item": [
+        {
+          "name": "Get Calendar",
+          "id": "4b3b59a1-ead9-4c04-ad63-520bde708cba",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/calendar?from=2026-02-01T00:00:00.000Z&to=2026-02-28T00:00:00.000Z&ubicacion_id=1&page=1&page_size=20&include=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "calendar"
+              ],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "2026-02-01T00:00:00.000Z",
+                  "description": "Start date in ISO8601 format (required)"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-02-28T00:00:00.000Z",
+                  "description": "End date in ISO8601 format (required)"
+                },
+                {
+                  "key": "ubicacion_id",
+                  "value": "1",
+                  "description": "Filter by location ID (optional)"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (optional, min: 1)"
+                },
+                {
+                  "key": "page_size",
+                  "value": "20",
+                  "description": "Items per page (optional, min: 1, max: 100)"
+                },
+                {
+                  "key": "include",
+                  "value": "all",
+                  "description": "Include type: 'all', 'reservas', or 'bloqueos' (optional)"
+                }
+              ]
+            },
+            "description": "Get calendar entries (reservations and/or blocks) for a date range."
+          },
+          "response": []
+        }
+      ],
+      "id": "5f9a9bdb-49fe-4e5d-9a71-c6245130cf96",
+      "description": "Calendar view combining reservations and blocks"
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "Get All Clients",
+          "id": "619e5619-4ec8-4306-99ba-6fb79b912bf4",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients?search=&active=true&page=1&pageSize=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search term for client name (optional)"
+                },
+                {
+                  "key": "active",
+                  "value": "true",
+                  "description": "Filter by active status (optional)"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "20",
+                  "description": "Items per page (default: 20, max: 100)"
+                }
+              ]
+            },
+            "description": "Retrieve all clients with optional search and pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client by ID",
+          "id": "dba6466a-64ad-41d5-b63e-d6eeaf39d6ef",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientId}}"
+              ]
+            },
+            "description": "Retrieve a specific client by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Client",
+          "id": "dde935aa-0fa5-46b2-8dee-d3d578ca881d",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan Pérez\",\n  \"correo\": \"juan.perez@example.com\",\n  \"phones\": [\n    {\n      \"telefono\": \"+521234567890\",\n      \"es_principal\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/clients",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients"
+              ]
+            },
+            "description": "Create a new client with at least one phone number."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Client",
+          "id": "9388a2cf-91c6-4eb5-8bc7-81ee294aa43e",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Juan Pérez García\",\n  \"correo\": \"juan.perez.garcia@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientId}}"
+              ]
+            },
+            "description": "Update client information (name and/or email)."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Client Status",
+          "id": "fb66fc64-cb4d-4803-ab29-2a1c45cc4244",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientId}}",
+                "status"
+              ]
+            },
+            "description": "Activate or deactivate a client."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Phone to Client",
+          "id": "fea985e7-5adb-4412-a828-65bcb069f211",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefono\": \"+520987654321\",\n  \"es_principal\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientId}}/phones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientId}}",
+                "phones"
+              ]
+            },
+            "description": "Add a new phone number to an existing client."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Client Phone",
+          "id": "5b04076c-9eb7-4da2-93ef-8a74f4b0b2eb",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefono\": \"+521112223333\",\n  \"activo\": true,\n  \"es_principal\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientId}}/phones/{{phoneId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientId}}",
+                "phones",
+                "{{phoneId}}"
+              ]
+            },
+            "description": "Update a client's phone number details."
+          },
+          "response": []
+        },
+        {
+          "name": "Set Primary Phone",
+          "id": "6010bcea-f8b5-4241-b2a8-f815f6cae332",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clients/{{clientId}}/phones/{{phoneId}}/primary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clients",
+                "{{clientId}}",
+                "phones",
+                "{{phoneId}}",
+                "primary"
+              ]
+            },
+            "description": "Set a phone number as the client's primary phone."
+          },
+          "response": []
+        }
+      ],
+      "id": "1e2f9e59-e51f-4edd-8cb9-8d215999561b",
+      "description": "Manage clients and their phone numbers"
+    },
+    {
+      "name": "Reservations",
+      "item": [
+        {
+          "name": "Get All Reservations",
+          "id": "b9215312-3c94-4988-a1ed-1133d3ca53f0",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations?page=1&page_size=20&ubicacion_id=1&cliente_id=&estatus_reserva_code=CONFIRMADA&origen=&from=2026-02-01T00:00:00.000Z&to=2026-02-28T00:00:00.000Z",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "page_size",
+                  "value": "20",
+                  "description": "Items per page (default: 20, max: 100)"
+                },
+                {
+                  "key": "ubicacion_id",
+                  "value": "1",
+                  "description": "Filter by location ID (optional)"
+                },
+                {
+                  "key": "cliente_id",
+                  "value": "",
+                  "description": "Filter by client ID (optional)"
+                },
+                {
+                  "key": "estatus_reserva_code",
+                  "value": "CONFIRMADA",
+                  "description": "Filter by reservation status (optional)"
+                },
+                {
+                  "key": "origen",
+                  "value": "",
+                  "description": "Filter by reservation origin (optional)"
+                },
+                {
+                  "key": "from",
+                  "value": "2026-02-01T00:00:00.000Z",
+                  "description": "Filter from date in ISO8601 (optional)"
+                },
+                {
+                  "key": "to",
+                  "value": "2026-02-28T00:00:00.000Z",
+                  "description": "Filter to date in ISO8601 (optional)"
+                }
+              ]
+            },
+            "description": "Retrieve all reservations with optional filters and pagination."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Reservation by ID",
+          "id": "b93d6cb0-bcab-4b17-8834-b82c86b6caa5",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservation_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservation_id}}"
+              ]
+            },
+            "description": "Retrieve a specific reservation by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Reservation History",
+          "id": "368f2c63-3141-4449-8f41-b6c379e8dd3c",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservation_id}}/history?page=1&page_size=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservation_id}}",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (optional)"
+                },
+                {
+                  "key": "page_size",
+                  "value": "20",
+                  "description": "Items per page (optional, max: 100)"
+                }
+              ]
+            },
+            "description": "Retrieve the change history for a specific reservation."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Reservation",
+          "id": "445935e8-ee68-4447-88be-f30f1969d1d1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "description": "User ID for audit (required)"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente_id\": \"1\",\n  \"ubicacion_id\": \"2\",\n  \"origen_reserva_code\": \"EXTERNA\",\n  \"checkin_datetime\": \"2026-02-10T15:00:00.000Z\",\n  \"checkout_datetime\": \"2026-02-12T11:00:00.000Z\",\n  \"estatus_reserva_code\": \"CONFIRMADA\",\n  \"total_reserva\": 1200,\n  \"notas\": \"Cliente frecuente\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations"
+              ]
+            },
+            "description": "Create a new reservation. Requires x-user-id header for audit."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Reservation",
+          "id": "05c4058f-104a-46a4-a643-4bec6b239009",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "description": "User ID for audit (required)"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"checkin_datetime\": \"2026-02-15T15:00:00.000Z\",\n  \"checkout_datetime\": \"2026-02-18T11:00:00.000Z\",\n  \"estatus_reserva_code\": \"CONFIRMADA\",\n  \"origen_reserva_code\": \"EXTERNA\",\n  \"total_reserva\": 1500,\n  \"notas\": \"Cliente solicitó cambio\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservation_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservation_id}}"
+              ]
+            },
+            "description": "Update an existing reservation. Requires x-user-id header for audit."
+          },
+          "response": []
+        },
+        {
+          "name": "Change Reservation Status",
+          "id": "b477ced0-1b51-4b85-bfa2-8207589e2ebc",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "description": "User ID for audit (required)"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estatus_reserva_code\": \"CANCELADA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservation_id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservation_id}}",
+                "status"
+              ]
+            },
+            "description": "Change the status of a reservation. Requires x-user-id header for audit."
+          },
+          "response": []
+        }
+      ],
+      "id": "375889c1-cd08-4cd9-a452-d0fa4787f075",
+      "description": "Manage reservations"
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Get Reservation Payments",
+          "id": "8e9a590f-97b6-4ebe-9869-b67ffd11d4e3",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservation_id}}/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservation_id}}",
+                "payments"
+              ]
+            },
+            "description": "Retrieve all payments for a specific reservation."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Payment",
+          "id": "0d5945d9-64d1-4d54-bd25-b1f527765733",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "42",
+                "description": "User ID for audit (required)"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipo_pago_mov_code\": \"EFECTIVO\",\n  \"metodo_pago_code\": \"CASH\",\n  \"monto\": 1500,\n  \"fecha_pago\": \"2026-02-04T18:30:00.000Z\",\n  \"referencia\": \"ABCD-1234\",\n  \"notas\": \"Pago en mostrador\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservation_id}}/payments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservation_id}}",
+                "payments"
+              ]
+            },
+            "description": "Create a new payment for a reservation. Requires x-user-id header for audit."
+          },
+          "response": []
+        }
+      ],
+      "id": "07360d26-b0ff-4bd3-9a8e-d454dad4dd59",
+      "description": "Manage payments for reservations"
+    },
+    {
+      "name": "iCal Sync",
+      "item": [
+        {
+          "name": "Sync iCal Calendar",
+          "id": "a81837cb-d832-4755-bf2f-e4627a8a67ab",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ical/sync?ubicacion_id=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ical",
+                "sync"
+              ],
+              "query": [
+                {
+                  "key": "ubicacion_id",
+                  "value": "1",
+                  "description": "Location ID to sync (required)"
+                }
+              ]
+            },
+            "description": "Trigger synchronization of external iCal calendar for a location. Returns sync statistics."
+          },
+          "response": []
+        }
+      ],
+      "id": "df6b1733-6109-4d2f-9990-08725a00d24e",
+      "description": "Synchronize calendar data from external iCal sources (e.g., Airbnb)"
+    }
+  ],
+  "variable": [
+    {
+      "id": "26c8aa93-de55-4cf1-b044-2713a50eeeb3",
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    }
+  ]
+}
