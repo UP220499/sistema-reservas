@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
@@ -14,6 +14,7 @@ import { AvailabilityModule } from './modules/availability/availability.module';
 import { IcalSyncModule } from './modules/ical_sync/ical-sync.module';
 import { UserIdentityGuard } from './common/guards/user-identity.guard';
 import { CalendarModule } from './modules/calendar/calendar.module';
+import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 @Module({
   imports: [
@@ -34,6 +35,10 @@ import { CalendarModule } from './modules/calendar/calendar.module';
     {
       provide: APP_GUARD,
       useClass: UserIdentityGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
     },
   ],
 })
