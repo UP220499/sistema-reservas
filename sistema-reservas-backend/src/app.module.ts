@@ -14,6 +14,7 @@ import { AvailabilityModule } from './modules/availability/availability.module';
 import { IcalSyncModule } from './modules/ical_sync/ical-sync.module';
 import { UserIdentityGuard } from './common/guards/user-identity.guard';
 import { CalendarModule } from './modules/calendar/calendar.module';
+import { AuthModule } from './modules/auth/auth.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 
 @Module({
@@ -21,6 +22,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     PrismaModule,
+    AuthModule,
     ClientsModule,
     ReservationsModule,
     PaymentsModule,

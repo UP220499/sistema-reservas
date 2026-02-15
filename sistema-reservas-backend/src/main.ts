@@ -25,6 +25,7 @@ async function bootstrap() {
       'API para gestión de reservas, clientes, pagos y calendario',
     )
     .setVersion('1.0')
+    .addBearerAuth()
     .addGlobalParameters({
       name: 'x-user-id',
       in: 'header',
