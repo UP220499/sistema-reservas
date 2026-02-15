@@ -13,6 +13,9 @@ import {
     Skeleton,
     useTheme,
     alpha,
+    Popover,
+    TextField,
+    Button,
 } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -43,6 +46,7 @@ export default function CalendarPage() {
     const navigate = useNavigate();
     const [currentDate, setCurrentDate] = useState(dayjs());
     const [filter, setFilter] = useState<'all' | 'reservas' | 'bloqueos'>('all');
+    const [pickerAnchor, setPickerAnchor] = useState<HTMLElement | null>(null);
 
     const from = currentDate.startOf('month').subtract(7, 'day').toISOString();
     const to = currentDate.endOf('month').add(7, 'day').toISOString();
@@ -131,7 +135,6 @@ export default function CalendarPage() {
         return map;
     }, [data]);
 
-    const goToToday = () => setCurrentDate(dayjs());
     const goPrev = () => setCurrentDate((d) => d.subtract(1, 'month'));
     const goNext = () => setCurrentDate((d) => d.add(1, 'month'));
 
@@ -160,9 +163,46 @@ export default function CalendarPage() {
                     <IconButton onClick={goNext}>
                         <ChevronRightIcon />
                     </IconButton>
-                    <IconButton onClick={goToToday} color="primary" title="Hoy">
+                    <IconButton onClick={(e) => setPickerAnchor(e.currentTarget)} color="primary" title="Ir a fecha">
                         <TodayIcon />
                     </IconButton>
+
+                    {/* Date picker popover */}
+                    <Popover
+                        open={!!pickerAnchor}
+                        anchorEl={pickerAnchor}
+                        onClose={() => setPickerAnchor(null)}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'center' }}
+                    >
+                        <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.5, minWidth: 220 }}>
+                            <Typography variant="subtitle2" fontWeight={600}>Ir a fecha</Typography>
+                            <TextField
+                                type="month"
+                                size="small"
+                                value={currentDate.format('YYYY-MM')}
+                                onChange={(e) => {
+                                    const d = dayjs(e.target.value + '-01');
+                                    if (d.isValid()) {
+                                        setCurrentDate(d);
+                                        setPickerAnchor(null);
+                                    }
+                                }}
+                                fullWidth
+                                slotProps={{ inputLabel: { shrink: true } }}
+                            />
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => {
+                                    setCurrentDate(dayjs());
+                                    setPickerAnchor(null);
+                                }}
+                            >
+                                Hoy
+                            </Button>
+                        </Box>
+                    </Popover>
                 </Box>
 
                 <ToggleButtonGroup

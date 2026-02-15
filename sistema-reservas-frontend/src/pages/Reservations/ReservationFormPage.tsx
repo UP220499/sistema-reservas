@@ -16,6 +16,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import dayjs from 'dayjs';
 import {
     reservationsApi,
+    catalogsApi,
     type CreateReservationPayload,
 } from '../../api/reservations';
 import { clientsApi } from '../../api/clients';
@@ -42,6 +43,12 @@ export default function ReservationFormPage() {
     const { data: clientsData } = useQuery({
         queryKey: ['clients-all'],
         queryFn: () => clientsApi.findAll({ pageSize: 100 }),
+    });
+
+    // Load ubicaciones for dropdown
+    const { data: ubicaciones } = useQuery({
+        queryKey: ['ubicaciones'],
+        queryFn: () => catalogsApi.getUbicaciones(),
     });
 
     // Load existing reservation if editing
@@ -145,13 +152,19 @@ export default function ReservationFormPage() {
                         </TextField>
 
                         <TextField
-                            label="ID Ubicación"
+                            select
+                            label="Ubicación"
                             value={form.ubicacion_id}
                             onChange={(e) => updateField('ubicacion_id', e.target.value)}
                             required
                             fullWidth
-                            placeholder="Ej: 1, 2, 3..."
-                        />
+                        >
+                            {ubicaciones?.map((ub) => (
+                                <MenuItem key={ub.ubicacion_id} value={ub.ubicacion_id}>
+                                    {ub.nombre}
+                                </MenuItem>
+                            ))}
+                        </TextField>
 
                         <TextField
                             select

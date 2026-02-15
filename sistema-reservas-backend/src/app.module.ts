@@ -17,6 +17,7 @@ import { UserIdentityGuard } from './common/guards/user-identity.guard';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
+import { UbicacionesModule } from './modules/ubicaciones/ubicaciones.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     AvailabilityModule,
     IcalSyncModule,
     CalendarModule,
+    UbicacionesModule,
   ],
   controllers: [AppController],
   providers: [
@@ -50,4 +52,4 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

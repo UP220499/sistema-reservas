@@ -96,13 +96,8 @@ export const reservationsApi = {
 // Catalogs & Locations (reusable)
 export const catalogsApi = {
     getUbicaciones: async (): Promise<Ubicacion[]> => {
-        // There's no dedicated endpoint yet — we get them from reservations context
-        // For now, use a static fetch. This can be enhanced later.
-        const { data } = await api.get('/reservations', {
-            params: { page: 1, page_size: 1 },
-        });
-        // Extract unique locations from the meta or use a workaround
-        return data.ubicaciones || [];
+        const { data } = await api.get('/ubicaciones');
+        return data;
     },
 
     getEstatusReserva: async (): Promise<CatalogoItem[]> => {
