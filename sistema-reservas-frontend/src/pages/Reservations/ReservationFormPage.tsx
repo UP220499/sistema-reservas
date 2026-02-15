@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
     Box,
@@ -23,17 +23,24 @@ import { clientsApi } from '../../api/clients';
 
 export default function ReservationFormPage() {
     const { id } = useParams<{ id: string }>();
+    const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const isEditing = !!id;
 
+    // Detect if coming from a block (pre-fill from query params)
+    const fromBlock = searchParams.get('from') === 'bloqueo';
+    const prefillUbicacion = searchParams.get('ubicacion_id') || '';
+    const prefillCheckin = searchParams.get('checkin') || '';
+    const prefillCheckout = searchParams.get('checkout') || '';
+
     const [form, setForm] = useState<CreateReservationPayload>({
         cliente_id: '',
-        ubicacion_id: '',
-        origen_reserva_code: 'DIRECTA',
+        ubicacion_id: prefillUbicacion,
+        origen_reserva_code: fromBlock ? 'EXTERNA' : 'DIRECTA',
         estatus_reserva_code: 'PENDIENTE',
-        checkin_datetime: dayjs().add(1, 'day').hour(15).minute(0).format('YYYY-MM-DDTHH:mm'),
-        checkout_datetime: dayjs().add(3, 'day').hour(11).minute(0).format('YYYY-MM-DDTHH:mm'),
+        checkin_datetime: prefillCheckin || dayjs().add(1, 'day').hour(15).minute(0).format('YYYY-MM-DDTHH:mm'),
+        checkout_datetime: prefillCheckout || dayjs().add(3, 'day').hour(11).minute(0).format('YYYY-MM-DDTHH:mm'),
         total_reserva: undefined,
         notas: '',
     });
@@ -118,6 +125,13 @@ export default function ReservationFormPage() {
                     {isEditing ? 'Editar Reservación' : 'Nueva Reservación'}
                 </Typography>
             </Box>
+
+            {fromBlock && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                    Creando reservación desde bloqueo de Airbnb — las fechas y ubicación fueron pre-llenadas.
+                    Solo falta seleccionar el <strong>cliente</strong> y registrar el <strong>monto total</strong>.
+                </Alert>
+            )}
 
             {error && (
                 <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>

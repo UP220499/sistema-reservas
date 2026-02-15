@@ -317,7 +317,7 @@ export default function CalendarPage() {
                                                     title={
                                                         event.tipo === 'RESERVA'
                                                             ? `${event.cliente_nombre} — ${event.ubicacion_nombre}`
-                                                            : `Bloqueo — ${event.ubicacion_nombre}`
+                                                            : `Bloqueo — ${event.ubicacion_nombre} (clic para crear reservación)`
                                                     }
                                                     arrow
                                                 >
@@ -332,6 +332,14 @@ export default function CalendarPage() {
                                                             e.stopPropagation();
                                                             if (event.tipo === 'RESERVA') {
                                                                 navigate(`/reservaciones/${event.id}`);
+                                                            } else {
+                                                                const params = new URLSearchParams({
+                                                                    from: 'bloqueo',
+                                                                    ubicacion_id: event.ubicacion_id ?? '',
+                                                                    checkin: dayjs(event.inicio_datetime).format('YYYY-MM-DDTHH:mm'),
+                                                                    checkout: dayjs(event.fin_datetime).format('YYYY-MM-DDTHH:mm'),
+                                                                });
+                                                                navigate(`/reservaciones/nueva?${params.toString()}`);
                                                             }
                                                         }}
                                                         sx={{
@@ -340,7 +348,7 @@ export default function CalendarPage() {
                                                             fontWeight: 600,
                                                             bgcolor: getEventColor(event, theme.palette.primary.main),
                                                             color: '#fff',
-                                                            cursor: event.tipo === 'RESERVA' ? 'pointer' : 'default',
+                                                            cursor: 'pointer',
                                                             '& .MuiChip-label': { px: 0.75 },
                                                         }}
                                                     />

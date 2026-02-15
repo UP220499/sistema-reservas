@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { catalogsApi } from '../../api/reservations';
 import {
@@ -38,6 +39,7 @@ const statusColors: Record<string, 'success' | 'error' | 'default'> = {
 
 export default function BlocksListPage() {
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
     const [filters, setFilters] = useState<BlockFilters>({
         page: 1,
         page_size: 10,
@@ -227,18 +229,38 @@ export default function BlocksListPage() {
                                             />
                                         </TableCell>
                                         <TableCell align="center">
-                                            {block.estatus_bloqueo === 'ACTIVO' && (
-                                                <Button
-                                                    size="small"
-                                                    color="error"
-                                                    onClick={() =>
-                                                        cancelMutation.mutate(block.bloqueo_id)
-                                                    }
-                                                    disabled={cancelMutation.isPending}
-                                                >
-                                                    Cancelar
-                                                </Button>
-                                            )}
+                                            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                                                {block.estatus_bloqueo === 'ACTIVO' && block.origen_bloqueo_code === 'ICAL' && (
+                                                    <Button
+                                                        size="small"
+                                                        color="primary"
+                                                        variant="outlined"
+                                                        onClick={() => {
+                                                            const params = new URLSearchParams({
+                                                                from: 'bloqueo',
+                                                                ubicacion_id: block.ubicacion_id,
+                                                                checkin: dayjs(block.inicio_datetime).format('YYYY-MM-DDTHH:mm'),
+                                                                checkout: dayjs(block.fin_datetime).format('YYYY-MM-DDTHH:mm'),
+                                                            });
+                                                            navigate(`/reservaciones/nueva?${params.toString()}`);
+                                                        }}
+                                                    >
+                                                        Crear Reservación
+                                                    </Button>
+                                                )}
+                                                {block.estatus_bloqueo === 'ACTIVO' && (
+                                                    <Button
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={() =>
+                                                            cancelMutation.mutate(block.bloqueo_id)
+                                                        }
+                                                        disabled={cancelMutation.isPending}
+                                                    >
+                                                        Cancelar
+                                                    </Button>
+                                                )}
+                                            </Box>
                                         </TableCell>
                                     </TableRow>
                                 ))}
