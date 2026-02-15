@@ -7,6 +7,12 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import LoginPage from './pages/Login/LoginPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
+import ReservationsListPage from './pages/Reservations/ReservationsListPage';
+import ReservationDetailPage from './pages/Reservations/ReservationDetailPage';
+import ReservationFormPage from './pages/Reservations/ReservationFormPage';
+import ClientsListPage from './pages/Clients/ClientsListPage';
+import ClientDetailPage from './pages/Clients/ClientDetailPage';
+import ClientFormPage from './pages/Clients/ClientFormPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,7 +44,17 @@ export default function App() {
                 }
               >
                 <Route path="/" element={<DashboardPage />} />
-                {/* Phase 2 routes will be added here */}
+
+                {/* Reservaciones */}
+                <Route path="/reservaciones" element={<ReservationsListPage />} />
+                <Route path="/reservaciones/nueva" element={<ReservationFormPage />} />
+                <Route path="/reservaciones/:id" element={<ReservationDetailPage />} />
+                <Route path="/reservaciones/:id/editar" element={<ReservationFormPage />} />
+
+                {/* Clientes */}
+                <Route path="/clientes" element={<ClientsListPage />} />
+                <Route path="/clientes/nuevo" element={<ClientFormPage />} />
+                <Route path="/clientes/:id" element={<ClientDetailPage />} />
               </Route>
             </Routes>
           </AuthProvider>
