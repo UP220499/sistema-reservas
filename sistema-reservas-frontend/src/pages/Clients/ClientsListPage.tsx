@@ -125,7 +125,7 @@ export default function ClientsListPage() {
                                         ))}
                                     </TableRow>
                                 ))
-                                : data?.data?.map((client) => {
+                                : data?.items?.map((client) => {
                                     const primaryPhone = client.cliente_telefono?.find(
                                         (p) => p.es_principal,
                                     );
@@ -170,7 +170,7 @@ export default function ClientsListPage() {
                                     );
                                 })}
 
-                            {!isLoading && (!data?.data || data.data.length === 0) && (
+                            {!isLoading && (!data?.items || data.items.length === 0) && (
                                 <TableRow>
                                     <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                                         <Typography color="text.secondary">
@@ -183,12 +183,12 @@ export default function ClientsListPage() {
                     </Table>
                 </TableContainer>
 
-                {data?.meta && (
+                {data && (
                     <TablePagination
                         component="div"
-                        count={data.meta.total}
-                        page={(data.meta.page || 1) - 1}
-                        rowsPerPage={data.meta.page_size || 10}
+                        count={data.total}
+                        page={(data.page || 1) - 1}
+                        rowsPerPage={data.pageSize || 10}
                         onPageChange={handlePageChange}
                         onRowsPerPageChange={handleRowsPerPageChange}
                         rowsPerPageOptions={[5, 10, 20, 50]}

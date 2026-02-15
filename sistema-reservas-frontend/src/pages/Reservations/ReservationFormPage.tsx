@@ -144,7 +144,7 @@ export default function ReservationFormPage() {
                             required
                             fullWidth
                         >
-                            {clientsData?.data?.map((client) => (
+                            {clientsData?.items?.map((client) => (
                                 <MenuItem key={client.cliente_id} value={client.cliente_id}>
                                     {client.nombre}
                                 </MenuItem>

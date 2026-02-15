@@ -200,7 +200,7 @@ export default function ReservationsListPage() {
                                         ))}
                                     </TableRow>
                                 ))
-                                : data?.data?.map((reserva) => (
+                                : data?.items?.map((reserva) => (
                                     <TableRow
                                         key={reserva.reserva_id}
                                         hover
@@ -255,7 +255,7 @@ export default function ReservationsListPage() {
                                     </TableRow>
                                 ))}
 
-                            {!isLoading && (!data?.data || data.data.length === 0) && (
+                            {!isLoading && (!data?.items || data.items.length === 0) && (
                                 <TableRow>
                                     <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
                                         <Typography color="text.secondary">
@@ -268,12 +268,12 @@ export default function ReservationsListPage() {
                     </Table>
                 </TableContainer>
 
-                {data?.meta && (
+                {data && (
                     <TablePagination
                         component="div"
-                        count={data.meta.total}
-                        page={(data.meta.page || 1) - 1}
-                        rowsPerPage={data.meta.page_size || 10}
+                        count={data.total}
+                        page={(data.page || 1) - 1}
+                        rowsPerPage={data.page_size || 10}
                         onPageChange={handlePageChange}
                         onRowsPerPageChange={handleRowsPerPageChange}
                         rowsPerPageOptions={[5, 10, 20, 50]}

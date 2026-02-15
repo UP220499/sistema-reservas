@@ -16,13 +16,11 @@ export interface UserProfile {
 }
 
 export interface PaginatedResponse<T> {
-    data: T[];
-    meta: {
-        total: number;
-        page: number;
-        page_size: number;
-        total_pages: number;
-    };
+    items: T[];
+    page: number;
+    page_size?: number;
+    pageSize?: number;
+    total: number;
 }
 
 export interface Reserva {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { catalogsApi } from '../../api/reservations';
 import {
     Box,
     Typography,
@@ -53,6 +54,11 @@ export default function BlocksListPage() {
     const { data, isLoading } = useQuery({
         queryKey: ['blocks', filters],
         queryFn: () => blocksApi.findAll(filters),
+    });
+
+    const { data: ubicaciones } = useQuery({
+        queryKey: ['ubicaciones'],
+        queryFn: () => catalogsApi.getUbicaciones(),
     });
 
     const createMutation = useMutation({
@@ -188,7 +194,7 @@ export default function BlocksListPage() {
                                         ))}
                                     </TableRow>
                                 ))
-                                : data?.data?.map((block) => (
+                                : data?.items?.map((block) => (
                                     <TableRow key={block.bloqueo_id} hover>
                                         <TableCell>
                                             <Typography variant="body2" fontWeight={600}>
@@ -237,7 +243,7 @@ export default function BlocksListPage() {
                                     </TableRow>
                                 ))}
 
-                            {!isLoading && (!data?.data || data.data.length === 0) && (
+                            {!isLoading && (!data?.items || data.items.length === 0) && (
                                 <TableRow>
                                     <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                                         <Typography color="text.secondary">
@@ -250,12 +256,12 @@ export default function BlocksListPage() {
                     </Table>
                 </TableContainer>
 
-                {data?.meta && (
+                {data && (
                     <TablePagination
                         component="div"
-                        count={data.meta.total}
-                        page={(data.meta.page || 1) - 1}
-                        rowsPerPage={data.meta.page_size || 10}
+                        count={data.total}
+                        page={(data.page || 1) - 1}
+                        rowsPerPage={data.page_size || 10}
                         onPageChange={handlePageChange}
                         onRowsPerPageChange={handleRowsPerPageChange}
                         rowsPerPageOptions={[5, 10, 20, 50]}
@@ -289,15 +295,21 @@ export default function BlocksListPage() {
                         sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}
                     >
                         <TextField
-                            label="ID Ubicación"
+                            select
+                            label="Ubicación"
                             value={form.ubicacion_id}
                             onChange={(e) =>
                                 setForm((prev) => ({ ...prev, ubicacion_id: e.target.value }))
                             }
                             fullWidth
                             required
-                            placeholder="Ej: 1, 2, 3..."
-                        />
+                        >
+                            {ubicaciones?.map((ub) => (
+                                <MenuItem key={ub.ubicacion_id} value={ub.ubicacion_id}>
+                                    {ub.nombre}
+                                </MenuItem>
+                            ))}
+                        </TextField>
 
                         <TextField
                             label="Origen"
