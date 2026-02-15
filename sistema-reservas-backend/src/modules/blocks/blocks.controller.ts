@@ -11,7 +11,9 @@ import { BlocksService } from './blocks.service';
 import { CreateBlockDto } from './dto/create-block.dto';
 import { BlockQueryDto } from './dto/block-query.dto';
 import { ChangeBlockStatusDto } from './dto/change-block-status.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Bloqueos')
 @Controller('blocks')
 export class BlocksController {
   constructor(private readonly blocksService: BlocksService) {}

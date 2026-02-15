@@ -15,7 +15,9 @@ import { UpdateClientDto } from './dto/update-client.dto';
 import { AddPhoneDto } from './dto/add-phone.dto';
 import { UpdatePhoneDto } from './dto/update-phone.dto';
 import { ChangeStatusDto } from './dto/change-status.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Clientes')
 @Controller('clients')
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}

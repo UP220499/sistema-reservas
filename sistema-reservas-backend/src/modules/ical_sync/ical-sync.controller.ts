@@ -1,7 +1,9 @@
 import { Controller, Post, Query } from '@nestjs/common';
 import { IcalSyncService } from './ical-sync.service';
 import { IcalSyncQueryDto } from './dto/ical-sync-query.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('iCal Sync')
 @Controller('ical')
 export class IcalSyncController {
   constructor(private readonly icalSyncService: IcalSyncService) {}

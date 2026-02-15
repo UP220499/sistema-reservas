@@ -3,7 +3,9 @@ import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { RequireUser } from '../../common/decorators/require-user.decorator';
 import { AuditUserId } from '../../common/decorators/audit-user.decorator';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Pagos')
 @Controller('reservations/:reservation_id/payments')
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}

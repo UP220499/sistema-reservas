@@ -8,6 +8,7 @@ import {
   Put,
   Query,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { ReservationsService } from './reservations.service';
 import { ReservationQueryDto } from './dto/reservation-query.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
@@ -17,6 +18,7 @@ import { ReservationHistoryQueryDto } from './dto/reservation-history-query.dto'
 import { RequireUser } from '../../common/decorators/require-user.decorator';
 import { AuditUserId } from '../../common/decorators/audit-user.decorator';
 
+@ApiTags('Reservas')
 @Controller('reservations')
 export class ReservationsController {
   constructor(private readonly reservationsService: ReservationsService) {}

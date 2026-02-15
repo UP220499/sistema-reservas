@@ -1,7 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { CalendarService } from './calendar.service';
 import { CalendarQueryDto } from './dto/calendar-query.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Calendario')
 @Controller('calendar')
 export class CalendarController {
   constructor(private readonly calendarService: CalendarService) {}
