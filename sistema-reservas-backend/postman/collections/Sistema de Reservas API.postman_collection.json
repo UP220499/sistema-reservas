@@ -7,6 +7,176 @@
   },
   "item": [
     {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "id": "auth-login-001",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Authenticate user and obtain JWT tokens. Returns access_token and refresh_token."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login successful - Status 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains access_token', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "    pm.expect(jsonData.access_token).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "pm.test('Response contains refresh_token', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('refresh_token');",
+                  "    pm.expect(jsonData.refresh_token).to.be.a('string').and.not.empty;",
+                  "});",
+                  "",
+                  "// Save tokens to environment variables",
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.environment.set('jwt_token', jsonData.access_token);",
+                  "    pm.environment.set('refresh_token', jsonData.refresh_token);",
+                  "    console.log('JWT tokens saved to environment variables');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "id": "auth-refresh-002",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "refresh"
+              ]
+            },
+            "description": "Refresh JWT tokens using a valid refresh_token. Returns new access_token and refresh_token."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Token refresh successful - Status 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains new access_token', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('access_token');",
+                  "});",
+                  "",
+                  "// Update tokens in environment",
+                  "if (pm.response.code === 201) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.environment.set('jwt_token', jsonData.access_token);",
+                  "    pm.environment.set('refresh_token', jsonData.refresh_token);",
+                  "    console.log('JWT tokens refreshed and saved');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Profile",
+          "id": "auth-profile-003",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "description": "JWT access token"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "profile"
+              ]
+            },
+            "description": "Get the authenticated user's profile. Requires valid JWT token in Authorization header."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Profile retrieved - Status 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains user data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('usuario_id');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.expect(jsonData).to.have.property('rol_code');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "id": "auth-folder-001",
+      "description": "Authentication endpoints - Login, token refresh, and user profile. Execute Login first to obtain JWT tokens that will be saved automatically to environment variables."
+    },
+    {
       "name": "App",
       "item": [
         {
@@ -656,14 +826,19 @@
                 "value": "application/json"
               },
               {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "description": "JWT access token from login"
+              },
+              {
                 "key": "x-user-id",
-                "value": "42",
+                "value": "{{x_user_id}}",
                 "description": "User ID for audit (required)"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cliente_id\": \"1\",\n  \"ubicacion_id\": \"2\",\n  \"origen_reserva_code\": \"EXTERNA\",\n  \"checkin_datetime\": \"2026-02-10T15:00:00.000Z\",\n  \"checkout_datetime\": \"2026-02-12T11:00:00.000Z\",\n  \"estatus_reserva_code\": \"CONFIRMADA\",\n  \"total_reserva\": 1200,\n  \"notas\": \"Cliente frecuente\"\n}"
+              "raw": "{\n  \"cliente_id\": \"2\",\n  \"ubicacion_id\": \"3\",\n  \"origen_reserva_code\": \"EXTERNA\",\n  \"checkin_datetime\": \"2026-02-10T15:00:00.000Z\",\n  \"checkout_datetime\": \"2026-02-12T11:00:00.000Z\",\n  \"estatus_reserva_code\": \"CONFIRMADA\",\n  \"total_reserva\": 1200,\n  \"notas\": \"Cliente frecuente\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/reservations",
@@ -689,8 +864,13 @@
                 "value": "application/json"
               },
               {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "description": "JWT access token from login"
+              },
+              {
                 "key": "x-user-id",
-                "value": "42",
+                "value": "{{x_user_id}}",
                 "description": "User ID for audit (required)"
               }
             ],
@@ -723,8 +903,13 @@
                 "value": "application/json"
               },
               {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "description": "JWT access token from login"
+              },
+              {
                 "key": "x-user-id",
-                "value": "42",
+                "value": "{{x_user_id}}",
                 "description": "User ID for audit (required)"
               }
             ],
@@ -786,8 +971,13 @@
                 "value": "application/json"
               },
               {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}",
+                "description": "JWT access token from login"
+              },
+              {
                 "key": "x-user-id",
-                "value": "42",
+                "value": "{{x_user_id}}",
                 "description": "User ID for audit (required)"
               }
             ],
