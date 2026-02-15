@@ -80,11 +80,11 @@ export interface PagoMovimiento {
 export interface Bloqueo {
     bloqueo_id: string;
     ubicacion_id: string;
-    fecha_inicio: string;
-    fecha_fin: string;
-    motivo: string | null;
+    inicio_datetime: string;
+    fin_datetime: string;
+    estatus_bloqueo: string;
     origen_bloqueo_code: string;
-    activo: boolean;
+    external_uid: string | null;
     ubicacion?: { nombre: string };
 }
 
@@ -92,4 +92,37 @@ export interface CatalogoItem {
     code: string;
     nombre: string;
     activo?: boolean;
+}
+
+// Calendar discriminated union (mirrors backend CalendarEventResponse)
+export type CalendarEvent =
+    | {
+        tipo: 'RESERVA';
+        id: string;
+        ubicacion_id: string;
+        ubicacion_nombre: string;
+        inicio_datetime: string;
+        fin_datetime: string;
+        estatus_reserva_code: string;
+        origen_reserva_code: string;
+        cliente_id: string;
+        cliente_nombre: string;
+    }
+    | {
+        tipo: 'BLOQUEO';
+        id: string;
+        ubicacion_id: string;
+        ubicacion_nombre: string;
+        inicio_datetime: string;
+        fin_datetime: string;
+        estatus_bloqueo: string;
+        origen_bloqueo_code: string;
+        external_uid: string | null;
+    };
+
+export interface CalendarResponse {
+    items: CalendarEvent[];
+    page: number;
+    page_size: number;
+    total: number;
 }

@@ -13,6 +13,8 @@ import ReservationFormPage from './pages/Reservations/ReservationFormPage';
 import ClientsListPage from './pages/Clients/ClientsListPage';
 import ClientDetailPage from './pages/Clients/ClientDetailPage';
 import ClientFormPage from './pages/Clients/ClientFormPage';
+import CalendarPage from './pages/Calendar/CalendarPage';
+import BlocksListPage from './pages/Blocks/BlocksListPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +57,10 @@ export default function App() {
                 <Route path="/clientes" element={<ClientsListPage />} />
                 <Route path="/clientes/nuevo" element={<ClientFormPage />} />
                 <Route path="/clientes/:id" element={<ClientDetailPage />} />
+
+                {/* Calendario & Bloqueos */}
+                <Route path="/calendario" element={<CalendarPage />} />
+                <Route path="/bloqueos" element={<BlocksListPage />} />
               </Route>
             </Routes>
           </AuthProvider>
