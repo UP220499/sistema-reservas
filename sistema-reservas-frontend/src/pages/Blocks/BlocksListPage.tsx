@@ -300,20 +300,12 @@ export default function BlocksListPage() {
                         />
 
                         <TextField
-                            select
                             label="Origen"
-                            value={form.origen_bloqueo_code}
-                            onChange={(e) =>
-                                setForm((prev) => ({
-                                    ...prev,
-                                    origen_bloqueo_code: e.target.value,
-                                }))
-                            }
+                            value="MANUAL"
                             fullWidth
-                        >
-                            <MenuItem value="MANUAL">Manual</MenuItem>
-                            <MenuItem value="ICAL">iCal Sync</MenuItem>
-                        </TextField>
+                            disabled
+                            helperText="Los bloqueos iCal se crean automáticamente desde Airbnb"
+                        />
 
                         <TextField
                             label="Inicio"

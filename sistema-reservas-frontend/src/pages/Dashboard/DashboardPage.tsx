@@ -1,8 +1,9 @@
+import { useNavigate } from 'react-router-dom';
 import { Box, Typography, Card, CardContent } from '@mui/material';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import PeopleIcon from '@mui/icons-material/People';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import BlockIcon from '@mui/icons-material/Block';
 import { useAuth } from '../../hooks/useAuth';
 
 const cards = [
@@ -12,6 +13,7 @@ const cards = [
         icon: <EventNoteIcon sx={{ fontSize: 40 }} />,
         color: '#2E7D32',
         bgColor: '#E8F5E9',
+        path: '/reservaciones',
     },
     {
         title: 'Clientes',
@@ -19,6 +21,7 @@ const cards = [
         icon: <PeopleIcon sx={{ fontSize: 40 }} />,
         color: '#1976D2',
         bgColor: '#E3F2FD',
+        path: '/clientes',
     },
     {
         title: 'Calendario',
@@ -26,18 +29,21 @@ const cards = [
         icon: <CalendarMonthIcon sx={{ fontSize: 40 }} />,
         color: '#F57C00',
         bgColor: '#FFF3E0',
+        path: '/calendario',
     },
     {
-        title: 'Pagos',
-        description: 'Anticipos, liquidaciones y ajustes',
-        icon: <AttachMoneyIcon sx={{ fontSize: 40 }} />,
+        title: 'Bloqueos',
+        description: 'Gestiona bloqueos de ubicaciones',
+        icon: <BlockIcon sx={{ fontSize: 40 }} />,
         color: '#7B1FA2',
         bgColor: '#F3E5F5',
+        path: '/bloqueos',
     },
 ];
 
 export default function DashboardPage() {
     const { user } = useAuth();
+    const navigate = useNavigate();
 
     return (
         <Box>
@@ -64,6 +70,7 @@ export default function DashboardPage() {
                 {cards.map((card) => (
                     <Card
                         key={card.title}
+                        onClick={() => navigate(card.path)}
                         sx={{
                             cursor: 'pointer',
                             transition: 'all 0.2s ease-in-out',
