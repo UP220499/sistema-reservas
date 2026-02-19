@@ -16,6 +16,7 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import { useAuth } from '../../hooks/useAuth';
+import { getErrorMessage } from '../../utils/error';
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -41,8 +42,13 @@ export default function LoginPage() {
         try {
             await login(username, password);
             navigate('/', { replace: true });
-        } catch {
-            setError('Credenciales inválidas. Verifica tu usuario y contraseña.');
+        } catch (err: unknown) {
+            setError(
+                getErrorMessage(
+                    err,
+                    'Credenciales inválidas. Verifica tu usuario y contraseña.',
+                ),
+            );
         } finally {
             setLoading(false);
         }
