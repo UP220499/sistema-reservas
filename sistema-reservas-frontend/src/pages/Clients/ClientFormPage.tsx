@@ -16,6 +16,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { clientsApi, type CreateClientPayload } from '../../api/clients';
+import { getErrorMessage } from '../../utils/error';
 
 export default function ClientFormPage() {
     const navigate = useNavigate();
@@ -34,7 +35,8 @@ export default function ClientFormPage() {
             queryClient.invalidateQueries({ queryKey: ['clients'] });
             navigate(`/clientes/${result.cliente_id}`);
         },
-        onError: () => setError('Error al crear el cliente'),
+        onError: (err: unknown) =>
+            setError(getErrorMessage(err, 'Error al crear el cliente')),
     });
 
     const handleSubmit = (e: React.FormEvent) => {
