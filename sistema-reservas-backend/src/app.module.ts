@@ -52,4 +52,4 @@ import { UbicacionesModule } from './modules/ubicaciones/ubicaciones.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

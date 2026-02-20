@@ -5,9 +5,9 @@ import { UbicacionesRepository } from './prisma/ubicaciones.repository';
 import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
-    imports: [PrismaModule],
-    controllers: [UbicacionesController],
-    providers: [UbicacionesService, UbicacionesRepository],
-    exports: [UbicacionesService],
+  imports: [PrismaModule],
+  controllers: [UbicacionesController],
+  providers: [UbicacionesService, UbicacionesRepository],
+  exports: [UbicacionesService],
 })
-export class UbicacionesModule { }
+export class UbicacionesModule {}
