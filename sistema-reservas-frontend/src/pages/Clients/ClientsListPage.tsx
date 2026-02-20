@@ -110,6 +110,7 @@ export default function ClientsListPage() {
                                 <TableCell>Nombre</TableCell>
                                 <TableCell>Correo</TableCell>
                                 <TableCell>Teléfono Principal</TableCell>
+                                <TableCell align="center">Reservas</TableCell>
                                 <TableCell>Estado</TableCell>
                                 <TableCell align="center">Acciones</TableCell>
                             </TableRow>
@@ -126,7 +127,7 @@ export default function ClientsListPage() {
                                     </TableRow>
                                 ))
                                 : data?.items?.map((client) => {
-                                    const primaryPhone = client.cliente_telefono?.find(
+                                    const primaryPhone = client.phones?.find(
                                         (p) => p.es_principal,
                                     );
                                     return (
@@ -147,6 +148,17 @@ export default function ClientsListPage() {
                                             <TableCell>{client.correo || '—'}</TableCell>
                                             <TableCell>
                                                 {primaryPhone?.telefono || '—'}
+                                            </TableCell>
+                                            <TableCell align="center">
+                                                {client.reservas_completadas}
+                                                {(client.es_vip || (client.reservas_completadas || 0) >= 3) && (
+                                                    <Chip
+                                                        label="Frecuente"
+                                                        color="secondary"
+                                                        size="small"
+                                                        sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
+                                                    />
+                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 <Chip

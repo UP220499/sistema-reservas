@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getErrorMessage } from '../../utils/error';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -27,7 +28,11 @@ import StarIcon from '@mui/icons-material/Star';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import AddIcon from '@mui/icons-material/Add';
 import PhoneIcon from '@mui/icons-material/Phone';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { clientsApi, type AddPhonePayload } from '../../api/clients';
+import { type ClienteTelefono } from '../../types';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 export default function ClientDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -35,7 +40,13 @@ export default function ClientDetailPage() {
     const queryClient = useQueryClient();
     const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
     const [newPhone, setNewPhone] = useState('');
+    const [editingPhone, setEditingPhone] = useState<ClienteTelefono | null>(null);
     const [error, setError] = useState('');
+    const [confirmStatusOpen, setConfirmStatusOpen] = useState(false);
+    const [deletePhoneOpen, setDeletePhoneOpen] = useState(false);
+    const [phoneToDelete, setPhoneToDelete] = useState<string | null>(null);
+
+
 
     const { data: client, isLoading } = useQuery({
         queryKey: ['client', id],
@@ -48,8 +59,10 @@ export default function ClientDetailPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['client', id] });
             queryClient.invalidateQueries({ queryKey: ['clients'] });
+            queryClient.invalidateQueries({ queryKey: ['clients-all'] });
+            setConfirmStatusOpen(false);
         },
-        onError: () => setError('Error al cambiar el estado'),
+        onError: (err) => setError(getErrorMessage(err)),
     });
 
     const addPhoneMutation = useMutation({
@@ -60,7 +73,28 @@ export default function ClientDetailPage() {
             setPhoneDialogOpen(false);
             setNewPhone('');
         },
-        onError: () => setError('Error al agregar teléfono'),
+        onError: (err) => setError(getErrorMessage(err)),
+    });
+
+    const editPhoneMutation = useMutation({
+        mutationFn: ({ id: phoneId, telefono }: { id: string; telefono: string }) =>
+            clientsApi.updatePhone(id!, phoneId, { telefono }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['client', id] });
+            setPhoneDialogOpen(false);
+            setEditingPhone(null);
+            setNewPhone('');
+        },
+        onError: (err) => setError(getErrorMessage(err)),
+    });
+
+    const deletePhoneMutation = useMutation({
+        mutationFn: (phoneId: string) =>
+            clientsApi.updatePhone(id!, phoneId, { activo: false }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['client', id] });
+        },
+        onError: (err) => setError(getErrorMessage(err)),
     });
 
     const setPrimaryMutation = useMutation({
@@ -116,9 +150,15 @@ export default function ClientDetailPage() {
                 <Button
                     variant="outlined"
                     size="small"
+                    onClick={() => navigate(`/clientes/${id}/editar`)}
+                >
+                    Editar Info
+                </Button>
+                <Button
+                    variant="outlined"
+                    size="small"
                     color={client.activo ? 'error' : 'success'}
-                    onClick={() => toggleStatusMutation.mutate()}
-                    disabled={toggleStatusMutation.isPending}
+                    onClick={() => setConfirmStatusOpen(true)}
                 >
                     {client.activo ? 'Desactivar' : 'Activar'}
                 </Button>
@@ -180,8 +220,8 @@ export default function ClientDetailPage() {
                         </Box>
                         <Divider sx={{ mb: 1 }} />
                         <List dense>
-                            {client.cliente_telefono && client.cliente_telefono.length > 0 ? (
-                                client.cliente_telefono.map((phone) => (
+                            {client.phones && client.phones.length > 0 ? (
+                                client.phones.map((phone) => (
                                     <ListItem key={phone.cliente_telefono_id}>
                                         <PhoneIcon
                                             sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }}
@@ -193,6 +233,28 @@ export default function ClientDetailPage() {
                                             }
                                         />
                                         <ListItemSecondaryAction>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => {
+                                                    setEditingPhone(phone);
+                                                    setNewPhone(phone.telefono);
+                                                    setPhoneDialogOpen(true);
+                                                }}
+                                                title="Editar"
+                                            >
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                            <IconButton
+                                                size="small"
+                                                color="error"
+                                                onClick={() => {
+                                                    setPhoneToDelete(phone.cliente_telefono_id);
+                                                    setDeletePhoneOpen(true);
+                                                }}
+                                                title="Eliminar"
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
                                             <IconButton
                                                 size="small"
                                                 onClick={() =>
@@ -228,14 +290,18 @@ export default function ClientDetailPage() {
                 </Card>
             </Box>
 
-            {/* Add Phone Dialog */}
+            {/* Add/Edit Phone Dialog */}
             <Dialog
                 open={phoneDialogOpen}
-                onClose={() => setPhoneDialogOpen(false)}
+                onClose={() => {
+                    setPhoneDialogOpen(false);
+                    setEditingPhone(null);
+                    setNewPhone('');
+                }}
                 maxWidth="xs"
                 fullWidth
             >
-                <DialogTitle>Agregar Teléfono</DialogTitle>
+                <DialogTitle>{editingPhone ? 'Editar Teléfono' : 'Agregar Teléfono'}</DialogTitle>
                 <DialogContent>
                     <TextField
                         label="Número de teléfono"
@@ -247,21 +313,65 @@ export default function ClientDetailPage() {
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setPhoneDialogOpen(false)}>Cancelar</Button>
+                    <Button onClick={() => {
+                        setPhoneDialogOpen(false);
+                        setEditingPhone(null);
+                        setNewPhone('');
+                    }}>
+                        Cancelar
+                    </Button>
                     <Button
                         variant="contained"
-                        onClick={() =>
-                            addPhoneMutation.mutate({
-                                telefono: newPhone,
-                                es_principal: false,
-                            })
-                        }
-                        disabled={!newPhone || addPhoneMutation.isPending}
+                        onClick={() => {
+                            if (editingPhone) {
+                                editPhoneMutation.mutate({
+                                    id: editingPhone.cliente_telefono_id,
+                                    telefono: newPhone
+                                });
+                            } else {
+                                addPhoneMutation.mutate({
+                                    telefono: newPhone,
+                                    es_principal: false,
+                                });
+                            }
+                        }}
+                        disabled={!newPhone || (editingPhone ? editPhoneMutation.isPending : addPhoneMutation.isPending)}
                     >
-                        Agregar
+                        {editingPhone ? 'Guardar' : 'Agregar'}
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <ConfirmDialog
+                open={deletePhoneOpen}
+                title="Eliminar Teléfono"
+                content="¿Estás seguro de eliminar este teléfono? Esta acción no se puede deshacer."
+                confirmText="Eliminar"
+                confirmColor="error"
+                onClose={() => {
+                    setDeletePhoneOpen(false);
+                    setPhoneToDelete(null);
+                }}
+                onConfirm={() => {
+                    if (phoneToDelete) {
+                        deletePhoneMutation.mutate(phoneToDelete);
+                        setDeletePhoneOpen(false);
+                    }
+                }}
+            />
+
+            <ConfirmDialog
+                open={confirmStatusOpen}
+                title="Confirmar cambio de estatus"
+                content={`¿Estás seguro de querer ${client.activo ? 'desactivar' : 'activar'} a este cliente? ${client.activo ? 'No podrá ser seleccionado para nuevas reservaciones.' : ''}`}
+                confirmText={client.activo ? 'Desactivar' : 'Activar'}
+                confirmColor={client.activo ? 'error' : 'primary'}
+                onClose={() => setConfirmStatusOpen(false)}
+                onConfirm={() => {
+                    toggleStatusMutation.mutate();
+                    setConfirmStatusOpen(false);
+                }}
+            />
         </Box>
     );
 }

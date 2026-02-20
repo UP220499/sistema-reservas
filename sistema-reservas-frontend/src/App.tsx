@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import theme from './theme/theme';
-import AuthProvider from './auth/AuthProvider';
+import { AuthProvider } from './hooks/AuthProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import LoginPage from './pages/Login/LoginPage';
@@ -57,6 +57,7 @@ export default function App() {
                 <Route path="/clientes" element={<ClientsListPage />} />
                 <Route path="/clientes/nuevo" element={<ClientFormPage />} />
                 <Route path="/clientes/:id" element={<ClientDetailPage />} />
+                <Route path="/clientes/:id/editar" element={<ClientFormPage />} />
 
                 {/* Calendario & Bloqueos */}
                 <Route path="/calendario" element={<CalendarPage />} />

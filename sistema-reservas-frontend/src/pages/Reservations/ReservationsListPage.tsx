@@ -221,13 +221,13 @@ export default function ReservationsListPage() {
                                             {reserva.cliente?.nombre || '—'}
                                         </TableCell>
                                         <TableCell>
-                                            {dayjs(reserva.fecha_entrada).format('DD/MM/YYYY')}
+                                            {dayjs(reserva.checkin_datetime).format('DD/MM/YYYY')}
                                         </TableCell>
                                         <TableCell>
-                                            {dayjs(reserva.fecha_salida).format('DD/MM/YYYY')}
+                                            {dayjs(reserva.checkout_datetime).format('DD/MM/YYYY')}
                                         </TableCell>
                                         <TableCell>
-                                            ${Number(reserva.precio_total).toLocaleString()}
+                                            ${Number(reserva.total_reserva ?? 0).toLocaleString()}
                                         </TableCell>
                                         <TableCell>
                                             <Chip

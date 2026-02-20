@@ -1,6 +1,8 @@
 import api from './client';
 import type { Cliente, PaginatedResponse } from '../types';
 
+export type Client = Cliente;
+
 export interface ClientFilters {
     page?: number;
     pageSize?: number;

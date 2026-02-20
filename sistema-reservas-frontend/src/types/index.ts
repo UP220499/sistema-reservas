@@ -27,10 +27,10 @@ export interface Reserva {
     reserva_id: string;
     ubicacion_id: string;
     cliente_id: string;
-    fecha_entrada: string;
-    fecha_salida: string;
+    checkin_datetime: string;
+    checkout_datetime: string;
     num_huespedes: number;
-    precio_total: string;
+    total_reserva: string | null;
     notas: string | null;
     estatus_reserva_code: string;
     origen_reserva_code: string;
@@ -46,7 +46,10 @@ export interface Cliente {
     nombre: string;
     correo: string | null;
     activo: boolean;
-    cliente_telefono?: ClienteTelefono[];
+    es_vip?: boolean;
+    reservas_completadas?: number;
+    phones?: ClienteTelefono[];
+    primary_phone?: string;
 }
 
 export interface ClienteTelefono {

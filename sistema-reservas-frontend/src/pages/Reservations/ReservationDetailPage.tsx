@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getErrorMessage } from '../../utils/error';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -78,7 +79,7 @@ export default function ReservationDetailPage() {
             setPaymentDialogOpen(false);
             resetPaymentForm();
         },
-        onError: () => setError('Error al registrar el pago'),
+        onError: (err) => setError(getErrorMessage(err)),
     });
 
     const changeStatusMutation = useMutation({
@@ -89,7 +90,7 @@ export default function ReservationDetailPage() {
             queryClient.invalidateQueries({ queryKey: ['reservations'] });
             setStatusDialogOpen(false);
         },
-        onError: () => setError('Error al cambiar el estatus'),
+        onError: (err) => setError(getErrorMessage(err)),
     });
 
     const resetPaymentForm = () => {
@@ -116,10 +117,10 @@ export default function ReservationDetailPage() {
     };
 
     const totalPagado = payments?.reduce(
-        (sum, p) => sum + Number(p.monto),
+        (sum, p) => sum + (Number(p.monto) || 0),
         0,
     ) || 0;
-    const totalReserva = Number(reserva?.precio_total || 0);
+    const totalReserva = Number(reserva?.total_reserva ?? 0);
     const saldoPendiente = totalReserva - totalPagado;
 
     if (isLoading) {
@@ -200,11 +201,11 @@ export default function ReservationDetailPage() {
                         <InfoRow label="Cliente" value={reserva.cliente?.nombre} />
                         <InfoRow
                             label="Check-in"
-                            value={dayjs(reserva.fecha_entrada).format('DD/MM/YYYY HH:mm')}
+                            value={dayjs(reserva.checkin_datetime).format('DD/MM/YYYY HH:mm')}
                         />
                         <InfoRow
                             label="Check-out"
-                            value={dayjs(reserva.fecha_salida).format('DD/MM/YYYY HH:mm')}
+                            value={dayjs(reserva.checkout_datetime).format('DD/MM/YYYY HH:mm')}
                         />
                         <InfoRow label="Huéspedes" value={String(reserva.num_huespedes)} />
                         <InfoRow label="Origen" value={reserva.origen_reserva_code} />
@@ -465,6 +466,11 @@ export default function ReservationDetailPage() {
                         <MenuItem value="CANCELADA">Cancelada</MenuItem>
                         <MenuItem value="COMPLETADA">Completada</MenuItem>
                     </TextField>
+                    {newStatus === 'CANCELADA' && (
+                        <Alert severity="warning" sx={{ mt: 2 }}>
+                            Al cancelar la reservación, se liberarán las fechas en el calendario. Esta acción no se puede deshacer fácilmente.
+                        </Alert>
+                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setStatusDialogOpen(false)}>Cancelar</Button>

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { getErrorMessage } from '../../utils/error';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { catalogsApi } from '../../api/reservations';
@@ -34,7 +36,8 @@ import {
 
 const statusColors: Record<string, 'success' | 'error' | 'default'> = {
     ACTIVO: 'success',
-    CANCELADO: 'error',
+    INACTIVO: 'default',
+    CANCELADO: 'error', // Kept for backwards compatibility if needed
 };
 
 export default function BlocksListPage() {
@@ -52,6 +55,8 @@ export default function BlocksListPage() {
         inicio_datetime: dayjs().add(1, 'day').hour(15).minute(0).format('YYYY-MM-DDTHH:mm'),
         fin_datetime: dayjs().add(3, 'day').hour(11).minute(0).format('YYYY-MM-DDTHH:mm'),
     });
+    const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+    const [blockToCancel, setBlockToCancel] = useState<string | null>(null);
 
     const { data, isLoading } = useQuery({
         queryKey: ['blocks', filters],
@@ -71,15 +76,16 @@ export default function BlocksListPage() {
             setCreateOpen(false);
             resetForm();
         },
-        onError: () => setError('Error al crear el bloqueo'),
+        onError: (err) => setError(getErrorMessage(err)),
     });
 
     const cancelMutation = useMutation({
-        mutationFn: (id: string) => blocksApi.changeStatus(id, 'CANCELADO'),
+        mutationFn: (id: string) => blocksApi.changeStatus(id, 'INACTIVO'),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['blocks'] });
             queryClient.invalidateQueries({ queryKey: ['calendar'] });
         },
+        onError: (err) => setError(getErrorMessage(err)),
     });
 
     const resetForm = () => {
@@ -165,7 +171,7 @@ export default function BlocksListPage() {
                     >
                         <MenuItem value="">Todos</MenuItem>
                         <MenuItem value="ACTIVO">Activo</MenuItem>
-                        <MenuItem value="CANCELADO">Cancelado</MenuItem>
+                        <MenuItem value="INACTIVO">Inactivo</MenuItem>
                     </TextField>
                 </Box>
             </Card>
@@ -252,9 +258,10 @@ export default function BlocksListPage() {
                                                     <Button
                                                         size="small"
                                                         color="error"
-                                                        onClick={() =>
-                                                            cancelMutation.mutate(block.bloqueo_id)
-                                                        }
+                                                        onClick={() => {
+                                                            setBlockToCancel(block.bloqueo_id);
+                                                            setCancelDialogOpen(true);
+                                                        }}
                                                         disabled={cancelMutation.isPending}
                                                     >
                                                         Cancelar
@@ -383,6 +390,24 @@ export default function BlocksListPage() {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </Box>
+
+            <ConfirmDialog
+                open={cancelDialogOpen}
+                title="Cancelar Bloqueo"
+                content="¿Estás seguro de cancelar este bloqueo? Se liberarán las fechas y esta acción no se puede deshacer."
+                confirmText="Sí, Cancelar"
+                confirmColor="error"
+                onClose={() => {
+                    setCancelDialogOpen(false);
+                    setBlockToCancel(null);
+                }}
+                onConfirm={() => {
+                    if (blockToCancel) {
+                        cancelMutation.mutate(blockToCancel);
+                        setCancelDialogOpen(false);
+                    }
+                }}
+            />
+        </Box >
     );
 }

@@ -7,6 +7,8 @@ import type {
     CatalogoItem,
 } from '../types';
 
+export type { Reserva };
+
 export interface ReservationFilters {
     page?: number;
     page_size?: number;
