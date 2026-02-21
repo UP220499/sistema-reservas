@@ -18,6 +18,7 @@ import { CalendarModule } from './modules/calendar/calendar.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
 import { UbicacionesModule } from './modules/ubicaciones/ubicaciones.module';
+import { ReportsModule } from './modules/reports/reports.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { UbicacionesModule } from './modules/ubicaciones/ubicaciones.module';
     IcalSyncModule,
     CalendarModule,
     UbicacionesModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [
