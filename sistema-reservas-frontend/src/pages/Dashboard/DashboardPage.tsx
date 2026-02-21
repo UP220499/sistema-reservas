@@ -29,12 +29,12 @@ export default function DashboardPage() {
         refetchInterval: 30000, // Refresh every 30s
     });
 
-    const { data: occupancy } = useQuery({
+    const { data: occupancy = [] } = useQuery({
         queryKey: ['dashboard-occupancy'],
         queryFn: reportsApi.getOccupancy,
     });
 
-    const { data: revenue } = useQuery({
+    const { data: revenue = [] } = useQuery({
         queryKey: ['dashboard-revenue'],
         queryFn: reportsApi.getRevenue,
     });
@@ -91,7 +91,7 @@ export default function DashboardPage() {
                         <Typography variant="h6" gutterBottom>
                             Ocupación (Últimos 30 días)
                         </Typography>
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={260} minHeight={260}>
                             <LineChart data={occupancy}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis
@@ -130,7 +130,7 @@ export default function DashboardPage() {
                         <Typography variant="h6" gutterBottom>
                             Ingresos Mensuales
                         </Typography>
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height={260} minHeight={260}>
                             <BarChart data={revenue}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis

@@ -215,10 +215,10 @@ export default function ReservationsListPage() {
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
-                                            {reserva.ubicacion?.nombre || '—'}
+                                            {reserva.ubicacion_nombre || reserva.ubicacion?.nombre || '—'}
                                         </TableCell>
                                         <TableCell>
-                                            {reserva.cliente?.nombre || '—'}
+                                            {reserva.cliente_nombre || reserva.cliente?.nombre || '—'}
                                         </TableCell>
                                         <TableCell>
                                             {dayjs(reserva.checkin_datetime).format('DD/MM/YYYY')}

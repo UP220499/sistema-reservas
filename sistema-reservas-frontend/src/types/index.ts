@@ -39,6 +39,8 @@ export interface Reserva {
     ubicacion?: { nombre: string };
     cliente?: { nombre: string; correo: string | null };
     estatus_reserva?: { nombre: string };
+    ubicacion_nombre?: string;
+    cliente_nombre?: string;
 }
 
 export interface Cliente {

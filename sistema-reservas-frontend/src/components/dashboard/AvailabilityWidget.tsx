@@ -3,10 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { reportsApi, type TodayAvailability } from '../../api/reports';
 
 export default function AvailabilityWidget() {
-    const { data: availability } = useQuery<TodayAvailability[]>({
+    const { data } = useQuery<TodayAvailability[] | { items: TodayAvailability[], total: number }>({
         queryKey: ['today-availability'],
-        queryFn: reportsApi.getTodayAvailability,
+        queryFn: reportsApi.getTodayAvailability as any,
     });
+
+    const availability = Array.isArray(data)
+        ? data
+        : (data && 'items' in data && Array.isArray(data.items) ? data.items : []);
 
     return (
         <Card>

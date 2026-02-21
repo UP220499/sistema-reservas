@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import {
     Box,
     Card,
@@ -29,8 +29,7 @@ export default function LoginPage() {
 
     // If already authenticated, redirect
     if (isAuthenticated) {
-        navigate('/', { replace: true });
-        return null;
+        return <Navigate to="/" replace />;
     }
 
     const handleSubmit = async (e: React.FormEvent) => {

@@ -147,7 +147,7 @@ export default function ClientsListPage() {
                                             <TableCell>{client.nombre}</TableCell>
                                             <TableCell>{client.correo || '—'}</TableCell>
                                             <TableCell>
-                                                {primaryPhone?.telefono || '—'}
+                                                {client.primary_phone || primaryPhone?.telefono || '—'}
                                             </TableCell>
                                             <TableCell align="center">
                                                 {client.reservas_completadas}
