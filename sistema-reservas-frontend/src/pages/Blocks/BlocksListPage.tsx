@@ -210,7 +210,7 @@ export default function BlocksListPage() {
                                             </Typography>
                                         </TableCell>
                                         <TableCell>
-                                            {block.ubicacion?.nombre || `Ubicación ${block.ubicacion_id}`}
+                                            {block.ubicacion_nombre || block.ubicacion?.nombre || ubicaciones?.find(u => String(u.ubicacion_id) === String(block.ubicacion_id))?.nombre || '—'}
                                         </TableCell>
                                         <TableCell>
                                             {dayjs(block.inicio_datetime).format('DD/MM/YYYY HH:mm')}

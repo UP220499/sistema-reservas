@@ -89,6 +89,7 @@ export interface Bloqueo {
     origen_bloqueo_code: string;
     external_uid: string | null;
     ubicacion?: { nombre: string };
+    ubicacion_nombre?: string;
 }
 
 export interface CatalogoItem {
