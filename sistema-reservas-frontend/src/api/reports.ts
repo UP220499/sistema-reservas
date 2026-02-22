@@ -2,10 +2,10 @@
 import api from './client'; // Assuming auth.ts exports the configured axios instance 'api'
 
 export interface DashboardStats {
-    checkins: number;
-    checkouts: number;
-    activeReservations: number;
-    monthlyRevenue: number;
+    checkins_hoy: number;
+    checkouts_hoy: number;
+    active_reservations: number;
+    monthly_revenue: string | number;
 }
 
 export interface ChartPoint {
@@ -33,11 +33,11 @@ export const reportsApi = {
         const { data } = await api.get<ChartPoint[]>('/reports/revenue');
         return data;
     },
-    getTodayAvailability: async (): Promise<TodayAvailability[]> => {
+    getTodayAvailability: async (): Promise<TodayAvailability[] | { items: TodayAvailability[]; total: number }> => {
         // Mocking or endpoint might be different, but implementing as requested.
         // If the backend doesn't have this exact endpoint, this might fail at runtime, 
         // but the goal is to fix BUILD errors.
-        const { data } = await api.get<TodayAvailability[]>('/reports/availability/today');
+        const { data } = await api.get<TodayAvailability[] | { items: TodayAvailability[]; total: number }>('/reports/availability/today');
         return data;
     }
 };
