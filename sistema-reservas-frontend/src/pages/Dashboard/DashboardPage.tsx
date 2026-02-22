@@ -54,7 +54,7 @@ export default function DashboardPage() {
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <StatsCard
                         title="Check-ins Hoy"
-                        value={stats?.checkins ?? '—'}
+                        value={stats?.checkins_hoy ?? '—'}
                         icon={<LoginIcon />}
                         color="primary"
                     />
@@ -62,7 +62,7 @@ export default function DashboardPage() {
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <StatsCard
                         title="Check-outs Hoy"
-                        value={stats?.checkouts ?? '—'}
+                        value={stats?.checkouts_hoy ?? '—'}
                         icon={<LogoutIcon />}
                         color="warning"
                     />
@@ -70,7 +70,7 @@ export default function DashboardPage() {
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <StatsCard
                         title="Hospedados"
-                        value={stats?.activeReservations ?? '—'}
+                        value={stats?.active_reservations ?? '—'}
                         icon={<HotelIcon />}
                         color="info"
                     />
@@ -78,7 +78,7 @@ export default function DashboardPage() {
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <StatsCard
                         title="Ingresos (Mes)"
-                        value={stats?.monthlyRevenue ? `$${Number(stats.monthlyRevenue).toLocaleString()}` : '—'}
+                        value={(stats?.monthly_revenue !== undefined && stats?.monthly_revenue !== null) ? `$${Number(stats.monthly_revenue).toLocaleString()}` : '—'}
                         icon={<AttachMoneyIcon />}
                         color="success"
                     />
