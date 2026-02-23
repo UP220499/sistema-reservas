@@ -2,6 +2,22 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
+/**
+ * Decode the payload section of a JWT without verifying the signature.
+ * Safe for client-side header injection only — never use for security decisions.
+ */
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+    try {
+        const parts = token.split('.');
+        if (parts.length !== 3) return null;
+        // Base64url → base64 → JSON
+        const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(atob(b64)) as Record<string, unknown>;
+    } catch {
+        return null;
+    }
+}
+
 const api = axios.create({
     baseURL: API_BASE_URL,
     headers: {
@@ -9,12 +25,19 @@ const api = axios.create({
     },
 });
 
-// Request interceptor: attach JWT token
+// Request interceptor: attach JWT token and x-user-id (legacy auth guard)
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('access_token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+            // x-user-id is required by the legacy guard on several CRUD endpoints.
+            // The backend sets `sub` = usuario_id when signing the JWT.
+            const payload = decodeJwtPayload(token);
+            const rawSub = payload?.sub;
+            if (rawSub !== undefined && rawSub !== null) {
+                config.headers['x-user-id'] = String(rawSub);
+            }
         }
         return config;
     },
