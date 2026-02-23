@@ -8,9 +8,24 @@ export interface DashboardStats {
     monthly_revenue: string | number;
 }
 
-export interface ChartPoint {
-    name: string;
-    value: number;
+/** Shape returned by GET /reports/occupancy */
+export interface OccupancyPoint {
+    date: string;
+    occupied_units: number;
+    total_units: number;
+    occupancy_pct: number;
+}
+
+/** Shape returned by GET /reports/revenue (revenue normalised to number) */
+export interface RevenuePoint {
+    month: string;
+    revenue: number;
+}
+
+/** Raw backend shape — Prisma serialises Decimal as string */
+interface RevenuePointRaw {
+    month: string;
+    revenue: string;
 }
 
 export interface TodayAvailability {
@@ -25,19 +40,16 @@ export const reportsApi = {
         const { data } = await api.get<DashboardStats>('/reports/stats');
         return data;
     },
-    getOccupancy: async (): Promise<ChartPoint[]> => {
-        const { data } = await api.get<ChartPoint[]>('/reports/occupancy');
+    getOccupancy: async (): Promise<OccupancyPoint[]> => {
+        const { data } = await api.get<OccupancyPoint[]>('/reports/occupancy');
         return data;
     },
-    getRevenue: async (): Promise<ChartPoint[]> => {
-        const { data } = await api.get<ChartPoint[]>('/reports/revenue');
-        return data;
+    getRevenue: async (): Promise<RevenuePoint[]> => {
+        const { data } = await api.get<RevenuePointRaw[]>('/reports/revenue');
+        return data.map((r) => ({ month: r.month, revenue: Number(r.revenue) }));
     },
     getTodayAvailability: async (): Promise<TodayAvailability[] | { items: TodayAvailability[]; total: number }> => {
-        // Mocking or endpoint might be different, but implementing as requested.
-        // If the backend doesn't have this exact endpoint, this might fail at runtime, 
-        // but the goal is to fix BUILD errors.
         const { data } = await api.get<TodayAvailability[] | { items: TodayAvailability[]; total: number }>('/reports/availability/today');
         return data;
-    }
+    },
 };
