@@ -32,7 +32,7 @@ export class CreatePaymentDto {
 
   @Transform(({ value }) => toNumber(value))
   @IsNumber({ allowInfinity: false, allowNaN: false })
-  @Min(0.01)
+  @Min(0.01, { message: 'monto debe ser mayor a 0' })
   monto!: number;
 
   @IsISO8601()
