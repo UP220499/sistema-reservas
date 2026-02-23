@@ -16,3 +16,6 @@ yarn-error.log*
 
 #Postman
 .postman/
+
+#Claude
+.claude/
