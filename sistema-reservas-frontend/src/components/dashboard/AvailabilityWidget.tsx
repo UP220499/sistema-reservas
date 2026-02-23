@@ -1,4 +1,6 @@
-import { Card, CardContent, CardHeader, List, ListItem, ListItemText, Chip, Typography } from '@mui/material';
+import { Box, Card, CardContent, CardHeader, Chip, IconButton, List, ListItem, ListItemText, Tooltip, Typography } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { reportsApi, type TodayAvailability } from '../../api/reports';
 
@@ -7,6 +9,7 @@ type TodayAvailabilityResponse =
   | { items: TodayAvailability[]; total: number };
 
 export default function AvailabilityWidget() {
+  const navigate = useNavigate();
   const { data } = useQuery<TodayAvailabilityResponse>({
     queryKey: ['today-availability'],
     queryFn: () => reportsApi.getTodayAvailability(),
@@ -27,11 +30,26 @@ export default function AvailabilityWidget() {
                   item.status === 'OCUPADO' ? `Ocupado por: ${item.cliente}` : null
                 }
               />
-              <Chip
-                label={item.status}
-                color={item.status === 'DISPONIBLE' ? 'success' : 'error'}
-                size="small"
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                {item.status === 'DISPONIBLE' && (
+                  <Tooltip title="Agendar reservación">
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() =>
+                        navigate(`/reservaciones/nueva?ubicacion_id=${item.ubicacion_id}`)
+                      }
+                    >
+                      <AddIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                <Chip
+                  label={item.status}
+                  color={item.status === 'DISPONIBLE' ? 'success' : 'error'}
+                  size="small"
+                />
+              </Box>
             </ListItem>
           ))}
 
