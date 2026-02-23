@@ -24,6 +24,10 @@ export class PaymentsService {
     const fechaPago = this.parseDate(dto.fecha_pago, 'fecha_pago');
     const montoDecimal = this.parseDecimal(dto.monto, 'monto');
 
+    if (montoDecimal.lte(new Prisma.Decimal(0))) {
+      throw new BadRequestException('monto debe ser mayor a 0');
+    }
+
     const created = await this.paymentsRepository.createPayment({
       reserva: { connect: { reserva_id: reservaId } },
       cat_tipo_pago_mov: {
