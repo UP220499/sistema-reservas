@@ -19,8 +19,6 @@ export class PaymentsService {
 
     const reservaId = this.parseId(reservationId, 'reservation_id');
 
-    await this.paymentsRepository.assertReservationExists(reservaId);
-
     const fechaPago = this.parseDate(dto.fecha_pago, 'fecha_pago');
     const montoDecimal = this.parseDecimal(dto.monto, 'monto');
 
@@ -28,20 +26,26 @@ export class PaymentsService {
       throw new BadRequestException('monto debe ser mayor a 0');
     }
 
-    const created = await this.paymentsRepository.createPayment({
-      reserva: { connect: { reserva_id: reservaId } },
-      cat_tipo_pago_mov: {
-        connect: { tipo_pago_mov_code: dto.tipo_pago_mov_code },
+    // Reservation existence, balance validation, and insert are executed
+    // atomically inside createPaymentChecked (REPEATABLE READ transaction).
+    const created = await this.paymentsRepository.createPaymentChecked(
+      reservaId,
+      {
+        reserva: { connect: { reserva_id: reservaId } },
+        cat_tipo_pago_mov: {
+          connect: { tipo_pago_mov_code: dto.tipo_pago_mov_code },
+        },
+        cat_metodo_pago: {
+          connect: { metodo_pago_code: dto.metodo_pago_code },
+        },
+        monto: montoDecimal,
+        fecha_pago: fechaPago,
+        referencia: dto.referencia ?? null,
+        notas: dto.notas ?? null,
+        usuario: { connect: { usuario_id: auditUserId } },
       },
-      cat_metodo_pago: {
-        connect: { metodo_pago_code: dto.metodo_pago_code },
-      },
-      monto: montoDecimal,
-      fecha_pago: fechaPago,
-      referencia: dto.referencia ?? null,
-      notas: dto.notas ?? null,
-      usuario: { connect: { usuario_id: auditUserId } },
-    });
+      montoDecimal,
+    );
 
     return toPaymentResponse(created);
   }
