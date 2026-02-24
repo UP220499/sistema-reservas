@@ -16,6 +16,9 @@ const INCOME_TYPES = ['ANTICIPO', 'LIQUIDACION'] as const;
 /** Reservation statuses that count as "active" for check-in/out/count. */
 const ACTIVE_RESERVATION_STATUSES = ['CONFIRMADA', 'EN_CURSO'] as const;
 
+/** Reservation statuses excluded from expected-revenue totals. */
+const EXCLUDED_REVENUE_STATUSES = ['CANCELADA'] as const;
+
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
 /** Format a Date as 'YYYY-MM-DD' using local calendar. */
@@ -59,42 +62,59 @@ export class ReportsService {
       1,
     );
 
-    const [checkins_hoy, checkouts_hoy, active_reservations] =
-      await Promise.all([
-        this.prisma.reserva.count({
-          where: {
-            estatus_reserva_code: { in: [...ACTIVE_RESERVATION_STATUSES] },
-            checkin_datetime: { gte: todayStart, lt: todayEnd },
-          },
-        }),
-        this.prisma.reserva.count({
-          where: {
-            estatus_reserva_code: { in: [...ACTIVE_RESERVATION_STATUSES] },
-            checkout_datetime: { gte: todayStart, lt: todayEnd },
-          },
-        }),
-        this.prisma.reserva.count({
-          where: {
-            estatus_reserva_code: { in: [...ACTIVE_RESERVATION_STATUSES] },
-          },
-        }),
-      ]);
-
-    const revenueAgg = await this.prisma.pago_movimiento.aggregate({
-      where: {
-        fecha_pago: { gte: monthStart, lt: monthEnd },
-        tipo_pago_mov_code: { in: [...INCOME_TYPES] },
-        monto: { gt: 0 },
-      },
-      _sum: { monto: true },
-    });
+    const [
+      checkins_hoy,
+      checkouts_hoy,
+      active_reservations,
+      expectedAgg,
+      collectedAgg,
+    ] = await Promise.all([
+      this.prisma.reserva.count({
+        where: {
+          estatus_reserva_code: { in: [...ACTIVE_RESERVATION_STATUSES] },
+          checkin_datetime: { gte: todayStart, lt: todayEnd },
+        },
+      }),
+      this.prisma.reserva.count({
+        where: {
+          estatus_reserva_code: { in: [...ACTIVE_RESERVATION_STATUSES] },
+          checkout_datetime: { gte: todayStart, lt: todayEnd },
+        },
+      }),
+      this.prisma.reserva.count({
+        where: {
+          estatus_reserva_code: { in: [...ACTIVE_RESERVATION_STATUSES] },
+        },
+      }),
+      // Sum of total_reserva for bookings whose check-in falls in the current
+      // month, excluding cancelled reservations.
+      this.prisma.reserva.aggregate({
+        where: {
+          checkin_datetime: { gte: monthStart, lt: monthEnd },
+          estatus_reserva_code: { notIn: [...EXCLUDED_REVENUE_STATUSES] },
+        },
+        _sum: { total_reserva: true },
+      }),
+      // Sum of actual payments received this month (ANTICIPO + LIQUIDACION, > 0).
+      this.prisma.pago_movimiento.aggregate({
+        where: {
+          fecha_pago: { gte: monthStart, lt: monthEnd },
+          tipo_pago_mov_code: { in: [...INCOME_TYPES] },
+          monto: { gt: 0 },
+        },
+        _sum: { monto: true },
+      }),
+    ]);
 
     return {
       checkins_hoy,
       checkouts_hoy,
       active_reservations,
-      monthly_revenue: (
-        revenueAgg._sum.monto ?? new Prisma.Decimal(0)
+      expected_monthly_revenue: (
+        expectedAgg._sum.total_reserva ?? new Prisma.Decimal(0)
+      ).toString(),
+      collected_monthly_revenue: (
+        collectedAgg._sum.monto ?? new Prisma.Decimal(0)
       ).toString(),
     };
   }
