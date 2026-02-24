@@ -20,6 +20,10 @@ import {
 
 import AvailabilityWidget from '../../components/dashboard/AvailabilityWidget';
 
+function fmtCurrency(v: string | number | null | undefined): string {
+    return v != null ? `$${Number(v).toLocaleString()}` : '—';
+}
+
 export default function DashboardPage() {
     const theme = useTheme();
 
@@ -51,7 +55,7 @@ export default function DashboardPage() {
             </Box>
 
             <Grid container spacing={3} sx={{ mb: 4 }}>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <StatsCard
                         title="Check-ins Hoy"
                         value={stats?.checkins_hoy ?? '—'}
@@ -59,7 +63,7 @@ export default function DashboardPage() {
                         color="primary"
                     />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <StatsCard
                         title="Check-outs Hoy"
                         value={stats?.checkouts_hoy ?? '—'}
@@ -67,7 +71,7 @@ export default function DashboardPage() {
                         color="warning"
                     />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <StatsCard
                         title="Hospedados"
                         value={stats?.active_reservations ?? '—'}
@@ -75,11 +79,24 @@ export default function DashboardPage() {
                         color="info"
                     />
                 </Grid>
-                <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                <Grid size={{ xs: 12, sm: 6, md: 6 }}>
                     <Box>
                         <StatsCard
-                            title="Ingresos cobrados este mes"
-                            value={(stats?.monthly_revenue !== undefined && stats?.monthly_revenue !== null) ? `$${Number(stats.monthly_revenue).toLocaleString()}` : '—'}
+                            title="Ingresos esperados (mes)"
+                            value={fmtCurrency(stats?.expected_monthly_revenue)}
+                            icon={<AttachMoneyIcon />}
+                            color="info"
+                        />
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, px: 0.5 }}>
+                            Basado en el total de reservas activas del mes.
+                        </Typography>
+                    </Box>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6, md: 6 }}>
+                    <Box>
+                        <StatsCard
+                            title="Ingresos cobrados (mes)"
+                            value={fmtCurrency(stats?.collected_monthly_revenue)}
                             icon={<AttachMoneyIcon />}
                             color="success"
                         />

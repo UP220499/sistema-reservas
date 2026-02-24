@@ -5,7 +5,10 @@ export interface DashboardStats {
     checkins_hoy: number;
     checkouts_hoy: number;
     active_reservations: number;
-    monthly_revenue: string | number;
+    /** Suma del total_reserva de reservas activas/confirmadas del mes. */
+    expected_monthly_revenue: string | number;
+    /** Suma de pagos cobrados (ANTICIPO + LIQUIDACION) del mes. */
+    collected_monthly_revenue: string | number;
 }
 
 /** Shape returned by GET /reports/occupancy */
