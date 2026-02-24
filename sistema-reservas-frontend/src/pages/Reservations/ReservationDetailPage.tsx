@@ -386,8 +386,14 @@ export default function ReservationDetailPage() {
                                     monto: parseFloat(e.target.value) || 0,
                                 }))
                             }
+                            onKeyDown={(e) => {
+                                if (e.key === '-' || e.key === 'e') e.preventDefault();
+                            }}
                             fullWidth
-                            slotProps={{ input: { startAdornment: <span>$&nbsp;</span> } }}
+                            slotProps={{
+                                input: { startAdornment: <span>$&nbsp;</span> },
+                                htmlInput: { min: 0.01, step: 0.01 },
+                            }}
                         />
 
                         <TextField
