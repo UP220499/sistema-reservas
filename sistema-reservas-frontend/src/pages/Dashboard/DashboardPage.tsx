@@ -76,12 +76,17 @@ export default function DashboardPage() {
                     />
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-                    <StatsCard
-                        title="Ingresos (Mes)"
-                        value={(stats?.monthly_revenue !== undefined && stats?.monthly_revenue !== null) ? `$${Number(stats.monthly_revenue).toLocaleString()}` : '—'}
-                        icon={<AttachMoneyIcon />}
-                        color="success"
-                    />
+                    <Box>
+                        <StatsCard
+                            title="Ingresos cobrados este mes"
+                            value={(stats?.monthly_revenue !== undefined && stats?.monthly_revenue !== null) ? `$${Number(stats.monthly_revenue).toLocaleString()}` : '—'}
+                            icon={<AttachMoneyIcon />}
+                            color="success"
+                        />
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5, px: 0.5 }}>
+                            Basado en pagos registrados en el mes actual.
+                        </Typography>
+                    </Box>
                 </Grid>
             </Grid>
 
