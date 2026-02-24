@@ -41,6 +41,13 @@ const statusColors: Record<string, 'warning' | 'success' | 'error' | 'info'> = {
     COMPLETADA: 'info',
 };
 
+/** Returns an error message or '' if valid. */
+function validateAmount(monto: number, saldo: number): string {
+    if (!isFinite(monto) || monto <= 0) return 'El monto debe ser mayor a 0.';
+    if (monto > saldo) return `El monto excede el saldo pendiente ($${saldo.toLocaleString()}).`;
+    return '';
+}
+
 export default function ReservationDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -57,6 +64,7 @@ export default function ReservationDetailPage() {
         notas: '',
     });
     const [error, setError] = useState('');
+    const [amountError, setAmountError] = useState('');
 
     const { data: reserva, isLoading } = useQuery({
         queryKey: ['reservation', id],
@@ -103,11 +111,13 @@ export default function ReservationDetailPage() {
             notas: '',
         });
         setError('');
+        setAmountError('');
     };
 
     const handlePaymentSubmit = () => {
-        if (paymentForm.monto <= 0) {
-            setError('El monto debe ser mayor a 0');
+        const err = validateAmount(paymentForm.monto, saldoPendiente);
+        if (err) {
+            setAmountError(err);
             return;
         }
         createPaymentMutation.mutate({
@@ -342,6 +352,11 @@ export default function ReservationDetailPage() {
                 <DialogTitle>Registrar Pago</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                        <Typography variant="body2" color={saldoPendiente > 0 ? 'text.secondary' : 'error'}>
+                            Saldo pendiente:{' '}
+                            <strong>${saldoPendiente.toLocaleString()}</strong>
+                        </Typography>
+
                         <TextField
                             select
                             label="Tipo de Pago"
@@ -380,15 +395,17 @@ export default function ReservationDetailPage() {
                             label="Monto"
                             type="number"
                             value={paymentForm.monto || ''}
-                            onChange={(e) =>
-                                setPaymentForm((prev) => ({
-                                    ...prev,
-                                    monto: parseFloat(e.target.value) || 0,
-                                }))
-                            }
+                            onChange={(e) => {
+                                const raw = parseFloat(e.target.value);
+                                const monto = isFinite(raw) ? raw : 0;
+                                setPaymentForm((prev) => ({ ...prev, monto }));
+                                setAmountError(validateAmount(monto, saldoPendiente));
+                            }}
                             onKeyDown={(e) => {
                                 if (e.key === '-' || e.key === 'e') e.preventDefault();
                             }}
+                            error={!!amountError}
+                            helperText={amountError}
                             fullWidth
                             slotProps={{
                                 input: { startAdornment: <span>$&nbsp;</span> },
@@ -443,7 +460,12 @@ export default function ReservationDetailPage() {
                     <Button
                         variant="contained"
                         onClick={handlePaymentSubmit}
-                        disabled={createPaymentMutation.isPending}
+                        disabled={
+                            createPaymentMutation.isPending ||
+                            !!amountError ||
+                            paymentForm.monto <= 0 ||
+                            saldoPendiente <= 0
+                        }
                     >
                         {createPaymentMutation.isPending ? 'Guardando...' : 'Registrar'}
                     </Button>
