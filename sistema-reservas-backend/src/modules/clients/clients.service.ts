@@ -11,6 +11,7 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { AddPhoneDto } from './dto/add-phone.dto';
 import { UpdatePhoneDto } from './dto/update-phone.dto';
+import { LoyaltyInfo, computeLoyalty } from './loyalty/loyalty';
 
 @Injectable()
 export class ClientsService {
@@ -56,8 +57,19 @@ export class ClientsService {
       this.clientsRepository.count(where),
     ]);
 
+    // Single groupBy query — no N+1
+    const clienteIds = items.map((c) => c.cliente_id);
+    const loyaltySums = await this.clientsRepository.getLoyaltySums(clienteIds);
+
     return {
-      items: items.map((item) => this.mapClientSummary(item)),
+      items: items.map((item) =>
+        this.mapClientSummary(
+          item,
+          computeLoyalty(
+            loyaltySums.get(item.cliente_id) ?? new Prisma.Decimal(0),
+          ),
+        ),
+      ),
       page,
       pageSize,
       total,
@@ -66,13 +78,17 @@ export class ClientsService {
 
   async findOne(clientId: string) {
     const id = this.parseId(clientId, 'clientId');
-    const client = await this.clientsRepository.findById(id);
+
+    const [client, loyaltyTotal] = await Promise.all([
+      this.clientsRepository.findById(id),
+      this.clientsRepository.getLoyaltySum(id),
+    ]);
 
     if (!client) {
       throw new NotFoundException('Client not found');
     }
 
-    return this.mapClientDetail(client);
+    return this.mapClientDetail(client, computeLoyalty(loyaltyTotal));
   }
 
   async create(dto: CreateClientDto) {
@@ -109,13 +125,16 @@ export class ClientsService {
       },
     });
 
-    const client = await this.clientsRepository.findById(created.cliente_id);
+    const [client, loyaltyTotal] = await Promise.all([
+      this.clientsRepository.findById(created.cliente_id),
+      this.clientsRepository.getLoyaltySum(created.cliente_id),
+    ]);
 
     if (!client) {
       throw new NotFoundException('Client not found after creation');
     }
 
-    return this.mapClientDetail(client);
+    return this.mapClientDetail(client, computeLoyalty(loyaltyTotal));
   }
 
   async update(clientId: string, dto: UpdateClientDto) {
@@ -436,6 +455,7 @@ export class ClientsService {
 
   private mapClientSummary(
     client: cliente & { cliente_telefono: cliente_telefono[] },
+    loyalty: LoyaltyInfo,
   ) {
     const primaryPhone = client.cliente_telefono[0]?.telefono ?? null;
 
@@ -445,11 +465,13 @@ export class ClientsService {
       correo: client.correo,
       activo: client.activo,
       primary_phone: primaryPhone,
+      loyalty,
     };
   }
 
   private mapClientDetail(
     client: cliente & { cliente_telefono: cliente_telefono[] },
+    loyalty: LoyaltyInfo,
   ) {
     return {
       cliente_id: client.cliente_id.toString(),
@@ -462,6 +484,7 @@ export class ClientsService {
         es_principal: phone.es_principal,
         activo: phone.activo,
       })),
+      loyalty,
     };
   }
 
