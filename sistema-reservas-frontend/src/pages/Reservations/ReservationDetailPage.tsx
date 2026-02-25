@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import axios from 'axios';
 import { getErrorMessage } from '../../utils/error';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -44,8 +45,33 @@ const statusColors: Record<string, 'warning' | 'success' | 'error' | 'info'> = {
 /** Returns an error message or '' if valid. */
 function validateAmount(monto: number, saldo: number): string {
     if (!isFinite(monto) || monto <= 0) return 'El monto debe ser mayor a 0.';
-    if (monto > saldo) return `El monto excede el saldo pendiente ($${saldo.toLocaleString()}).`;
+    if (monto > saldo) return `El monto excede el saldo restante ($${saldo.toLocaleString()}).`;
     return '';
+}
+
+interface PaymentErrorDetail {
+    message: string;
+    remaining_balance?: number;
+}
+
+/** Extracts message and optional remaining_balance from a backend 400 payment error. */
+function getPaymentErrorDetail(err: unknown): PaymentErrorDetail {
+    if (axios.isAxiosError(err)) {
+        const data: unknown = err.response?.data;
+        let message = 'Error al registrar el pago.';
+        let remaining_balance: number | undefined;
+        if (typeof data === 'object' && data !== null) {
+            const d = data as Record<string, unknown>;
+            if (typeof d.message === 'string' && d.message.trim()) {
+                message = d.message;
+            }
+            if (typeof d.remaining_balance === 'number') {
+                remaining_balance = d.remaining_balance;
+            }
+        }
+        return { message, remaining_balance };
+    }
+    return { message: getErrorMessage(err) };
 }
 
 export default function ReservationDetailPage() {
@@ -65,6 +91,7 @@ export default function ReservationDetailPage() {
     });
     const [error, setError] = useState('');
     const [amountError, setAmountError] = useState('');
+    const [backendPaymentError, setBackendPaymentError] = useState<PaymentErrorDetail | null>(null);
 
     const { data: reserva, isLoading } = useQuery({
         queryKey: ['reservation', id],
@@ -87,7 +114,7 @@ export default function ReservationDetailPage() {
             setPaymentDialogOpen(false);
             resetPaymentForm();
         },
-        onError: (err) => setError(getErrorMessage(err)),
+        onError: (err) => setBackendPaymentError(getPaymentErrorDetail(err)),
     });
 
     const changeStatusMutation = useMutation({
@@ -112,6 +139,7 @@ export default function ReservationDetailPage() {
         });
         setError('');
         setAmountError('');
+        setBackendPaymentError(null);
     };
 
     const handlePaymentSubmit = () => {
@@ -352,10 +380,66 @@ export default function ReservationDetailPage() {
                 <DialogTitle>Registrar Pago</DialogTitle>
                 <DialogContent>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-                        <Typography variant="body2" color={saldoPendiente > 0 ? 'text.secondary' : 'error'}>
-                            Saldo pendiente:{' '}
-                            <strong>${saldoPendiente.toLocaleString()}</strong>
-                        </Typography>
+                        {/* Mini financial summary */}
+                        <Box
+                            sx={{
+                                bgcolor: 'action.hover',
+                                borderRadius: 1,
+                                px: 1.5,
+                                py: 1,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 0.5,
+                            }}
+                        >
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Total reserva
+                                </Typography>
+                                <Typography variant="body2" fontWeight={600}>
+                                    ${totalReserva.toLocaleString()}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Typography variant="body2" color="text.secondary">
+                                    Total pagado
+                                </Typography>
+                                <Typography variant="body2" fontWeight={600} color="success.main">
+                                    ${totalPagado.toLocaleString()}
+                                </Typography>
+                            </Box>
+                            <Divider sx={{ my: 0.25 }} />
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <Typography variant="body2" fontWeight={700}>
+                                    Saldo restante
+                                </Typography>
+                                <Typography
+                                    variant="body2"
+                                    fontWeight={700}
+                                    color={saldoPendiente > 0 ? 'error.main' : 'success.main'}
+                                >
+                                    ${saldoPendiente.toLocaleString()}
+                                </Typography>
+                            </Box>
+                        </Box>
+
+                        {/* Backend payment error */}
+                        {backendPaymentError && (
+                            <Alert
+                                severity="error"
+                                onClose={() => setBackendPaymentError(null)}
+                            >
+                                {backendPaymentError.message}
+                                {backendPaymentError.remaining_balance !== undefined && (
+                                    <>
+                                        {' '}
+                                        <strong>
+                                            Saldo disponible: ${Number(backendPaymentError.remaining_balance).toLocaleString()}
+                                        </strong>
+                                    </>
+                                )}
+                            </Alert>
+                        )}
 
                         <TextField
                             select
