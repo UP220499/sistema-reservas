@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { LOYALTY_COMPLETED_STATUSES } from '../loyalty/loyalty';
 
 @Injectable()
 export class ClientsRepository {
@@ -85,6 +86,55 @@ export class ClientsRepository {
     return this.prisma.cliente_telefono.findFirst({
       where: { cliente_id, activo: true, es_principal: true },
     });
+  }
+
+  /**
+   * Returns a Map<cliente_id, totalGastado> for bulk loyalty calculation.
+   * Uses groupBy + _sum to avoid N+1 — one query for the whole page.
+   * Clients with no matching reservations are absent from the map (caller
+   * should default to Decimal(0)).
+   */
+  async getLoyaltySums(
+    clienteIds: bigint[],
+  ): Promise<Map<bigint, Prisma.Decimal>> {
+    if (!clienteIds.length) {
+      return new Map();
+    }
+
+    const groups = await this.prisma.reserva.groupBy({
+      by: ['cliente_id'],
+      where: {
+        cliente_id: { in: clienteIds },
+        estatus_reserva_code: { in: [...LOYALTY_COMPLETED_STATUSES] },
+        total_reserva: { not: null },
+      },
+      _sum: { total_reserva: true },
+    });
+
+    const map = new Map<bigint, Prisma.Decimal>();
+    for (const g of groups) {
+      if (g._sum.total_reserva !== null) {
+        map.set(g.cliente_id, g._sum.total_reserva);
+      }
+    }
+    return map;
+  }
+
+  /**
+   * Returns the loyalty total for a single client.
+   * Intended for detail endpoints — runs parallel with findById.
+   */
+  async getLoyaltySum(clienteId: bigint): Promise<Prisma.Decimal> {
+    const agg = await this.prisma.reserva.aggregate({
+      where: {
+        cliente_id: clienteId,
+        estatus_reserva_code: { in: [...LOYALTY_COMPLETED_STATUSES] },
+        total_reserva: { not: null },
+      },
+      _sum: { total_reserva: true },
+    });
+
+    return agg._sum.total_reserva ?? new Prisma.Decimal(0);
   }
 
   get prismaClient() {
