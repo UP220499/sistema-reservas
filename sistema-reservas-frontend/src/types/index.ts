@@ -52,6 +52,7 @@ export interface Cliente {
     reservas_completadas?: number;
     phones?: ClienteTelefono[];
     primary_phone?: string;
+    loyalty?: LoyaltyInfo;
 }
 
 export interface ClienteTelefono {
@@ -90,6 +91,12 @@ export interface Bloqueo {
     external_uid: string | null;
     ubicacion?: { nombre: string };
     ubicacion_nombre?: string;
+}
+
+export interface LoyaltyInfo {
+    total_reservas: number;
+    puntos: number;
+    nivel_loyalty: string;
 }
 
 export interface CatalogoItem {
