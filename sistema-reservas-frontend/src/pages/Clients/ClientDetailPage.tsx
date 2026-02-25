@@ -31,7 +31,52 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { clientsApi, type AddPhonePayload } from '../../api/clients';
-import { type ClienteTelefono } from '../../types';
+import { type ClienteTelefono, type LoyaltyInfo } from '../../types';
+
+const LOYALTY_COLOR: Record<string, 'default' | 'warning' | 'success' | 'secondary'> = {
+    BRONCE: 'warning',
+    PLATA: 'default',
+    ORO: 'success',
+    PLATINO: 'secondary',
+};
+
+function LoyaltyCard({ loyalty }: { loyalty: LoyaltyInfo }) {
+    return (
+        <Card sx={{ mt: 3 }}>
+            <CardContent>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Programa de Lealtad
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                    <Chip
+                        label={loyalty.nivel_loyalty}
+                        color={LOYALTY_COLOR[loyalty.nivel_loyalty] ?? 'default'}
+                        sx={{ fontWeight: 700, px: 0.5 }}
+                    />
+                    <Box sx={{ display: 'flex', gap: 3 }}>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" display="block">
+                                Puntos
+                            </Typography>
+                            <Typography variant="body2" fontWeight={600}>
+                                {loyalty.puntos.toLocaleString()}
+                            </Typography>
+                        </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" display="block">
+                                Reservas completadas
+                            </Typography>
+                            <Typography variant="body2" fontWeight={600}>
+                                {loyalty.total_reservas.toLocaleString()}
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Box>
+            </CardContent>
+        </Card>
+    );
+}
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 export default function ClientDetailPage() {
@@ -289,6 +334,9 @@ export default function ClientDetailPage() {
                     </CardContent>
                 </Card>
             </Box>
+
+            {/* Loyalty */}
+            {client.loyalty && <LoyaltyCard loyalty={client.loyalty} />}
 
             {/* Add/Edit Phone Dialog */}
             <Dialog

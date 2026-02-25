@@ -23,6 +23,30 @@ import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import SearchIcon from '@mui/icons-material/Search';
 import { clientsApi, type ClientFilters } from '../../api/clients';
+import type { LoyaltyInfo } from '../../types';
+
+const LOYALTY_COLOR: Record<string, 'default' | 'warning' | 'success' | 'secondary'> = {
+    BRONCE: 'warning',
+    PLATA: 'default',
+    ORO: 'success',
+    PLATINO: 'secondary',
+};
+
+function LoyaltyChip({ loyalty }: { loyalty: LoyaltyInfo | undefined }) {
+    if (!loyalty) return <>—</>;
+    return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.25 }}>
+            <Chip
+                label={loyalty.nivel_loyalty}
+                color={LOYALTY_COLOR[loyalty.nivel_loyalty] ?? 'default'}
+                size="small"
+            />
+            <Typography variant="caption" color="text.secondary">
+                {loyalty.puntos} pts · {loyalty.total_reservas} res.
+            </Typography>
+        </Box>
+    );
+}
 
 export default function ClientsListPage() {
     const navigate = useNavigate();
@@ -111,6 +135,7 @@ export default function ClientsListPage() {
                                 <TableCell>Correo</TableCell>
                                 <TableCell>Teléfono Principal</TableCell>
                                 <TableCell align="center">Reservas</TableCell>
+                                <TableCell>Loyalty</TableCell>
                                 <TableCell>Estado</TableCell>
                                 <TableCell align="center">Acciones</TableCell>
                             </TableRow>
@@ -119,7 +144,7 @@ export default function ClientsListPage() {
                             {isLoading
                                 ? Array.from({ length: 5 }).map((_, i) => (
                                     <TableRow key={i}>
-                                        {Array.from({ length: 6 }).map((__, j) => (
+                                        {Array.from({ length: 7 }).map((__, j) => (
                                             <TableCell key={j}>
                                                 <Skeleton />
                                             </TableCell>
@@ -161,6 +186,9 @@ export default function ClientsListPage() {
                                                 )}
                                             </TableCell>
                                             <TableCell>
+                                                <LoyaltyChip loyalty={client.loyalty} />
+                                            </TableCell>
+                                            <TableCell>
                                                 <Chip
                                                     label={client.activo ? 'Activo' : 'Inactivo'}
                                                     color={client.activo ? 'success' : 'default'}
@@ -184,7 +212,7 @@ export default function ClientsListPage() {
 
                             {!isLoading && (!data?.items || data.items.length === 0) && (
                                 <TableRow>
-                                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                                         <Typography color="text.secondary">
                                             No se encontraron clientes
                                         </Typography>
