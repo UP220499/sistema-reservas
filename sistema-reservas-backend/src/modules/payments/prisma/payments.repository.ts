@@ -70,9 +70,10 @@ export class PaymentsRepository {
         if (monto.gt(remaining)) {
           throw new BadRequestException({
             message: 'Payment exceeds remaining balance',
-            remaining: remaining.toString(),
-            total: total.toString(),
-            paid: paid.toString(),
+            remaining_balance: remaining.toString(),
+            total_reserva: total.toString(),
+            total_pagado: paid.toString(),
+            attempted_monto: monto.toString(),
           });
         }
 
@@ -157,9 +158,10 @@ Case 2 — FAIL: excede saldo restante
   Expected → HTTP 400:
   {
     "message": "Payment exceeds remaining balance",
-    "remaining": "500",
-    "total": "5000",
-    "paid": "4500"
+    "remaining_balance": "500",
+    "total_reserva": "5000",
+    "total_pagado": "4500",
+    "attempted_monto": "1000"
   }
 
 Case 3 — FAIL: monto negativo o cero
