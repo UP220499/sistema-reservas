@@ -129,6 +129,13 @@ export class ReservationsService {
         ? this.parseDecimal(dto.total_reserva, 'total_reserva')
         : undefined;
 
+    if (
+      totalReservaDecimal !== undefined &&
+      totalReservaDecimal.lte(new Prisma.Decimal(0))
+    ) {
+      throw new BadRequestException('total_reserva must be greater than 0');
+    }
+
     const prisma = this.reservationsRepository.prismaClient;
 
     const created = await prisma.$transaction(async (tx) => {
@@ -352,6 +359,24 @@ export class ReservationsService {
 
       if (dto.total_reserva !== undefined) {
         const nextTotal = this.parseDecimal(dto.total_reserva, 'total_reserva');
+
+        if (nextTotal.lte(new Prisma.Decimal(0))) {
+          throw new BadRequestException('total_reserva must be greater than 0');
+        }
+
+        // Compute total already paid (inside the transaction for consistent reads).
+        const paidAgg = await tx.pago_movimiento.aggregate({
+          where: { reserva_id: reservaId, monto: { gt: 0 } },
+          _sum: { monto: true },
+        });
+        const totalPaid = paidAgg._sum.monto ?? new Prisma.Decimal(0);
+
+        if (totalPaid.gt(nextTotal)) {
+          throw new BadRequestException(
+            'total_reserva cannot be less than total_paid',
+          );
+        }
+
         const previousTotalString = existing.total_reserva
           ? existing.total_reserva.toString()
           : null;
@@ -571,3 +596,40 @@ export class ReservationsService {
     }
   }
 }
+
+/*
+Manual testing — total_reserva hardening
+Header requerido en todos los casos: x-user-id: <usuario_válido>
+
+Case 1 — FAIL create: total_reserva = 0
+  POST /reservations
+  body: { ..., "total_reserva": 0 }
+  Expected → HTTP 400: { "message": "total_reserva must be greater than 0" }
+
+Case 2 — FAIL create: total_reserva negativo
+  POST /reservations
+  body: { ..., "total_reserva": -500 }
+  Expected → HTTP 400: { "message": "total_reserva must be greater than 0" }
+
+Case 3 — FAIL update: total_reserva = 0
+  PUT /reservations/:id
+  body: { "total_reserva": 0 }
+  Expected → HTTP 400: { "message": "total_reserva must be greater than 0" }
+
+Case 4 — FAIL update: intento de bajar total por debajo del pagado
+  Prerequisito: reserva con total_reserva=5000 y pagos registrados=3000.
+  PUT /reservations/:id
+  body: { "total_reserva": 2500 }
+  Expected → HTTP 400: { "message": "total_reserva cannot be less than total_paid" }
+
+Case 5 — OK update: nuevo total exactamente igual al total pagado
+  Prerequisito: reserva con total_reserva=5000 y pagos registrados=3000.
+  PUT /reservations/:id
+  body: { "total_reserva": 3000 }
+  Expected → HTTP 200 con reserva actualizada (total_reserva="3000")
+
+Case 6 — OK create: total_reserva válido
+  POST /reservations
+  body: { ..., "total_reserva": 1500 }
+  Expected → HTTP 201 con reserva creada
+*/
