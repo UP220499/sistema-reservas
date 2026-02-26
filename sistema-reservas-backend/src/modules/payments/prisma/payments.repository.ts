@@ -10,6 +10,13 @@ import { PaymentWithReservation } from '../mappers/payment.mapper';
 /** Payment types that represent real income for balance calculations. */
 const INCOME_PAYMENT_TYPES = ['ANTICIPO', 'LIQUIDACION'] as const;
 
+/** Reservation statuses for which new payments are not allowed. */
+const BLOCKED_PAYMENT_STATUSES = new Set<string>([
+  'CANCELADA',
+  'NO_SHOW',
+  'FINALIZADA',
+]);
+
 @Injectable()
 export class PaymentsRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -45,11 +52,22 @@ export class PaymentsRepository {
         // ── 1. Fetch reservation ────────────────────────────────────────────
         const reserva = await tx.reserva.findUnique({
           where: { reserva_id: reservaId },
-          select: { reserva_id: true, total_reserva: true },
+          select: {
+            reserva_id: true,
+            total_reserva: true,
+            estatus_reserva_code: true,
+          },
         });
 
         if (!reserva) {
           throw new NotFoundException('Reservation not found');
+        }
+
+        // ── 1b. Status check ────────────────────────────────────────────────
+        if (BLOCKED_PAYMENT_STATUSES.has(reserva.estatus_reserva_code)) {
+          throw new BadRequestException(
+            `Cannot register payments for reservation in status ${reserva.estatus_reserva_code}`,
+          );
         }
 
         // ── 2. Sum existing income payments ─────────────────────────────────
@@ -145,14 +163,16 @@ export class PaymentsRepository {
 Manual testing — POST /reservations/:id/payments
 Header requerido: x-user-id: <id_usuario_válido>
 
+── Balance / monto ──────────────────────────────────────────────────────────
+
 Case 1 — OK: remaining suficiente
-  Prerequisito: reserva con total_reserva=5000 y pagos ANTICIPO existentes=2000.
+  Prerequisito: reserva CONFIRMADA con total_reserva=5000 y pagos ANTICIPO existentes=2000.
   body: { "tipo_pago_mov_code":"LIQUIDACION", "metodo_pago_code":"EFECTIVO",
           "monto":1500, "fecha_pago":"2026-02-24T12:00:00Z" }
   Expected → HTTP 201 con el pago creado; saldo restante después = 1500.
 
 Case 2 — FAIL: excede saldo restante
-  Prerequisito: reserva con total_reserva=5000 y pagos existentes=4500.
+  Prerequisito: reserva CONFIRMADA con total_reserva=5000 y pagos existentes=4500.
   body: { "tipo_pago_mov_code":"ANTICIPO", "metodo_pago_code":"EFECTIVO",
           "monto":1000, "fecha_pago":"2026-02-24T12:00:00Z" }
   Expected → HTTP 400:
@@ -168,4 +188,29 @@ Case 3 — FAIL: monto negativo o cero
   body: { ..., "monto": -100 }  o  { ..., "monto": 0 }
   Expected → HTTP 400 (interceptado por DTO @Min(0.01)):
   { "message": ["monto debe ser mayor a 0"], "error": "Bad Request", "statusCode": 400 }
+
+── Status hardening ─────────────────────────────────────────────────────────
+
+Case 4 — FAIL: reserva CANCELADA
+  Prerequisito: cancelar la reserva (PATCH /reservations/:id/status con CANCELADA).
+  body: { "tipo_pago_mov_code":"ANTICIPO", "metodo_pago_code":"EFECTIVO",
+          "monto":500, "fecha_pago":"2026-02-24T12:00:00Z" }
+  Expected → HTTP 400:
+  { "message": "Cannot register payments for reservation in status CANCELADA" }
+
+Case 5 — FAIL: reserva FINALIZADA
+  Prerequisito: reserva con estatus_reserva_code=FINALIZADA.
+  body: { "tipo_pago_mov_code":"ANTICIPO", "metodo_pago_code":"EFECTIVO",
+          "monto":500, "fecha_pago":"2026-02-24T12:00:00Z" }
+  Expected → HTTP 400:
+  { "message": "Cannot register payments for reservation in status FINALIZADA" }
+
+Case 6 — FAIL: reserva NO_SHOW
+  Prerequisito: reserva con estatus_reserva_code=NO_SHOW.
+  Expected → HTTP 400:
+  { "message": "Cannot register payments for reservation in status NO_SHOW" }
+
+Case 7 — OK: reserva activa (CONFIRMADA / EN_CURSO)
+  Prerequisito: reserva en estatus CONFIRMADA con saldo disponible.
+  Expected → HTTP 201 con el pago creado.
 */
