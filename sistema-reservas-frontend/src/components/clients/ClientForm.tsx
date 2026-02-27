@@ -16,6 +16,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { clientsApi, type CreateClientPayload, type Client } from '../../api/clients';
+import { validatePhone } from '../../utils/phone';
 
 interface ClientFormProps {
     initialData?: Client;
@@ -35,6 +36,7 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
             : [{ telefono: '', es_principal: true }],
     });
     const [error, setError] = useState('');
+    const [phoneErrors, setPhoneErrors] = useState<string[]>(isEditing ? [] : ['']);
 
     const mutation = useMutation({
         mutationFn: (payload: CreateClientPayload) => {
@@ -64,9 +66,17 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
             setError('El nombre es obligatorio');
             return;
         }
-        if (!isEditing && (form.phones.length === 0 || !form.phones[0].telefono.trim())) {
-            setError('Debes agregar al menos un teléfono');
-            return;
+        if (!isEditing) {
+            if (form.phones.length === 0) {
+                setError('Debes agregar al menos un teléfono');
+                return;
+            }
+            const errs = form.phones.map((p) => validatePhone(p.telefono));
+            if (errs.some((e) => e !== '')) {
+                setPhoneErrors(errs);
+                setError('Corrige los errores en los teléfonos');
+                return;
+            }
         }
         mutation.mutate(form);
     };
@@ -76,6 +86,7 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
             ...prev,
             phones: [...prev.phones, { telefono: '', es_principal: false }],
         }));
+        setPhoneErrors((prev) => [...prev, '']);
     };
 
     const removePhone = (index: number) => {
@@ -83,15 +94,25 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
             ...prev,
             phones: prev.phones.filter((_, i) => i !== index),
         }));
+        setPhoneErrors((prev) => prev.filter((_, i) => i !== index));
     };
 
     const updatePhone = (index: number, value: string) => {
+        const stripped = value.replace(/\D/g, '');
+        const digits = stripped.length === 12 && stripped.startsWith('52')
+            ? stripped.slice(2)
+            : stripped.slice(0, 10);
         setForm((prev) => ({
             ...prev,
             phones: prev.phones.map((p, i) =>
-                i === index ? { ...p, telefono: value } : p,
+                i === index ? { ...p, telefono: digits } : p,
             ),
         }));
+        setPhoneErrors((prev) => {
+            const next = [...prev];
+            next[index] = validatePhone(digits);
+            return next;
+        });
     };
 
     return (
@@ -187,7 +208,12 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
                                             fullWidth
                                             size="small"
                                             required={index === 0}
-                                            placeholder="Ej: +52 1234567890"
+                                            error={!!phoneErrors[index]}
+                                            helperText={phoneErrors[index] || 'Ingresa 10 dígitos (México)'}
+                                            slotProps={{
+                                                input: { startAdornment: <span>+52&nbsp;</span> },
+                                                htmlInput: { inputMode: 'numeric', pattern: '\\d*', maxLength: 12 },
+                                            }}
                                         />
                                         {index > 0 && (
                                             <IconButton
@@ -226,7 +252,7 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
                             <Button
                                 type="submit"
                                 variant="contained"
-                                disabled={mutation.isPending}
+                                disabled={mutation.isPending || phoneErrors.some((e) => e !== '')}
                             >
                                 {mutation.isPending ? 'Guardando...' : (isEditing ? 'Guardar Cambios' : 'Crear Cliente')}
                             </Button>

@@ -32,6 +32,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { clientsApi, type AddPhonePayload } from '../../api/clients';
 import { type ClienteTelefono, type LoyaltyInfo } from '../../types';
+import { validatePhone, formatMxPhone, friendlyPhoneError } from '../../utils/phone';
 
 const LOYALTY_COLOR: Record<string, 'default' | 'warning' | 'success' | 'secondary'> = {
     BRONCE: 'warning',
@@ -86,6 +87,7 @@ export default function ClientDetailPage() {
     const queryClient = useQueryClient();
     const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
     const [newPhone, setNewPhone] = useState('');
+    const [phoneError, setPhoneError] = useState('');
     const [editingPhone, setEditingPhone] = useState<ClienteTelefono | null>(null);
     const [error, setError] = useState('');
     const [confirmStatusOpen, setConfirmStatusOpen] = useState(false);
@@ -118,8 +120,9 @@ export default function ClientDetailPage() {
             queryClient.invalidateQueries({ queryKey: ['client', id] });
             setPhoneDialogOpen(false);
             setNewPhone('');
+            setPhoneError('');
         },
-        onError: (err) => setError(getErrorMessage(err)),
+        onError: (err) => setError(friendlyPhoneError(getErrorMessage(err))),
     });
 
     const editPhoneMutation = useMutation({
@@ -130,8 +133,9 @@ export default function ClientDetailPage() {
             setPhoneDialogOpen(false);
             setEditingPhone(null);
             setNewPhone('');
+            setPhoneError('');
         },
-        onError: (err) => setError(getErrorMessage(err)),
+        onError: (err) => setError(friendlyPhoneError(getErrorMessage(err))),
     });
 
     const deletePhoneMutation = useMutation({
@@ -273,7 +277,7 @@ export default function ClientDetailPage() {
                                             sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }}
                                         />
                                         <ListItemText
-                                            primary={phone.telefono}
+                                            primary={formatMxPhone(phone.telefono)}
                                             secondary={
                                                 !phone.activo ? 'Inactivo' : undefined
                                             }
@@ -283,7 +287,10 @@ export default function ClientDetailPage() {
                                                 size="small"
                                                 onClick={() => {
                                                     setEditingPhone(phone);
-                                                    setNewPhone(phone.telefono);
+                                                    const digits = phone.telefono.replace(/\D/g, '');
+                                                    const local = digits.length === 12 && digits.startsWith('52') ? digits.slice(2) : digits;
+                                                    setNewPhone(local.slice(0, 10));
+                                                    setPhoneError('');
                                                     setPhoneDialogOpen(true);
                                                 }}
                                                 title="Editar"
@@ -346,6 +353,7 @@ export default function ClientDetailPage() {
                     setPhoneDialogOpen(false);
                     setEditingPhone(null);
                     setNewPhone('');
+                    setPhoneError('');
                 }}
                 maxWidth="xs"
                 fullWidth
@@ -355,10 +363,23 @@ export default function ClientDetailPage() {
                     <TextField
                         label="Número de teléfono"
                         value={newPhone}
-                        onChange={(e) => setNewPhone(e.target.value)}
+                        onChange={(e) => {
+                            const stripped = e.target.value.replace(/\D/g, '');
+                            const digits = stripped.length === 12 && stripped.startsWith('52')
+                                ? stripped.slice(2)
+                                : stripped.slice(0, 10);
+                            setNewPhone(digits);
+                            setPhoneError(validatePhone(digits));
+                        }}
+                        required
+                        error={!!phoneError}
+                        helperText={phoneError || 'Ingresa 10 dígitos (México)'}
                         fullWidth
                         sx={{ mt: 1 }}
-                        placeholder="Ej: +52 1234567890"
+                        slotProps={{
+                            input: { startAdornment: <span>+52&nbsp;</span> },
+                            htmlInput: { inputMode: 'numeric', pattern: '\\d*', maxLength: 12 },
+                        }}
                     />
                 </DialogContent>
                 <DialogActions>
@@ -366,6 +387,7 @@ export default function ClientDetailPage() {
                         setPhoneDialogOpen(false);
                         setEditingPhone(null);
                         setNewPhone('');
+                        setPhoneError('');
                     }}>
                         Cancelar
                     </Button>
@@ -375,7 +397,7 @@ export default function ClientDetailPage() {
                             if (editingPhone) {
                                 editPhoneMutation.mutate({
                                     id: editingPhone.cliente_telefono_id,
-                                    telefono: newPhone
+                                    telefono: newPhone,
                                 });
                             } else {
                                 addPhoneMutation.mutate({
@@ -384,7 +406,11 @@ export default function ClientDetailPage() {
                                 });
                             }
                         }}
-                        disabled={!newPhone || (editingPhone ? editPhoneMutation.isPending : addPhoneMutation.isPending)}
+                        disabled={
+                            newPhone.length !== 10 ||
+                            !!phoneError ||
+                            (editingPhone ? editPhoneMutation.isPending : addPhoneMutation.isPending)
+                        }
                     >
                         {editingPhone ? 'Guardar' : 'Agregar'}
                     </Button>
