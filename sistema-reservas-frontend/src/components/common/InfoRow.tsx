@@ -1,12 +1,5 @@
 import { Box, Typography } from '@mui/material';
-
-/** Never shows "undefined", "null", or empty string — returns "—" instead. */
-function displayValue(v: string | number | null | undefined): string {
-    if (v === null || v === undefined) return '—';
-    const s = String(v).trim();
-    if (s === '' || s.toLowerCase() === 'undefined' || s.toLowerCase() === 'null') return '—';
-    return s;
-}
+import { displayValue } from '../../utils/display';
 
 export default function InfoRow({
     label,

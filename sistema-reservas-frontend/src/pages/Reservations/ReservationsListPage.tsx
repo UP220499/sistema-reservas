@@ -28,6 +28,7 @@ import {
     reservationsApi,
     type ReservationFilters,
 } from '../../api/reservations';
+import { displayCurrency } from '../../utils/display';
 
 const statusColors: Record<string, 'warning' | 'success' | 'error' | 'info'> = {
     PENDIENTE: 'warning',
@@ -227,7 +228,7 @@ export default function ReservationsListPage() {
                                             {dayjs(reserva.checkout_datetime).format('DD/MM/YYYY')}
                                         </TableCell>
                                         <TableCell>
-                                            ${Number(reserva.total_reserva ?? 0).toLocaleString()}
+                                            {displayCurrency(reserva.total_reserva)}
                                         </TableCell>
                                         <TableCell>
                                             <Chip
