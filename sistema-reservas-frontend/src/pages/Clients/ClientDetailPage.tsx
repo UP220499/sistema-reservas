@@ -78,6 +78,7 @@ function LoyaltyCard({ loyalty }: { loyalty: LoyaltyInfo }) {
     );
 }
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import InfoRow from '../../components/common/InfoRow';
 
 export default function ClientDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -424,31 +425,3 @@ export default function ClientDetailPage() {
     );
 }
 
-function InfoRow({
-    label,
-    value,
-}: {
-    label: string;
-    value?: string | null;
-}) {
-    return (
-        <Box
-            sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                py: 0.75,
-                '&:not(:last-child)': {
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                },
-            }}
-        >
-            <Typography variant="body2" color="text.secondary">
-                {label}
-            </Typography>
-            <Typography variant="body2" fontWeight={600}>
-                {value || '—'}
-            </Typography>
-        </Box>
-    );
-}
