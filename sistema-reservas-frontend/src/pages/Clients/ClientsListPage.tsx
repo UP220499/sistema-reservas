@@ -130,7 +130,6 @@ export default function ClientsListPage() {
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell>ID</TableCell>
                                 <TableCell>Nombre</TableCell>
                                 <TableCell>Correo</TableCell>
                                 <TableCell>Teléfono Principal</TableCell>
@@ -144,7 +143,7 @@ export default function ClientsListPage() {
                             {isLoading
                                 ? Array.from({ length: 5 }).map((_, i) => (
                                     <TableRow key={i}>
-                                        {Array.from({ length: 7 }).map((__, j) => (
+                                        {Array.from({ length: 6 }).map((__, j) => (
                                             <TableCell key={j}>
                                                 <Skeleton />
                                             </TableCell>
@@ -164,11 +163,6 @@ export default function ClientsListPage() {
                                                 navigate(`/clientes/${client.cliente_id}`)
                                             }
                                         >
-                                            <TableCell>
-                                                <Typography variant="body2" fontWeight={600}>
-                                                    #{client.cliente_id}
-                                                </Typography>
-                                            </TableCell>
                                             <TableCell>{client.nombre}</TableCell>
                                             <TableCell>{client.correo || '—'}</TableCell>
                                             <TableCell>
@@ -212,7 +206,7 @@ export default function ClientsListPage() {
 
                             {!isLoading && (!data?.items || data.items.length === 0) && (
                                 <TableRow>
-                                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                                         <Typography color="text.secondary">
                                             No se encontraron clientes
                                         </Typography>

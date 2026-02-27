@@ -180,7 +180,6 @@ export default function ReservationsListPage() {
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell>ID</TableCell>
                                 <TableCell>Ubicación</TableCell>
                                 <TableCell>Cliente</TableCell>
                                 <TableCell>Check-in</TableCell>
@@ -194,7 +193,7 @@ export default function ReservationsListPage() {
                             {isLoading
                                 ? Array.from({ length: 5 }).map((_, i) => (
                                     <TableRow key={i}>
-                                        {Array.from({ length: 8 }).map((__, j) => (
+                                        {Array.from({ length: 7 }).map((__, j) => (
                                             <TableCell key={j}>
                                                 <Skeleton />
                                             </TableCell>
@@ -210,11 +209,6 @@ export default function ReservationsListPage() {
                                             navigate(`/reservaciones/${reserva.reserva_id}`)
                                         }
                                     >
-                                        <TableCell>
-                                            <Typography variant="body2" fontWeight={600}>
-                                                #{reserva.reserva_id}
-                                            </Typography>
-                                        </TableCell>
                                         <TableCell>
                                             {reserva.ubicacion_nombre || reserva.ubicacion?.nombre || '—'}
                                         </TableCell>
@@ -258,7 +252,7 @@ export default function ReservationsListPage() {
 
                             {!isLoading && (!data?.items || data.items.length === 0) && (
                                 <TableRow>
-                                    <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                                         <Typography color="text.secondary">
                                             No se encontraron reservaciones
                                         </Typography>
