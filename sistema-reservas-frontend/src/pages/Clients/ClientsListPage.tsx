@@ -42,7 +42,7 @@ function LoyaltyChip({ loyalty }: { loyalty: LoyaltyInfo | undefined }) {
                 size="small"
             />
             <Typography variant="caption" color="text.secondary">
-                {loyalty.puntos} pts · {loyalty.total_reservas} res.
+                {loyalty.puntos} pts · {loyalty.reservas_completadas_count} res.
             </Typography>
         </Box>
     );

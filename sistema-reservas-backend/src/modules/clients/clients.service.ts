@@ -62,14 +62,13 @@ export class ClientsService {
     const loyaltySums = await this.clientsRepository.getLoyaltySums(clienteIds);
 
     return {
-      items: items.map((item) =>
-        this.mapClientSummary(
+      items: items.map((item) => {
+        const ls = loyaltySums.get(item.cliente_id);
+        return this.mapClientSummary(
           item,
-          computeLoyalty(
-            loyaltySums.get(item.cliente_id) ?? new Prisma.Decimal(0),
-          ),
-        ),
-      ),
+          computeLoyalty(ls?.count ?? 0, ls?.monto ?? new Prisma.Decimal(0)),
+        );
+      }),
       page,
       pageSize,
       total,
@@ -88,7 +87,10 @@ export class ClientsService {
       throw new NotFoundException('Client not found');
     }
 
-    return this.mapClientDetail(client, computeLoyalty(loyaltyTotal));
+    return this.mapClientDetail(
+      client,
+      computeLoyalty(loyaltyTotal.count, loyaltyTotal.monto),
+    );
   }
 
   async create(dto: CreateClientDto) {
@@ -134,7 +136,10 @@ export class ClientsService {
       throw new NotFoundException('Client not found after creation');
     }
 
-    return this.mapClientDetail(client, computeLoyalty(loyaltyTotal));
+    return this.mapClientDetail(
+      client,
+      computeLoyalty(loyaltyTotal.count, loyaltyTotal.monto),
+    );
   }
 
   async update(clientId: string, dto: UpdateClientDto) {

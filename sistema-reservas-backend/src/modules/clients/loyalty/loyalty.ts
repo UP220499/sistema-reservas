@@ -26,8 +26,10 @@ const LOYALTY_TIERS: LoyaltyTier[] = [
 ];
 
 export interface LoyaltyInfo {
+  /** Number of completed / finalised reservations. */
+  reservas_completadas_count: number;
   /** Sum of total_reserva for completed reservations, as decimal string. */
-  total_reservas: string;
+  reservas_completadas_monto: string;
   /** Integer points earned (floor(total / POINTS_DIVISOR)). */
   puntos: number;
   /** Tier name: BRONCE | PLATA | ORO | PLATINO */
@@ -35,12 +37,15 @@ export interface LoyaltyInfo {
 }
 
 /**
- * Derives loyalty data from the sum of a client's completed reservations.
+ * Derives loyalty data from the count and sum of a client's completed reservations.
  *
  * `toNumber()` is used only for tier comparison and point flooring —
- * monetary precision is kept in `total_reservas` (Decimal → string).
+ * monetary precision is kept in `reservas_completadas_monto` (Decimal → string).
  */
-export function computeLoyalty(totalGastado: Prisma.Decimal): LoyaltyInfo {
+export function computeLoyalty(
+  count: number,
+  totalGastado: Prisma.Decimal,
+): LoyaltyInfo {
   const totalNum = totalGastado.toNumber();
   const puntos = Math.floor(totalNum / POINTS_DIVISOR);
   const tier =
@@ -48,7 +53,8 @@ export function computeLoyalty(totalGastado: Prisma.Decimal): LoyaltyInfo {
     ({ nivel: 'BRONCE', minAmount: 0 } satisfies LoyaltyTier);
 
   return {
-    total_reservas: totalGastado.toString(),
+    reservas_completadas_count: count,
+    reservas_completadas_monto: totalGastado.toString(),
     puntos,
     nivel_loyalty: tier.nivel,
   };

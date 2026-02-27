@@ -89,14 +89,13 @@ export class ClientsRepository {
   }
 
   /**
-   * Returns a Map<cliente_id, totalGastado> for bulk loyalty calculation.
-   * Uses groupBy + _sum to avoid N+1 — one query for the whole page.
-   * Clients with no matching reservations are absent from the map (caller
-   * should default to Decimal(0)).
+   * Returns a Map<cliente_id, { count, monto }> for bulk loyalty calculation.
+   * Uses a single groupBy (+ _count + _sum) to avoid N+1.
+   * Clients with no matching reservations are absent from the map.
    */
   async getLoyaltySums(
     clienteIds: bigint[],
-  ): Promise<Map<bigint, Prisma.Decimal>> {
+  ): Promise<Map<bigint, { count: number; monto: Prisma.Decimal }>> {
     if (!clienteIds.length) {
       return new Map();
     }
@@ -108,33 +107,41 @@ export class ClientsRepository {
         estatus_reserva_code: { in: [...LOYALTY_COMPLETED_STATUSES] },
         total_reserva: { not: null },
       },
+      _count: { _all: true },
       _sum: { total_reserva: true },
     });
 
-    const map = new Map<bigint, Prisma.Decimal>();
+    const map = new Map<bigint, { count: number; monto: Prisma.Decimal }>();
     for (const g of groups) {
-      if (g._sum.total_reserva !== null) {
-        map.set(g.cliente_id, g._sum.total_reserva);
-      }
+      map.set(g.cliente_id, {
+        count: g._count._all,
+        monto: g._sum.total_reserva ?? new Prisma.Decimal(0),
+      });
     }
     return map;
   }
 
   /**
-   * Returns the loyalty total for a single client.
-   * Intended for detail endpoints — runs parallel with findById.
+   * Returns loyalty { count, monto } for a single client.
+   * Runs count + aggregate in parallel; intended for detail endpoints.
    */
-  async getLoyaltySum(clienteId: bigint): Promise<Prisma.Decimal> {
-    const agg = await this.prisma.reserva.aggregate({
-      where: {
-        cliente_id: clienteId,
-        estatus_reserva_code: { in: [...LOYALTY_COMPLETED_STATUSES] },
-        total_reserva: { not: null },
-      },
-      _sum: { total_reserva: true },
-    });
+  async getLoyaltySum(
+    clienteId: bigint,
+  ): Promise<{ count: number; monto: Prisma.Decimal }> {
+    const loyaltyWhere: Prisma.reservaWhereInput = {
+      cliente_id: clienteId,
+      estatus_reserva_code: { in: [...LOYALTY_COMPLETED_STATUSES] },
+    };
 
-    return agg._sum.total_reserva ?? new Prisma.Decimal(0);
+    const [count, agg] = await Promise.all([
+      this.prisma.reserva.count({ where: loyaltyWhere }),
+      this.prisma.reserva.aggregate({
+        where: { ...loyaltyWhere, total_reserva: { not: null } },
+        _sum: { total_reserva: true },
+      }),
+    ]);
+
+    return { count, monto: agg._sum.total_reserva ?? new Prisma.Decimal(0) };
   }
 
   get prismaClient() {
