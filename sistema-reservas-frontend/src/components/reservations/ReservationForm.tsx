@@ -56,6 +56,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
         notas: initialData?.notas || '',
     });
     const [error, setError] = useState('');
+    const [totalError, setTotalError] = useState('');
     const [confirmHistoricOpen, setConfirmHistoricOpen] = useState(false);
 
     // Load clients for dropdown
@@ -69,6 +70,18 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
         queryKey: ['ubicaciones'],
         queryFn: () => catalogsApi.getUbicaciones(),
     });
+
+    function validateTotal(v: number | undefined): string {
+        if (v === undefined || isNaN(v)) return 'El total es requerido';
+        if (v <= 0) return 'El total debe ser mayor a $0';
+        return '';
+    }
+
+    function friendlyReservationError(raw: string): string {
+        if (/total_reserva.*required/i.test(raw)) return 'El total de la reservación es requerido';
+        if (/total_reserva.*greater/i.test(raw)) return 'El total debe ser mayor a $0';
+        return raw;
+    }
 
     const mutation = useMutation({
         mutationFn: (payload: CreateReservationPayload) => {
@@ -86,7 +99,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
             queryClient.invalidateQueries({ queryKey: ['calendar'] });
             navigate(`/reservaciones/${result.reserva_id}`);
         },
-        onError: (err) => setError(getErrorMessage(err)),
+        onError: (err) => setError(friendlyReservationError(getErrorMessage(err))),
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -94,6 +107,12 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
         setError('');
         if (!form.cliente_id || !form.ubicacion_id) {
             setError('Selecciona un cliente y una ubicación');
+            return;
+        }
+
+        const tErr = validateTotal(form.total_reserva);
+        if (tErr) {
+            setTotalError(tErr);
             return;
         }
 
@@ -241,14 +260,19 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                             label="Total"
                             type="number"
                             value={form.total_reserva ?? ''}
-                            onChange={(e) =>
-                                updateField(
-                                    'total_reserva',
-                                    e.target.value ? parseFloat(e.target.value) : undefined,
-                                )
-                            }
+                            onChange={(e) => {
+                                const parsed = e.target.value ? parseFloat(e.target.value) : undefined;
+                                updateField('total_reserva', parsed);
+                                setTotalError(validateTotal(parsed));
+                            }}
+                            required
+                            error={!!totalError}
+                            helperText={totalError || ' '}
                             fullWidth
-                            slotProps={{ input: { startAdornment: <span>$&nbsp;</span> } }}
+                            slotProps={{
+                                input: { startAdornment: <span>$&nbsp;</span> },
+                                htmlInput: { min: 0.01, step: 0.01 },
+                            }}
                         />
 
                         <TextField
@@ -279,7 +303,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                             <Button
                                 type="submit"
                                 variant="contained"
-                                disabled={mutation.isPending}
+                                disabled={mutation.isPending || !!totalError}
                             >
                                 {mutation.isPending
                                     ? 'Guardando...'
