@@ -22,6 +22,8 @@ import {
     DialogContent,
     DialogActions,
     TextField,
+    Stack,
+    Paper,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import StarIcon from '@mui/icons-material/Star';
@@ -46,42 +48,48 @@ function LoyaltyCard({ loyalty }: { loyalty: LoyaltyInfo }) {
     return (
         <Card sx={{ mt: 3 }}>
             <CardContent>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Programa de Lealtad
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                    <Typography variant="subtitle1" fontWeight={700}>
+                        Programa de Lealtad
+                    </Typography>
                     <Chip
                         label={loyalty.nivel_loyalty}
                         color={LOYALTY_COLOR[loyalty.nivel_loyalty] ?? 'default'}
-                        sx={{ fontWeight: 700, px: 0.5 }}
+                        sx={{ fontWeight: 700 }}
                     />
-                    <Box sx={{ display: 'flex', gap: 3 }}>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary" display="block">
-                                Puntos
-                            </Typography>
-                            <Typography variant="body2" fontWeight={600}>
-                                {loyalty.puntos.toLocaleString()}
-                            </Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary" display="block">
-                                Reservas completadas
-                            </Typography>
-                            <Typography variant="body2" fontWeight={600}>
-                                {loyalty.reservas_completadas_count.toLocaleString()}
-                            </Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary" display="block">
-                                Monto completado
-                            </Typography>
-                            <Typography variant="body2" fontWeight={600}>
-                                {displayCurrency(loyalty.reservas_completadas_monto)}
-                            </Typography>
-                        </Box>
-                    </Box>
+                </Stack>
+                <Divider sx={{ mb: 2 }} />
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
+                        gap: 2,
+                    }}
+                >
+                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                        <Typography variant="h5" fontWeight={700}>
+                            {loyalty.puntos.toLocaleString()}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            Puntos
+                        </Typography>
+                    </Paper>
+                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                        <Typography variant="h5" fontWeight={700}>
+                            {loyalty.reservas_completadas_count.toLocaleString()}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            Reservas completadas
+                        </Typography>
+                    </Paper>
+                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                        <Typography variant="h5" fontWeight={700}>
+                            {displayCurrency(loyalty.reservas_completadas_monto)}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                            Monto acumulado
+                        </Typography>
+                    </Paper>
                 </Box>
             </CardContent>
         </Card>

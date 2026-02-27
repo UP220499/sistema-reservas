@@ -455,7 +455,6 @@ export default function ReservationDetailPage() {
                         >
                             <MenuItem value="ANTICIPO">Anticipo</MenuItem>
                             <MenuItem value="LIQUIDACION">Liquidación</MenuItem>
-                            <MenuItem value="AJUSTE">Ajuste</MenuItem>
                         </TextField>
 
                         <TextField

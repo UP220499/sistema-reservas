@@ -17,6 +17,10 @@ export class PaymentsService {
       throw new BadRequestException('Audit user is required');
     }
 
+    if (dto.tipo_pago_mov_code === 'AJUSTE') {
+      throw new BadRequestException('tipo_pago_mov_code AJUSTE is not allowed');
+    }
+
     const reservaId = this.parseId(reservationId, 'reservation_id');
 
     const fechaPago = this.parseDate(dto.fecha_pago, 'fecha_pago');

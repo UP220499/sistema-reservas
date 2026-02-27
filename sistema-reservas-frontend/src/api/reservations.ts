@@ -130,7 +130,6 @@ export const catalogsApi = {
         return [
             { code: 'ANTICIPO', nombre: 'Anticipo' },
             { code: 'LIQUIDACION', nombre: 'Liquidación' },
-            { code: 'AJUSTE', nombre: 'Ajuste' },
         ];
     },
 };
