@@ -182,7 +182,6 @@ export default function BlocksListPage() {
                     <Table>
                         <TableHead>
                             <TableRow>
-                                <TableCell>ID</TableCell>
                                 <TableCell>Ubicación</TableCell>
                                 <TableCell>Inicio</TableCell>
                                 <TableCell>Fin</TableCell>
@@ -195,7 +194,7 @@ export default function BlocksListPage() {
                             {isLoading
                                 ? Array.from({ length: 5 }).map((_, i) => (
                                     <TableRow key={i}>
-                                        {Array.from({ length: 7 }).map((__, j) => (
+                                        {Array.from({ length: 6 }).map((__, j) => (
                                             <TableCell key={j}>
                                                 <Skeleton />
                                             </TableCell>
@@ -204,11 +203,6 @@ export default function BlocksListPage() {
                                 ))
                                 : data?.items?.map((block) => (
                                     <TableRow key={block.bloqueo_id} hover>
-                                        <TableCell>
-                                            <Typography variant="body2" fontWeight={600}>
-                                                #{block.bloqueo_id}
-                                            </Typography>
-                                        </TableCell>
                                         <TableCell>
                                             {block.ubicacion_nombre || block.ubicacion?.nombre || ubicaciones?.find(u => String(u.ubicacion_id) === String(block.ubicacion_id))?.nombre || '—'}
                                         </TableCell>
@@ -274,7 +268,7 @@ export default function BlocksListPage() {
 
                             {!isLoading && (!data?.items || data.items.length === 0) && (
                                 <TableRow>
-                                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                                         <Typography color="text.secondary">
                                             No se encontraron bloqueos
                                         </Typography>
