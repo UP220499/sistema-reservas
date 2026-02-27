@@ -94,7 +94,8 @@ export interface Bloqueo {
 }
 
 export interface LoyaltyInfo {
-    total_reservas: number;
+    reservas_completadas_count: number;
+    reservas_completadas_monto: number;
     puntos: number;
     nivel_loyalty: string;
 }

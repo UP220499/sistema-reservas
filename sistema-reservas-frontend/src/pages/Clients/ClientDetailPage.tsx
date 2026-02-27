@@ -33,6 +33,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { clientsApi, type AddPhonePayload } from '../../api/clients';
 import { type ClienteTelefono, type LoyaltyInfo } from '../../types';
 import { validatePhone, formatMxPhone, friendlyPhoneError } from '../../utils/phone';
+import { displayCurrency } from '../../utils/display';
 
 const LOYALTY_COLOR: Record<string, 'default' | 'warning' | 'success' | 'secondary'> = {
     BRONCE: 'warning',
@@ -69,7 +70,15 @@ function LoyaltyCard({ loyalty }: { loyalty: LoyaltyInfo }) {
                                 Reservas completadas
                             </Typography>
                             <Typography variant="body2" fontWeight={600}>
-                                {loyalty.total_reservas.toLocaleString()}
+                                {loyalty.reservas_completadas_count.toLocaleString()}
+                            </Typography>
+                        </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary" display="block">
+                                Monto completado
+                            </Typography>
+                            <Typography variant="body2" fontWeight={600}>
+                                {displayCurrency(loyalty.reservas_completadas_monto)}
                             </Typography>
                         </Box>
                     </Box>
