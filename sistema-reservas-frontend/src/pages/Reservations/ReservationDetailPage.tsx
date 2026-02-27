@@ -34,6 +34,7 @@ import {
     reservationsApi,
     type CreatePaymentPayload,
 } from '../../api/reservations';
+import InfoRow from '../../components/common/InfoRow';
 
 const statusColors: Record<string, 'warning' | 'success' | 'error' | 'info'> = {
     PENDIENTE: 'warning',
@@ -598,35 +599,3 @@ export default function ReservationDetailPage() {
     );
 }
 
-// Helper component for info rows
-function InfoRow({
-    label,
-    value,
-    valueColor,
-}: {
-    label: string;
-    value?: string | null;
-    valueColor?: string;
-}) {
-    return (
-        <Box
-            sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                py: 0.75,
-                '&:not(:last-child)': { borderBottom: '1px solid', borderColor: 'divider' },
-            }}
-        >
-            <Typography variant="body2" color="text.secondary">
-                {label}
-            </Typography>
-            <Typography
-                variant="body2"
-                fontWeight={600}
-                color={valueColor || 'text.primary'}
-            >
-                {value || '—'}
-            </Typography>
-        </Box>
-    );
-}
