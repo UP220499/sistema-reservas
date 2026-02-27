@@ -245,7 +245,6 @@ export default function ReservationDetailPage() {
                             label="Check-out"
                             value={dayjs(reserva.checkout_datetime).format('DD/MM/YYYY HH:mm')}
                         />
-                        <InfoRow label="Huéspedes" value={String(reserva.num_huespedes)} />
                         <InfoRow label="Origen" value={reserva.origen_reserva_code} />
                         {reserva.notas && (
                             <InfoRow label="Notas" value={reserva.notas} />
