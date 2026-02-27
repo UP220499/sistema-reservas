@@ -29,7 +29,7 @@ export interface Reserva {
     cliente_id: string;
     checkin_datetime: string;
     checkout_datetime: string;
-    num_huespedes: number;
+    num_huespedes?: number;
     total_reserva: string | null;
     notas: string | null;
     estatus_reserva_code: string;
