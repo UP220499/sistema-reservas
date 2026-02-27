@@ -186,10 +186,8 @@ export default function DashboardPage() {
                 </Grid>
 
                 {/* Availability Widget */}
-                <Grid size={{ xs: 12, md: 4 }}>
-                    <Box sx={{ height: 400 }}>
-                        <AvailabilityWidget />
-                    </Box>
+                <Grid size={{ xs: 12 }}>
+                    <AvailabilityWidget />
                 </Grid>
             </Grid>
         </Container>

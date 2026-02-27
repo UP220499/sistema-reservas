@@ -35,6 +35,7 @@ export interface TodayAvailability {
     ubicacion_id: string;
     nombre: string;
     status: 'DISPONIBLE' | 'OCUPADO' | 'MANTENIMIENTO';
+    tipo?: string;
     cliente?: string;
 }
 
