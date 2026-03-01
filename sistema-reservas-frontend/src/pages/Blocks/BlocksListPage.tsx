@@ -73,6 +73,8 @@ export default function BlocksListPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['blocks'] });
             queryClient.invalidateQueries({ queryKey: ['calendar'] });
+            queryClient.invalidateQueries({ queryKey: ['today-availability'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
             setCreateOpen(false);
             resetForm();
         },
@@ -84,6 +86,8 @@ export default function BlocksListPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['blocks'] });
             queryClient.invalidateQueries({ queryKey: ['calendar'] });
+            queryClient.invalidateQueries({ queryKey: ['today-availability'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
         },
         onError: (err) => setError(getErrorMessage(err)),
     });

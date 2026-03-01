@@ -19,6 +19,9 @@ const ACTIVE_RESERVATION_STATUSES = ['CONFIRMADA', 'EN_CURSO'] as const;
 /** Reservation statuses excluded from expected-revenue totals. */
 const EXCLUDED_REVENUE_STATUSES = ['CANCELADA'] as const;
 
+/** IANA timezone for all local-calendar calculations. */
+const MX_TZ = 'America/Mexico_City';
+
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
 /** Format a Date as 'YYYY-MM-DD' using local calendar. */
@@ -34,6 +37,64 @@ function localMonthStr(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   return `${y}-${m}`;
+}
+
+/**
+ * Returns the UTC offset for MX_TZ at the given instant, in milliseconds.
+ * CST = -6 h = -21 600 000 ms; CDT = -5 h = -18 000 000 ms.
+ */
+function getMxOffsetMs(at: Date): number {
+  const epochOf = (tz: string): number => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).formatToParts(at);
+    const g = (t: Intl.DateTimeFormatPartTypes): number =>
+      Number(parts.find((p) => p.type === t)?.value ?? 0);
+    return Date.UTC(
+      g('year'),
+      g('month') - 1,
+      g('day'),
+      g('hour'),
+      g('minute'),
+      g('second'),
+    );
+  };
+  return epochOf(MX_TZ) - epochOf('UTC');
+}
+
+/**
+ * Returns [todayStart, todayEnd) in MX_TZ expressed as UTC Date objects.
+ *
+ * Uses a shift-and-zero technique that is correct across CST ↔ CDT transitions:
+ *   1. Shift now into "MX-local epoch space" (now + offsetMs).
+ *   2. Zero out the sub-day portion via modulo.
+ *   3. Shift back to UTC.
+ *
+ * Manual test plan for getAvailabilityToday:
+ *   1. Create a reservation for today (any hour) with CONFIRMADA → shows OCUPADO.
+ *   2. Change status to CANCELADA → refetch shows DISPONIBLE immediately.
+ *   3. Change status back to CONFIRMADA → shows OCUPADO immediately.
+ *   4. Create a bloqueo_calendario for today with ACTIVO → shows OCUPADO.
+ *   5. Change block status to INACTIVO → shows DISPONIBLE immediately.
+ */
+function todayBoundsMx(): { todayStart: Date; todayEnd: Date } {
+  const now = new Date();
+  const offsetMs = getMxOffsetMs(now);
+  // Represent now in MX-local epoch space (as if MX offset were 0).
+  const mxEpochMs = now.getTime() + offsetMs;
+  // Zero out the intra-day portion → MX local midnight in shifted space.
+  const mxMidnightMs = mxEpochMs - (mxEpochMs % 86_400_000);
+  return {
+    todayStart: new Date(mxMidnightMs - offsetMs),
+    todayEnd: new Date(mxMidnightMs - offsetMs + 86_400_000),
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -122,7 +183,7 @@ export class ReportsService {
   // ── /reports/availability/today ─────────────────────────────────────────────
 
   async getAvailabilityToday(): Promise<TodayAvailabilityResponse> {
-    const now = new Date();
+    const { todayStart, todayEnd } = todayBoundsMx();
 
     // Single round-trip per resource type, no N+1.
     const [locations, activeReservations, activeBlocks] = await Promise.all([
@@ -131,11 +192,14 @@ export class ReportsService {
         select: { ubicacion_id: true, nombre: true },
         orderBy: { nombre: 'asc' },
       }),
-      // Reservations where now ∈ [checkin, checkout) AND status blocks availability.
+      // Reservations overlapping today [todayStart, todayEnd) whose status blocks
+      // availability. Overlap condition: checkin < todayEnd AND checkout > todayStart.
+      // Status changes (CANCELADA, COMPLETADA, NO_SHOW) are reflected immediately
+      // because bloquea_disponibilidad is read live from cat_estatus_reserva each call.
       this.prisma.reserva.findMany({
         where: {
-          checkin_datetime: { lte: now },
-          checkout_datetime: { gt: now },
+          checkin_datetime: { lt: todayEnd },
+          checkout_datetime: { gt: todayStart },
           cat_estatus_reserva: { bloquea_disponibilidad: true },
         },
         select: {
@@ -143,11 +207,11 @@ export class ReportsService {
           cliente: { select: { nombre: true } },
         },
       }),
-      // Active calendar blocks where now ∈ [inicio, fin).
+      // Active calendar blocks overlapping today.
       this.prisma.bloqueo_calendario.findMany({
         where: {
-          inicio_datetime: { lte: now },
-          fin_datetime: { gt: now },
+          inicio_datetime: { lt: todayEnd },
+          fin_datetime: { gt: todayStart },
           estatus_bloqueo: 'ACTIVO',
         },
         select: { ubicacion_id: true },

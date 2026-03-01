@@ -97,6 +97,11 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
         onSuccess: (result) => {
             queryClient.invalidateQueries({ queryKey: ['reservations'] });
             queryClient.invalidateQueries({ queryKey: ['calendar'] });
+            queryClient.invalidateQueries({ queryKey: ['today-availability'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            if (isEditing) {
+                queryClient.invalidateQueries({ queryKey: ['reservation', reservationId] });
+            }
             navigate(`/reservaciones/${result.reserva_id}`);
         },
         onError: (err) => setError(friendlyReservationError(getErrorMessage(err))),

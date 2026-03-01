@@ -49,10 +49,12 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
             return clientsApi.create(payload);
         },
         onSuccess: (result) => {
-            queryClient.invalidateQueries({ queryKey: ['clients'] });
+            queryClient.invalidateQueries({ queryKey: ['clients'], exact: false });
+            queryClient.refetchQueries({ queryKey: ['clients'], exact: false, type: 'active' });
             queryClient.invalidateQueries({ queryKey: ['clients-all'] });
             if (isEditing) {
                 queryClient.invalidateQueries({ queryKey: ['client', clientId] });
+                queryClient.refetchQueries({ queryKey: ['client', clientId] });
             }
             navigate(`/clientes/${result.cliente_id}`);
         },
