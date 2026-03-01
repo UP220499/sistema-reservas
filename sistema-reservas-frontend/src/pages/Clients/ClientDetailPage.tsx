@@ -123,7 +123,9 @@ export default function ClientDetailPage() {
         mutationFn: () => clientsApi.changeStatus(id!, !client?.activo),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['client', id] });
-            queryClient.invalidateQueries({ queryKey: ['clients'] });
+            queryClient.refetchQueries({ queryKey: ['client', id] });
+            queryClient.invalidateQueries({ queryKey: ['clients'], exact: false });
+            queryClient.refetchQueries({ queryKey: ['clients'], exact: false, type: 'active' });
             queryClient.invalidateQueries({ queryKey: ['clients-all'] });
             setConfirmStatusOpen(false);
         },
@@ -135,6 +137,8 @@ export default function ClientDetailPage() {
             clientsApi.addPhone(id!, payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['client', id] });
+            queryClient.refetchQueries({ queryKey: ['client', id] });
+            queryClient.invalidateQueries({ queryKey: ['clients'], exact: false });
             setPhoneDialogOpen(false);
             setNewPhone('');
             setPhoneError('');
@@ -147,6 +151,8 @@ export default function ClientDetailPage() {
             clientsApi.updatePhone(id!, phoneId, { telefono }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['client', id] });
+            queryClient.refetchQueries({ queryKey: ['client', id] });
+            queryClient.invalidateQueries({ queryKey: ['clients'], exact: false });
             setPhoneDialogOpen(false);
             setEditingPhone(null);
             setNewPhone('');
@@ -160,6 +166,8 @@ export default function ClientDetailPage() {
             clientsApi.updatePhone(id!, phoneId, { activo: false }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['client', id] });
+            queryClient.refetchQueries({ queryKey: ['client', id] });
+            queryClient.invalidateQueries({ queryKey: ['clients'], exact: false });
         },
         onError: (err) => setError(getErrorMessage(err)),
     });
@@ -168,8 +176,16 @@ export default function ClientDetailPage() {
         mutationFn: (phoneId: string) => clientsApi.setPrimaryPhone(id!, phoneId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['client', id] });
+            queryClient.refetchQueries({ queryKey: ['client', id] });
+            queryClient.invalidateQueries({ queryKey: ['clients'], exact: false });
         },
     });
+
+    const anyPhonePending =
+        addPhoneMutation.isPending ||
+        editPhoneMutation.isPending ||
+        deletePhoneMutation.isPending ||
+        setPrimaryMutation.isPending;
 
     if (isLoading) {
         return (
@@ -281,6 +297,7 @@ export default function ClientDetailPage() {
                                 size="small"
                                 startIcon={<AddIcon />}
                                 onClick={() => setPhoneDialogOpen(true)}
+                                disabled={anyPhonePending}
                             >
                                 Agregar
                             </Button>
@@ -302,6 +319,7 @@ export default function ClientDetailPage() {
                                         <ListItemSecondaryAction>
                                             <IconButton
                                                 size="small"
+                                                disabled={anyPhonePending}
                                                 onClick={() => {
                                                     setEditingPhone(phone);
                                                     const digits = phone.telefono.replace(/\D/g, '');
@@ -317,6 +335,7 @@ export default function ClientDetailPage() {
                                             <IconButton
                                                 size="small"
                                                 color="error"
+                                                disabled={anyPhonePending}
                                                 onClick={() => {
                                                     setPhoneToDelete(phone.cliente_telefono_id);
                                                     setDeletePhoneOpen(true);
@@ -327,6 +346,7 @@ export default function ClientDetailPage() {
                                             </IconButton>
                                             <IconButton
                                                 size="small"
+                                                disabled={anyPhonePending}
                                                 onClick={() =>
                                                     setPrimaryMutation.mutate(phone.cliente_telefono_id)
                                                 }

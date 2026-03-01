@@ -112,6 +112,8 @@ export default function ReservationDetailPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['payments', id] });
             queryClient.invalidateQueries({ queryKey: ['reservation', id] });
+            queryClient.invalidateQueries({ queryKey: ['reservations'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
             setPaymentDialogOpen(false);
             resetPaymentForm();
         },
@@ -124,6 +126,10 @@ export default function ReservationDetailPage() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['reservation', id] });
             queryClient.invalidateQueries({ queryKey: ['reservations'] });
+            queryClient.invalidateQueries({ queryKey: ['today-availability'] });
+            queryClient.refetchQueries({ queryKey: ['today-availability'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            queryClient.invalidateQueries({ queryKey: ['calendar'] });
             setStatusDialogOpen(false);
         },
         onError: (err) => setError(getErrorMessage(err)),
