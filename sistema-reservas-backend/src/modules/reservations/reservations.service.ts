@@ -21,6 +21,7 @@ import {
   toReservationHistoryEntry,
 } from './mappers/reservation-history.mapper';
 import { HISTORY_ACTION } from './constants/history-actions';
+import { DEFAULT_RESERVATION_STATUS } from '../../shared/reservation-statuses';
 
 @Injectable()
 export class ReservationsService {
@@ -179,7 +180,8 @@ export class ReservationsService {
           ubicacion_id: ubicacionId,
           checkin_datetime: checkin,
           checkout_datetime: checkout,
-          estatus_reserva_code: dto.estatus_reserva_code ?? 'CONFIRMADA',
+          estatus_reserva_code:
+            dto.estatus_reserva_code ?? DEFAULT_RESERVATION_STATUS,
           origen_reserva_code: dto.origen_reserva_code,
           total_reserva: totalReservaDecimal,
           notas: dto.notas ?? null,

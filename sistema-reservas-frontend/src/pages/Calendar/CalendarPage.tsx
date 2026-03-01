@@ -25,6 +25,7 @@ import dayjs from 'dayjs';
 import type { CalendarEvent } from '../../types';
 import { calendarApi } from '../../api/calendar';
 import { catalogsApi } from '../../api/reservations';
+import { statusHexColor, CALENDAR_STATUS_COLORS } from '../../utils/reservationStatus';
 
 const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const MONTHS_ES = [
@@ -42,18 +43,7 @@ const getEventColor = (
         }
         return '#78909c'; // Manual Block (Blue Grey)
     }
-
-    switch (event.estatus_reserva_code) {
-        case 'PENDIENTE':
-            return '#ff9800'; // Orange
-        case 'CANCELADA':
-            return '#ef5350'; // Red
-        case 'COMPLETADA':
-            return '#42a5f5'; // Blue
-        case 'CONFIRMADA':
-        default:
-            return defaultColor; // Primary (Green)
-    }
+    return statusHexColor(event.estatus_reserva_code, defaultColor);
 };
 
 export default function CalendarPage() {
@@ -215,15 +205,15 @@ export default function CalendarPage() {
             key={`${event.id}-${index}`}
             title={
                 event.tipo === 'RESERVA'
-                    ? `${event.cliente_nombre} — ${event.ubicacion_nombre}`
-                    : `Bloqueo — ${event.ubicacion_nombre} (clic para crear reservación)`
+                    ? `${event.cliente_nombre ?? '—'} — ${event.ubicacion_nombre ?? '—'}`
+                    : `Bloqueo — ${event.ubicacion_nombre ?? '—'} (clic para crear reservación)`
             }
             arrow
         >
             <Chip
                 label={
                     event.tipo === 'RESERVA'
-                        ? event.cliente_nombre?.split(' ')[0]
+                        ? (event.cliente_nombre?.split(' ')[0] ?? '?')
                         : 'Bloq.'
                 }
                 size="small"
@@ -470,9 +460,9 @@ export default function CalendarPage() {
                     <Typography variant="subtitle2" color="text.secondary">Estatus:</Typography>
                     {[
                         { label: 'Confirmada', color: theme.palette.primary.main },
-                        { label: 'Pendiente', color: '#ff9800' },
-                        { label: 'Cancelada', color: '#ef5350' },
-                        { label: 'Completada', color: '#42a5f5' },
+                        { label: 'Pendiente', color: CALENDAR_STATUS_COLORS.PENDIENTE },
+                        { label: 'Cancelada', color: CALENDAR_STATUS_COLORS.CANCELADA },
+                        { label: 'Completada', color: CALENDAR_STATUS_COLORS.COMPLETADA },
                         { label: 'Bloqueo', color: '#78909c' },
                     ].map(({ label, color }) => (
                         <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>

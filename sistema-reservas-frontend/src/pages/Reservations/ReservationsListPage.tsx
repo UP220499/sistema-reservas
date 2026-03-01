@@ -29,13 +29,7 @@ import {
     type ReservationFilters,
 } from '../../api/reservations';
 import { displayCurrency } from '../../utils/display';
-
-const statusColors: Record<string, 'warning' | 'success' | 'error' | 'info'> = {
-    PENDIENTE: 'warning',
-    CONFIRMADA: 'success',
-    CANCELADA: 'error',
-    COMPLETADA: 'info',
-};
+import { statusLabel, statusChipColor } from '../../utils/reservationStatus';
 
 export default function ReservationsListPage() {
     const navigate = useNavigate();
@@ -226,11 +220,8 @@ export default function ReservationsListPage() {
                                         </TableCell>
                                         <TableCell>
                                             <Chip
-                                                label={reserva.estatus_reserva?.nombre || reserva.estatus_reserva_code}
-                                                color={
-                                                    statusColors[reserva.estatus_reserva_code] ||
-                                                    'default'
-                                                }
+                                                label={reserva.estatus_reserva?.nombre || statusLabel(reserva.estatus_reserva_code)}
+                                                color={statusChipColor(reserva.estatus_reserva_code)}
                                                 size="small"
                                             />
                                         </TableCell>

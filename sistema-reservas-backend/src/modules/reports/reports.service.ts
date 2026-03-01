@@ -7,17 +7,15 @@ import {
   TodayAvailabilityItem,
   TodayAvailabilityResponse,
 } from './reports.types';
+import {
+  ACTIVE_STATS_STATUSES,
+  EXCLUDED_REVENUE_STATUSES,
+} from '../../shared/reservation-statuses';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 /** Payment types that count as real income. */
 const INCOME_TYPES = ['ANTICIPO', 'LIQUIDACION'] as const;
-
-/** Reservation statuses that count as "active" for check-in/out/count. */
-const ACTIVE_RESERVATION_STATUSES = ['CONFIRMADA', 'EN_CURSO'] as const;
-
-/** Reservation statuses excluded from expected-revenue totals. */
-const EXCLUDED_REVENUE_STATUSES = ['CANCELADA'] as const;
 
 /** IANA timezone for all local-calendar calculations. */
 const MX_TZ = 'America/Mexico_City';
@@ -132,19 +130,19 @@ export class ReportsService {
     ] = await Promise.all([
       this.prisma.reserva.count({
         where: {
-          estatus_reserva_code: { in: [...ACTIVE_RESERVATION_STATUSES] },
+          estatus_reserva_code: { in: [...ACTIVE_STATS_STATUSES] },
           checkin_datetime: { gte: todayStart, lt: todayEnd },
         },
       }),
       this.prisma.reserva.count({
         where: {
-          estatus_reserva_code: { in: [...ACTIVE_RESERVATION_STATUSES] },
+          estatus_reserva_code: { in: [...ACTIVE_STATS_STATUSES] },
           checkout_datetime: { gte: todayStart, lt: todayEnd },
         },
       }),
       this.prisma.reserva.count({
         where: {
-          estatus_reserva_code: { in: [...ACTIVE_RESERVATION_STATUSES] },
+          estatus_reserva_code: { in: [...ACTIVE_STATS_STATUSES] },
         },
       }),
       // Sum of total_reserva for bookings whose check-in falls in the current

@@ -6,16 +6,10 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PaymentWithReservation } from '../mappers/payment.mapper';
+import { BLOCKED_PAYMENT_STATUSES } from '../../../shared/reservation-statuses';
 
 /** Payment types that represent real income for balance calculations. */
 const INCOME_PAYMENT_TYPES = ['ANTICIPO', 'LIQUIDACION'] as const;
-
-/** Reservation statuses for which new payments are not allowed. */
-const BLOCKED_PAYMENT_STATUSES = new Set<string>([
-  'CANCELADA',
-  'NO_SHOW',
-  'FINALIZADA',
-]);
 
 @Injectable()
 export class PaymentsRepository {

@@ -35,13 +35,12 @@ import {
     type CreatePaymentPayload,
 } from '../../api/reservations';
 import InfoRow from '../../components/common/InfoRow';
-
-const statusColors: Record<string, 'warning' | 'success' | 'error' | 'info'> = {
-    PENDIENTE: 'warning',
-    CONFIRMADA: 'success',
-    CANCELADA: 'error',
-    COMPLETADA: 'info',
-};
+import {
+    statusLabel,
+    statusChipColor,
+    canPay,
+    allowedStatusTransitions,
+} from '../../utils/reservationStatus';
 
 /** Returns an error message or '' if valid. */
 function validateAmount(monto: number, saldo: number): string {
@@ -204,21 +203,24 @@ export default function ReservationDetailPage() {
                 </Box>
                 <Chip
                     label={
-                        reserva.estatus_reserva?.nombre || reserva.estatus_reserva_code
+                        reserva.estatus_reserva?.nombre || statusLabel(reserva.estatus_reserva_code)
                     }
-                    color={statusColors[reserva.estatus_reserva_code] || 'default'}
+                    color={statusChipColor(reserva.estatus_reserva_code)}
                     sx={{ fontSize: '0.9rem', px: 1 }}
                 />
-                <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => {
-                        setNewStatus(reserva.estatus_reserva_code);
-                        setStatusDialogOpen(true);
-                    }}
-                >
-                    Cambiar Estatus
-                </Button>
+                {allowedStatusTransitions(reserva.estatus_reserva_code).length > 0 && (
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                            const transitions = allowedStatusTransitions(reserva.estatus_reserva_code);
+                            setNewStatus(transitions[0] ?? '');
+                            setStatusDialogOpen(true);
+                        }}
+                    >
+                        Cambiar Estatus
+                    </Button>
+                )}
             </Box>
 
             {error && (
@@ -297,16 +299,18 @@ export default function ReservationDetailPage() {
                         <Typography variant="subtitle2" color="text.secondary">
                             Pagos
                         </Typography>
-                        <Button
-                            size="small"
-                            startIcon={<AddIcon />}
-                            onClick={() => {
-                                resetPaymentForm();
-                                setPaymentDialogOpen(true);
-                            }}
-                        >
-                            Registrar Pago
-                        </Button>
+                        {canPay(reserva.estatus_reserva_code) && (
+                            <Button
+                                size="small"
+                                startIcon={<AddIcon />}
+                                onClick={() => {
+                                    resetPaymentForm();
+                                    setPaymentDialogOpen(true);
+                                }}
+                            >
+                                Registrar Pago
+                            </Button>
+                        )}
                     </Box>
                     <Divider sx={{ mb: 2 }} />
 
@@ -578,10 +582,11 @@ export default function ReservationDetailPage() {
                         fullWidth
                         sx={{ mt: 1 }}
                     >
-                        <MenuItem value="PENDIENTE">Pendiente</MenuItem>
-                        <MenuItem value="CONFIRMADA">Confirmada</MenuItem>
-                        <MenuItem value="CANCELADA">Cancelada</MenuItem>
-                        <MenuItem value="COMPLETADA">Completada</MenuItem>
+                        {allowedStatusTransitions(reserva.estatus_reserva_code).map((code) => (
+                            <MenuItem key={code} value={code}>
+                                {statusLabel(code)}
+                            </MenuItem>
+                        ))}
                     </TextField>
                     {newStatus === 'CANCELADA' && (
                         <Alert severity="warning" sx={{ mt: 2 }}>
