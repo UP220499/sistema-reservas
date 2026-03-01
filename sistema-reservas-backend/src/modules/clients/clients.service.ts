@@ -229,7 +229,43 @@ export class ClientsService {
           throw new NotFoundException('Client not found');
         }
 
-        const createdPhone = await tx.cliente_telefono.create({
+        // Check for an existing row with the same number regardless of activo.
+        const existing = await tx.cliente_telefono.findFirst({
+          where: { cliente_id: id, telefono },
+        });
+
+        if (existing) {
+          if (existing.activo) {
+            throw new BadRequestException(
+              'Phone number already exists for client',
+            );
+          }
+
+          // Reactivate the inactive row.
+          await tx.cliente_telefono.update({
+            where: { cliente_telefono_id: existing.cliente_telefono_id },
+            data: { activo: true },
+          });
+
+          if (esPrincipal) {
+            await tx.cliente_telefono.updateMany({
+              where: {
+                cliente_id: id,
+                cliente_telefono_id: { not: existing.cliente_telefono_id },
+              },
+              data: { es_principal: false },
+            });
+            await tx.cliente_telefono.update({
+              where: { cliente_telefono_id: existing.cliente_telefono_id },
+              data: { es_principal: true },
+            });
+          }
+          // else: keep the row's existing es_principal value unchanged.
+          return;
+        }
+
+        // Phone does not exist — create a new row.
+        const created = await tx.cliente_telefono.create({
           data: {
             cliente_id: id,
             telefono,
@@ -242,9 +278,7 @@ export class ClientsService {
           await tx.cliente_telefono.updateMany({
             where: {
               cliente_id: id,
-              cliente_telefono_id: {
-                not: createdPhone.cliente_telefono_id,
-              },
+              cliente_telefono_id: { not: created.cliente_telefono_id },
             },
             data: { es_principal: false },
           });
@@ -254,23 +288,20 @@ export class ClientsService {
               cliente_id: id,
               activo: true,
               es_principal: true,
-              cliente_telefono_id: {
-                not: createdPhone.cliente_telefono_id,
-              },
+              cliente_telefono_id: { not: created.cliente_telefono_id },
             },
           });
 
           if (!existingPrincipal) {
             await tx.cliente_telefono.update({
-              where: {
-                cliente_telefono_id: createdPhone.cliente_telefono_id,
-              },
+              where: { cliente_telefono_id: created.cliente_telefono_id },
               data: { es_principal: true },
             });
           }
         }
       });
     } catch (error) {
+      // Safety net for concurrent create race (P2002).
       this.handleUniqueViolation(
         error,
         'Phone number already exists for client',
