@@ -26,8 +26,12 @@ import {
     DialogActions,
     Alert,
     Skeleton,
+    IconButton,
+    Tooltip,
+    Divider,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import dayjs from 'dayjs';
 import {
     blocksApi,
@@ -58,6 +62,7 @@ export default function BlocksListPage() {
     });
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [blockToCancel, setBlockToCancel] = useState<string | null>(null);
+    const [detailBlock, setDetailBlock] = useState<import('../../types').Bloqueo | null>(null);
 
     const { data, isLoading } = useQuery({
         queryKey: qk.blocks.list(filters),
@@ -82,13 +87,27 @@ export default function BlocksListPage() {
         onError: (err) => setError(getErrorMessage(err)),
     });
 
+    const invalidateBlockQueries = () => {
+        queryClient.invalidateQueries({ queryKey: qk.blocks.list() });
+        queryClient.invalidateQueries({ queryKey: qk.calendar.events() });
+        queryClient.invalidateQueries({ queryKey: qk.dashboard.todayAvailability() });
+        queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
+    };
+
     const cancelMutation = useMutation({
         mutationFn: (id: string) => blocksApi.changeStatus(id, 'INACTIVO'),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: qk.blocks.list() });
-            queryClient.invalidateQueries({ queryKey: qk.calendar.events() });
-            queryClient.invalidateQueries({ queryKey: qk.dashboard.todayAvailability() });
-            queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
+            invalidateBlockQueries();
+            setDetailBlock(null);
+        },
+        onError: (err) => setError(getErrorMessage(err)),
+    });
+
+    const reactivateMutation = useMutation({
+        mutationFn: (id: string) => blocksApi.changeStatus(id, 'ACTIVO'),
+        onSuccess: () => {
+            invalidateBlockQueries();
+            setDetailBlock(null);
         },
         onError: (err) => setError(getErrorMessage(err)),
     });
@@ -234,25 +253,15 @@ export default function BlocksListPage() {
                                             />
                                         </TableCell>
                                         <TableCell align="center">
-                                            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
-                                                {block.estatus_bloqueo === 'ACTIVO' && block.origen_bloqueo_code === 'ICAL' && (
-                                                    <Button
+                                            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                                                <Tooltip title="Ver detalle">
+                                                    <IconButton
                                                         size="small"
-                                                        color="primary"
-                                                        variant="outlined"
-                                                        onClick={() => {
-                                                            const params = new URLSearchParams({
-                                                                from: 'bloqueo',
-                                                                ubicacion_id: block.ubicacion_id,
-                                                                checkin: dayjs(block.inicio_datetime).format('YYYY-MM-DDTHH:mm'),
-                                                                checkout: dayjs(block.fin_datetime).format('YYYY-MM-DDTHH:mm'),
-                                                            });
-                                                            navigate(`/reservaciones/nueva?${params.toString()}`);
-                                                        }}
+                                                        onClick={() => setDetailBlock(block)}
                                                     >
-                                                        Crear Reservación
-                                                    </Button>
-                                                )}
+                                                        <VisibilityIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
                                                 {block.estatus_bloqueo === 'ACTIVO' && (
                                                     <Button
                                                         size="small"
@@ -407,6 +416,122 @@ export default function BlocksListPage() {
                     }
                 }}
             />
+
+            {/* Block Detail Modal */}
+            <Dialog
+                open={detailBlock !== null}
+                onClose={() => setDetailBlock(null)}
+                maxWidth="sm"
+                fullWidth
+            >
+                {detailBlock && (
+                    <>
+                        <DialogTitle>
+                            Detalle del Bloqueo
+                        </DialogTitle>
+                        <DialogContent>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Typography variant="body2" color="text.secondary">Ubicación</Typography>
+                                    <Typography variant="body2" fontWeight={600}>
+                                        {detailBlock.ubicacion_nombre || detailBlock.ubicacion?.nombre || ubicaciones?.find(u => String(u.ubicacion_id) === String(detailBlock.ubicacion_id))?.nombre || '—'}
+                                    </Typography>
+                                </Box>
+                                <Divider />
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Typography variant="body2" color="text.secondary">Inicio</Typography>
+                                    <Typography variant="body2" fontWeight={600}>
+                                        {dayjs(detailBlock.inicio_datetime).format('DD/MM/YYYY HH:mm')}
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Typography variant="body2" color="text.secondary">Fin</Typography>
+                                    <Typography variant="body2" fontWeight={600}>
+                                        {dayjs(detailBlock.fin_datetime).format('DD/MM/YYYY HH:mm')}
+                                    </Typography>
+                                </Box>
+                                <Divider />
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="body2" color="text.secondary">Origen</Typography>
+                                    <Chip label={detailBlock.origen_bloqueo_code} size="small" variant="outlined" />
+                                </Box>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="body2" color="text.secondary">Estatus</Typography>
+                                    <Chip
+                                        label={detailBlock.estatus_bloqueo}
+                                        color={statusColors[detailBlock.estatus_bloqueo] || 'default'}
+                                        size="small"
+                                    />
+                                </Box>
+                                {detailBlock.external_uid && (
+                                    <>
+                                        <Divider />
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <Typography variant="body2" color="text.secondary">UID externo</Typography>
+                                            <Typography variant="body2" sx={{ fontSize: '0.75rem', wordBreak: 'break-all', maxWidth: '60%', textAlign: 'right' }}>
+                                                {detailBlock.external_uid}
+                                            </Typography>
+                                        </Box>
+                                    </>
+                                )}
+
+                                {detailBlock.origen_bloqueo_code === 'ICAL' && (
+                                    <Alert severity="info" sx={{ mt: 1 }}>
+                                        Este bloqueo proviene de una sincronización iCal (Airbnb). Los cambios de estatus pueden revertirse en el próximo sync.
+                                    </Alert>
+                                )}
+                            </Box>
+                        </DialogContent>
+                        <DialogActions sx={{ px: 3, pb: 2 }}>
+                            {detailBlock.estatus_bloqueo === 'ACTIVO' && detailBlock.origen_bloqueo_code === 'ICAL' && (
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => {
+                                        const params = new URLSearchParams({
+                                            from: 'bloqueo',
+                                            ubicacion_id: detailBlock.ubicacion_id,
+                                            checkin: dayjs(detailBlock.inicio_datetime).format('YYYY-MM-DDTHH:mm'),
+                                            checkout: dayjs(detailBlock.fin_datetime).format('YYYY-MM-DDTHH:mm'),
+                                        });
+                                        navigate(`/reservaciones/nueva?${params.toString()}`);
+                                    }}
+                                    sx={{ mr: 'auto' }}
+                                >
+                                    Crear Reservación
+                                </Button>
+                            )}
+                            <Button onClick={() => setDetailBlock(null)}>
+                                Cerrar
+                            </Button>
+                            {detailBlock.estatus_bloqueo === 'ACTIVO' && (
+                                <Button
+                                    variant="contained"
+                                    color="error"
+                                    onClick={() => {
+                                        cancelMutation.mutate(detailBlock.bloqueo_id);
+                                    }}
+                                    disabled={cancelMutation.isPending}
+                                >
+                                    {cancelMutation.isPending ? 'Cancelando...' : 'Cancelar Bloqueo'}
+                                </Button>
+                            )}
+                            {detailBlock.estatus_bloqueo === 'INACTIVO' && (
+                                <Button
+                                    variant="contained"
+                                    color="success"
+                                    onClick={() => {
+                                        reactivateMutation.mutate(detailBlock.bloqueo_id);
+                                    }}
+                                    disabled={reactivateMutation.isPending}
+                                >
+                                    {reactivateMutation.isPending ? 'Reactivando...' : 'Reactivar Bloqueo'}
+                                </Button>
+                            )}
+                        </DialogActions>
+                    </>
+                )}
+            </Dialog>
         </Box >
     );
 }

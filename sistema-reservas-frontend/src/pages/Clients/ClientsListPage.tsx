@@ -23,6 +23,7 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import SearchIcon from '@mui/icons-material/Search';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { clientsApi, type ClientFilters } from '../../api/clients';
 import type { LoyaltyInfo } from '../../types';
 
@@ -144,7 +145,7 @@ export default function ClientsListPage() {
                             {isLoading
                                 ? Array.from({ length: 5 }).map((_, i) => (
                                     <TableRow key={i}>
-                                        {Array.from({ length: 6 }).map((__, j) => (
+                                        {Array.from({ length: 7 }).map((__, j) => (
                                             <TableCell key={j}>
                                                 <Skeleton />
                                             </TableCell>
@@ -170,7 +171,27 @@ export default function ClientsListPage() {
                                                 {client.primary_phone || primaryPhone?.telefono || '—'}
                                             </TableCell>
                                             <TableCell align="center">
-                                                {client.reservas_completadas}
+                                                <Box
+                                                    component="span"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate(`/reservaciones?cliente_id=${client.cliente_id}`);
+                                                    }}
+                                                    sx={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.5,
+                                                        cursor: 'pointer',
+                                                        color: 'primary.main',
+                                                        fontWeight: 600,
+                                                        '&:hover': { textDecoration: 'underline' },
+                                                    }}
+                                                >
+                                                    {client.reservas_completadas ?? '—'}
+                                                    {client.reservas_completadas != null && (
+                                                        <OpenInNewIcon sx={{ fontSize: 14, opacity: 0.6 }} />
+                                                    )}
+                                                </Box>
                                                 {(client.es_vip || (client.reservas_completadas || 0) >= 3) && (
                                                     <Chip
                                                         label="Frecuente"
@@ -207,7 +228,7 @@ export default function ClientsListPage() {
 
                             {!isLoading && (!data?.items || data.items.length === 0) && (
                                 <TableRow>
-                                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                                         <Typography color="text.secondary">
                                             No se encontraron clientes
                                         </Typography>

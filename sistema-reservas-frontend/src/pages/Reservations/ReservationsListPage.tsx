@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { qk } from '../../utils/queryKeys';
 import {
@@ -34,9 +34,13 @@ import { statusLabel, statusChipColor } from '../../utils/reservationStatus';
 
 export default function ReservationsListPage() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const clienteIdParam = searchParams.get('cliente_id') || undefined;
+
     const [filters, setFilters] = useState<ReservationFilters>({
         page: 1,
         page_size: 10,
+        cliente_id: clienteIdParam,
     });
 
     const { data, isLoading } = useQuery({
@@ -85,6 +89,22 @@ export default function ReservationsListPage() {
 
             {/* Filters */}
             <Card sx={{ p: 2, mb: 3 }}>
+                {filters.cliente_id && (
+                    <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Chip
+                            label={`Filtrado por cliente`}
+                            color="primary"
+                            size="small"
+                            onDelete={() => {
+                                setFilters((prev) => ({ ...prev, cliente_id: undefined, page: 1 }));
+                                setSearchParams((prev) => {
+                                    prev.delete('cliente_id');
+                                    return prev;
+                                });
+                            }}
+                        />
+                    </Box>
+                )}
                 <Box
                     sx={{
                         display: 'flex',
