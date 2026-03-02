@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { qk } from '../../utils/queryKeys';
 import {
     Box,
     Typography,
@@ -39,7 +40,7 @@ export default function ReservationsListPage() {
     });
 
     const { data, isLoading } = useQuery({
-        queryKey: ['reservations', filters],
+        queryKey: qk.reservations.list(filters),
         queryFn: () => reservationsApi.findAll(filters),
     });
 

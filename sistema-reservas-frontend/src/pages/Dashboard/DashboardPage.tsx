@@ -1,6 +1,7 @@
 import { Box, Container, Grid, Typography, Paper, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { reportsApi, type OccupancyPoint, type RevenuePoint } from '../../api/reports';
+import { qk } from '../../utils/queryKeys';
 import StatsCard from '../../components/dashboard/StatsCard';
 import HotelIcon from '@mui/icons-material/Hotel';
 import LoginIcon from '@mui/icons-material/Login';
@@ -28,18 +29,18 @@ export default function DashboardPage() {
     const theme = useTheme();
 
     const { data: stats } = useQuery({
-        queryKey: ['dashboard-stats'],
+        queryKey: qk.dashboard.stats(),
         queryFn: reportsApi.getStats,
         refetchInterval: 30000, // Refresh every 30s
     });
 
     const { data: occupancy = [] } = useQuery<OccupancyPoint[]>({
-        queryKey: ['dashboard-occupancy'],
+        queryKey: qk.dashboard.occupancy(),
         queryFn: reportsApi.getOccupancy,
     });
 
     const { data: revenue = [] } = useQuery<RevenuePoint[]>({
-        queryKey: ['dashboard-revenue'],
+        queryKey: qk.dashboard.revenue(),
         queryFn: reportsApi.getRevenue,
     });
 

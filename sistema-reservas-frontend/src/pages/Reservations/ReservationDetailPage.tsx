@@ -41,6 +41,7 @@ import {
     canPay,
     allowedStatusTransitions,
 } from '../../utils/reservationStatus';
+import { qk } from '../../utils/queryKeys';
 
 /** Returns an error message or '' if valid. */
 function validateAmount(monto: number, saldo: number): string {
@@ -94,13 +95,13 @@ export default function ReservationDetailPage() {
     const [backendPaymentError, setBackendPaymentError] = useState<PaymentErrorDetail | null>(null);
 
     const { data: reserva, isLoading } = useQuery({
-        queryKey: ['reservation', id],
+        queryKey: qk.reservations.detail(id),
         queryFn: () => reservationsApi.findOne(id!),
         enabled: !!id,
     });
 
     const { data: payments, isLoading: paymentsLoading } = useQuery({
-        queryKey: ['payments', id],
+        queryKey: qk.reservations.payments(id),
         queryFn: () => reservationsApi.getPayments(id!),
         enabled: !!id,
     });
@@ -109,10 +110,10 @@ export default function ReservationDetailPage() {
         mutationFn: (payload: CreatePaymentPayload) =>
             reservationsApi.createPayment(id!, payload),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['payments', id] });
-            queryClient.invalidateQueries({ queryKey: ['reservation', id] });
-            queryClient.invalidateQueries({ queryKey: ['reservations'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            queryClient.invalidateQueries({ queryKey: qk.reservations.payments(id) });
+            queryClient.invalidateQueries({ queryKey: qk.reservations.detail(id) });
+            queryClient.invalidateQueries({ queryKey: qk.reservations.list() });
+            queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
             setPaymentDialogOpen(false);
             resetPaymentForm();
         },
@@ -123,12 +124,12 @@ export default function ReservationDetailPage() {
         mutationFn: (status: string) =>
             reservationsApi.changeStatus(id!, status),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['reservation', id] });
-            queryClient.invalidateQueries({ queryKey: ['reservations'] });
-            queryClient.invalidateQueries({ queryKey: ['today-availability'] });
-            queryClient.refetchQueries({ queryKey: ['today-availability'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-            queryClient.invalidateQueries({ queryKey: ['calendar'] });
+            queryClient.invalidateQueries({ queryKey: qk.reservations.detail(id) });
+            queryClient.invalidateQueries({ queryKey: qk.reservations.list() });
+            queryClient.invalidateQueries({ queryKey: qk.dashboard.todayAvailability() });
+            queryClient.refetchQueries({ queryKey: qk.dashboard.todayAvailability() });
+            queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
+            queryClient.invalidateQueries({ queryKey: qk.calendar.events() });
             setStatusDialogOpen(false);
         },
         onError: (err) => setError(getErrorMessage(err)),

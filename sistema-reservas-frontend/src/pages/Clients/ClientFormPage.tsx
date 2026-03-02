@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { qk } from '../../utils/queryKeys';
 import { Box, CircularProgress } from '@mui/material';
 import { clientsApi } from '../../api/clients';
 import ClientForm from '../../components/clients/ClientForm';
@@ -9,7 +10,7 @@ export default function ClientFormPage() {
     const isEditing = !!id;
 
     const { data: existingClient, isLoading } = useQuery({
-        queryKey: ['client', id],
+        queryKey: qk.clients.detail(id),
         queryFn: () => clientsApi.findOne(id!),
         enabled: isEditing,
     });

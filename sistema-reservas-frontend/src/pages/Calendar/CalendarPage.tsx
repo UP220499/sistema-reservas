@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { qk } from '../../utils/queryKeys';
 import {
     Box,
     Typography,
@@ -57,7 +58,7 @@ export default function CalendarPage() {
     const to = currentDate.endOf('month').add(7, 'day').toISOString();
 
     const { data, isLoading } = useQuery({
-        queryKey: ['calendar', from, to, filter],
+        queryKey: qk.calendar.events(from, to, filter),
         queryFn: () =>
             calendarApi.findAll({
                 from,
@@ -69,7 +70,7 @@ export default function CalendarPage() {
 
     // Fetch active locations for the legend
     const { data: locations } = useQuery({
-        queryKey: ['locations-calendar'],
+        queryKey: qk.calendar.locations(),
         queryFn: catalogsApi.getUbicaciones,
     });
 

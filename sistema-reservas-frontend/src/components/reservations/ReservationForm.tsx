@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import { qk } from '../../utils/queryKeys';
 import {
     Box,
     Typography,
@@ -61,13 +62,13 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
 
     // Load clients for dropdown
     const { data: clientsData } = useQuery({
-        queryKey: ['clients-all'],
+        queryKey: qk.clients.all(),
         queryFn: () => clientsApi.findAll({ pageSize: 100, active: true }),
     });
 
     // Load ubicaciones for dropdown
     const { data: ubicaciones } = useQuery({
-        queryKey: ['ubicaciones'],
+        queryKey: qk.ubicaciones(),
         queryFn: () => catalogsApi.getUbicaciones(),
     });
 
@@ -95,12 +96,12 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                 : reservationsApi.create(data);
         },
         onSuccess: (result) => {
-            queryClient.invalidateQueries({ queryKey: ['reservations'] });
-            queryClient.invalidateQueries({ queryKey: ['calendar'] });
-            queryClient.invalidateQueries({ queryKey: ['today-availability'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            queryClient.invalidateQueries({ queryKey: qk.reservations.list() });
+            queryClient.invalidateQueries({ queryKey: qk.calendar.events() });
+            queryClient.invalidateQueries({ queryKey: qk.dashboard.todayAvailability() });
+            queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
             if (isEditing) {
-                queryClient.invalidateQueries({ queryKey: ['reservation', reservationId] });
+                queryClient.invalidateQueries({ queryKey: qk.reservations.detail(reservationId) });
             }
             navigate(`/reservaciones/${result.reserva_id}`);
         },

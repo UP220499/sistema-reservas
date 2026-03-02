@@ -13,6 +13,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { reportsApi, type TodayAvailability } from '../../api/reports';
+import { qk } from '../../utils/queryKeys';
 
 type TodayAvailabilityResponse =
   | TodayAvailability[]
@@ -41,7 +42,7 @@ function borderColor(status: TodayAvailability['status']): string {
 export default function AvailabilityWidget() {
     const navigate = useNavigate();
     const { data } = useQuery<TodayAvailabilityResponse>({
-        queryKey: ['today-availability'],
+        queryKey: qk.dashboard.todayAvailability(),
         queryFn: () => reportsApi.getTodayAvailability(),
     });
 

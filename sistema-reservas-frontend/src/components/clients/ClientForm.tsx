@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { qk } from '../../utils/queryKeys';
 import {
     Box,
     Typography,
@@ -49,12 +50,12 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
             return clientsApi.create(payload);
         },
         onSuccess: (result) => {
-            queryClient.invalidateQueries({ queryKey: ['clients'], exact: false });
-            queryClient.refetchQueries({ queryKey: ['clients'], exact: false, type: 'active' });
-            queryClient.invalidateQueries({ queryKey: ['clients-all'] });
+            queryClient.invalidateQueries({ queryKey: qk.clients.list(), exact: false });
+            queryClient.refetchQueries({ queryKey: qk.clients.list(), exact: false, type: 'active' });
+            queryClient.invalidateQueries({ queryKey: qk.clients.all() });
             if (isEditing) {
-                queryClient.invalidateQueries({ queryKey: ['client', clientId] });
-                queryClient.refetchQueries({ queryKey: ['client', clientId] });
+                queryClient.invalidateQueries({ queryKey: qk.clients.detail(clientId) });
+                queryClient.refetchQueries({ queryKey: qk.clients.detail(clientId) });
             }
             navigate(`/clientes/${result.cliente_id}`);
         },

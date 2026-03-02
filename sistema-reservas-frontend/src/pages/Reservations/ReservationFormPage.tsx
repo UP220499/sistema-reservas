@@ -1,5 +1,6 @@
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { qk } from '../../utils/queryKeys';
 import { Box, CircularProgress } from '@mui/material';
 import { reservationsApi } from '../../api/reservations';
 import ReservationForm from '../../components/reservations/ReservationForm';
@@ -23,7 +24,7 @@ export default function ReservationFormPage() {
     };
 
     const { data: existing, isLoading } = useQuery({
-        queryKey: ['reservation', id],
+        queryKey: qk.reservations.detail(id),
         queryFn: () => reservationsApi.findOne(id!),
         enabled: isEditing,
     });

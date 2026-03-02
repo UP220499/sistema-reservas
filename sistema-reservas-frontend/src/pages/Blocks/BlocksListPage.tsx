@@ -3,6 +3,7 @@ import { getErrorMessage } from '../../utils/error';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { qk } from '../../utils/queryKeys';
 import { catalogsApi } from '../../api/reservations';
 import {
     Box,
@@ -59,22 +60,22 @@ export default function BlocksListPage() {
     const [blockToCancel, setBlockToCancel] = useState<string | null>(null);
 
     const { data, isLoading } = useQuery({
-        queryKey: ['blocks', filters],
+        queryKey: qk.blocks.list(filters),
         queryFn: () => blocksApi.findAll(filters),
     });
 
     const { data: ubicaciones } = useQuery({
-        queryKey: ['ubicaciones'],
+        queryKey: qk.ubicaciones(),
         queryFn: () => catalogsApi.getUbicaciones(),
     });
 
     const createMutation = useMutation({
         mutationFn: (payload: CreateBlockPayload) => blocksApi.create(payload),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['blocks'] });
-            queryClient.invalidateQueries({ queryKey: ['calendar'] });
-            queryClient.invalidateQueries({ queryKey: ['today-availability'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            queryClient.invalidateQueries({ queryKey: qk.blocks.list() });
+            queryClient.invalidateQueries({ queryKey: qk.calendar.events() });
+            queryClient.invalidateQueries({ queryKey: qk.dashboard.todayAvailability() });
+            queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
             setCreateOpen(false);
             resetForm();
         },
@@ -84,10 +85,10 @@ export default function BlocksListPage() {
     const cancelMutation = useMutation({
         mutationFn: (id: string) => blocksApi.changeStatus(id, 'INACTIVO'),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['blocks'] });
-            queryClient.invalidateQueries({ queryKey: ['calendar'] });
-            queryClient.invalidateQueries({ queryKey: ['today-availability'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+            queryClient.invalidateQueries({ queryKey: qk.blocks.list() });
+            queryClient.invalidateQueries({ queryKey: qk.calendar.events() });
+            queryClient.invalidateQueries({ queryKey: qk.dashboard.todayAvailability() });
+            queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
         },
         onError: (err) => setError(getErrorMessage(err)),
     });

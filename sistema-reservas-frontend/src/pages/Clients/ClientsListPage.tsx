@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { qk } from '../../utils/queryKeys';
 import {
     Box,
     Typography,
@@ -57,7 +58,7 @@ export default function ClientsListPage() {
     });
 
     const { data, isLoading } = useQuery({
-        queryKey: ['clients', filters],
+        queryKey: qk.clients.list(filters),
         queryFn: () => clientsApi.findAll(filters),
     });
 
