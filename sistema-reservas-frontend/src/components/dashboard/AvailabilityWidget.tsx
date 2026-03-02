@@ -94,6 +94,7 @@ export default function AvailabilityWidget() {
                                         borderColor: borderColor(item.status),
                                         borderRadius: 2,
                                         minWidth: 0,
+                                        minHeight: 80,
                                     }}
                                 >
                                     <Stack
@@ -117,15 +118,23 @@ export default function AvailabilityWidget() {
                                         />
                                     </Stack>
 
+                                    {/* OCUPADO: show tipo and client without the "— · por:" pattern */}
                                     {item.status === 'OCUPADO' && (
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                            sx={{ lineHeight: 1.4 }}
-                                        >
-                                            {item.tipo ?? '—'} · por:{' '}
-                                            {item.cliente ?? '—'}
-                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                                            {item.tipo && (
+                                                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4 }}>
+                                                    {item.tipo}
+                                                </Typography>
+                                            )}
+                                            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.4 }}>
+                                                {item.cliente ? (
+                                                    <>
+                                                        <Box component="span" sx={{ fontWeight: 600 }}>Cliente: </Box>
+                                                        {item.cliente}
+                                                    </>
+                                                ) : 'Ocupado'}
+                                            </Typography>
+                                        </Box>
                                     )}
 
                                     {item.status === 'DISPONIBLE' && (
@@ -140,7 +149,7 @@ export default function AvailabilityWidget() {
                                                         `/reservaciones/nueva?ubicacion_id=${item.ubicacion_id}`,
                                                     )
                                                 }
-                                                sx={{ fontSize: '0.7rem', py: 0.25 }}
+                                                sx={{ fontSize: '0.72rem', py: 0.3 }}
                                             >
                                                 Agendar
                                             </Button>
