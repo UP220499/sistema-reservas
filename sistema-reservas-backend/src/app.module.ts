@@ -24,7 +24,18 @@ import { ReportsModule } from './modules/reports/reports.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 10 }]),
+    ThrottlerModule.forRootAsync({
+      useFactory: () => {
+        const devMode =
+          process.env.NODE_ENV !== 'production' ||
+          process.env.THROTTLE_DISABLED === 'true';
+        // DEV: effectively unlimited (10 000 req / 60 s)
+        // PROD: 10 req / 60 s
+        return devMode
+          ? [{ ttl: 60_000, limit: 10_000 }]
+          : [{ ttl: 60_000, limit: 10 }];
+      },
+    }),
     PrismaModule,
     AuthModule,
     ClientsModule,

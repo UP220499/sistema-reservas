@@ -241,6 +241,7 @@ export default function ClientDetailPage() {
                     variant="outlined"
                     size="small"
                     color={client.activo ? 'error' : 'success'}
+                    disabled={toggleStatusMutation.isPending}
                     onClick={() => setConfirmStatusOpen(true)}
                 >
                     {client.activo ? 'Desactivar' : 'Activar'}
@@ -387,6 +388,7 @@ export default function ClientDetailPage() {
             <Dialog
                 open={phoneDialogOpen}
                 onClose={() => {
+                    if (anyPhonePending) return;
                     setPhoneDialogOpen(false);
                     setEditingPhone(null);
                     setNewPhone('');
@@ -420,17 +422,22 @@ export default function ClientDetailPage() {
                     />
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => {
-                        setPhoneDialogOpen(false);
-                        setEditingPhone(null);
-                        setNewPhone('');
-                        setPhoneError('');
-                    }}>
+                    <Button
+                        disabled={anyPhonePending}
+                        onClick={() => {
+                            if (anyPhonePending) return;
+                            setPhoneDialogOpen(false);
+                            setEditingPhone(null);
+                            setNewPhone('');
+                            setPhoneError('');
+                        }}
+                    >
                         Cancelar
                     </Button>
                     <Button
                         variant="contained"
                         onClick={() => {
+                            if (anyPhonePending) return;
                             if (editingPhone) {
                                 editPhoneMutation.mutate({
                                     id: editingPhone.cliente_telefono_id,
@@ -446,10 +453,10 @@ export default function ClientDetailPage() {
                         disabled={
                             newPhone.length !== 10 ||
                             !!phoneError ||
-                            (editingPhone ? editPhoneMutation.isPending : addPhoneMutation.isPending)
+                            anyPhonePending
                         }
                     >
-                        {editingPhone ? 'Guardar' : 'Agregar'}
+                        {anyPhonePending ? 'Guardando...' : (editingPhone ? 'Guardar' : 'Agregar')}
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -460,15 +467,16 @@ export default function ClientDetailPage() {
                 content="¿Estás seguro de eliminar este teléfono? Esta acción no se puede deshacer."
                 confirmText="Eliminar"
                 confirmColor="error"
+                isPending={deletePhoneMutation.isPending}
                 onClose={() => {
+                    if (deletePhoneMutation.isPending) return;
                     setDeletePhoneOpen(false);
                     setPhoneToDelete(null);
                 }}
                 onConfirm={() => {
-                    if (phoneToDelete) {
-                        deletePhoneMutation.mutate(phoneToDelete);
-                        setDeletePhoneOpen(false);
-                    }
+                    if (deletePhoneMutation.isPending || !phoneToDelete) return;
+                    deletePhoneMutation.mutate(phoneToDelete);
+                    setDeletePhoneOpen(false);
                 }}
             />
 
@@ -478,8 +486,10 @@ export default function ClientDetailPage() {
                 content={`¿Estás seguro de querer ${client.activo ? 'desactivar' : 'activar'} a este cliente? ${client.activo ? 'No podrá ser seleccionado para nuevas reservaciones.' : ''}`}
                 confirmText={client.activo ? 'Desactivar' : 'Activar'}
                 confirmColor={client.activo ? 'error' : 'primary'}
-                onClose={() => setConfirmStatusOpen(false)}
+                isPending={toggleStatusMutation.isPending}
+                onClose={() => { if (!toggleStatusMutation.isPending) setConfirmStatusOpen(false); }}
                 onConfirm={() => {
+                    if (toggleStatusMutation.isPending) return;
                     toggleStatusMutation.mutate();
                     setConfirmStatusOpen(false);
                 }}

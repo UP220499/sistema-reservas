@@ -149,6 +149,7 @@ export default function ReservationDetailPage() {
     };
 
     const handlePaymentSubmit = () => {
+        if (createPaymentMutation.isPending) return;
         const err = validateAmount(paymentForm.monto, saldoPendiente);
         if (err) {
             setAmountError(err);
@@ -212,6 +213,7 @@ export default function ReservationDetailPage() {
                     <Button
                         variant="outlined"
                         size="small"
+                        disabled={changeStatusMutation.isPending}
                         onClick={() => {
                             const transitions = allowedStatusTransitions(reserva.estatus_reserva_code);
                             setNewStatus(transitions[0] ?? '');
@@ -383,7 +385,7 @@ export default function ReservationDetailPage() {
             {/* Add Payment Dialog */}
             <Dialog
                 open={paymentDialogOpen}
-                onClose={() => setPaymentDialogOpen(false)}
+                onClose={() => { if (!createPaymentMutation.isPending) setPaymentDialogOpen(false); }}
                 maxWidth="sm"
                 fullWidth
             >
@@ -549,7 +551,12 @@ export default function ReservationDetailPage() {
                     </Box>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setPaymentDialogOpen(false)}>Cancelar</Button>
+                    <Button
+                        onClick={() => setPaymentDialogOpen(false)}
+                        disabled={createPaymentMutation.isPending}
+                    >
+                        Cancelar
+                    </Button>
                     <Button
                         variant="contained"
                         onClick={handlePaymentSubmit}
@@ -568,7 +575,7 @@ export default function ReservationDetailPage() {
             {/* Change Status Dialog */}
             <Dialog
                 open={statusDialogOpen}
-                onClose={() => setStatusDialogOpen(false)}
+                onClose={() => { if (!changeStatusMutation.isPending) setStatusDialogOpen(false); }}
                 maxWidth="xs"
                 fullWidth
             >
@@ -595,13 +602,21 @@ export default function ReservationDetailPage() {
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setStatusDialogOpen(false)}>Cancelar</Button>
                     <Button
-                        variant="contained"
-                        onClick={() => changeStatusMutation.mutate(newStatus)}
+                        onClick={() => setStatusDialogOpen(false)}
                         disabled={changeStatusMutation.isPending}
                     >
-                        Confirmar
+                        Cancelar
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={() => {
+                            if (changeStatusMutation.isPending) return;
+                            changeStatusMutation.mutate(newStatus);
+                        }}
+                        disabled={changeStatusMutation.isPending}
+                    >
+                        {changeStatusMutation.isPending ? 'Confirmando...' : 'Confirmar'}
                     </Button>
                 </DialogActions>
             </Dialog>
