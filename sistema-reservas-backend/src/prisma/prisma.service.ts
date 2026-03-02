@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call */
-
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { Pool, type PoolConfig } from 'pg';
+import { Pool } from 'pg';
 
 @Injectable()
 export class PrismaService
@@ -11,18 +9,10 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
-    const databaseUrl = process.env.DATABASE_URL;
+    const connectionString: string = process.env.DATABASE_URL ?? '';
 
-    if (!databaseUrl) {
-      throw new Error('DATABASE_URL environment variable is missing.');
-    }
-
-    const poolConfig: PoolConfig = {
-      connectionString: databaseUrl,
-    };
-
-    const pool = new Pool(poolConfig);
-    const adapter = new PrismaPg(pool);
+    const pool: Pool = new Pool({ connectionString });
+    const adapter: PrismaPg = new PrismaPg(pool);
 
     super({ adapter });
   }
