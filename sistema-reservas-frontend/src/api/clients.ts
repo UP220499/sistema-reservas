@@ -30,7 +30,9 @@ export const clientsApi = {
     findAll: async (
         filters: ClientFilters = {},
     ): Promise<PaginatedResponse<Cliente>> => {
-        const { data } = await api.get('/clients', { params: filters });
+        const { pageSize, ...rest } = filters;
+        const params = { ...rest, ...(pageSize !== undefined && { page_size: pageSize }) };
+        const { data } = await api.get('/clients', { params });
         return data;
     },
 

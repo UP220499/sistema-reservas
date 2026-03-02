@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { qk } from '../../utils/queryKeys';
 import {
+    Autocomplete,
     Box,
     Typography,
     Button,
@@ -18,19 +19,20 @@ import {
     IconButton,
     TextField,
     MenuItem,
-    InputAdornment,
     Skeleton,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import SearchIcon from '@mui/icons-material/Search';
 import dayjs from 'dayjs';
 import {
     reservationsApi,
+    catalogsApi,
     type ReservationFilters,
 } from '../../api/reservations';
+import { clientsApi } from '../../api/clients';
 import { displayCurrency } from '../../utils/display';
 import { statusLabel, statusChipColor } from '../../utils/reservationStatus';
+import type { Cliente, Ubicacion } from '../../types';
 
 export default function ReservationsListPage() {
     const navigate = useNavigate();
@@ -47,6 +49,29 @@ export default function ReservationsListPage() {
         queryKey: qk.reservations.list(filters),
         queryFn: () => reservationsApi.findAll(filters),
     });
+
+    const { data: clientesData, isLoading: clientesLoading } = useQuery({
+        queryKey: qk.clients.all(),
+        queryFn: () => clientsApi.findAll({ page: 1, pageSize: 200 }),
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const { data: ubicaciones, isLoading: ubicacionesLoading } = useQuery({
+        queryKey: qk.ubicaciones(),
+        queryFn: () => catalogsApi.getUbicaciones(),
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const clientesList: Cliente[] = clientesData?.items ?? [];
+    const ubicacionesList: Ubicacion[] = ubicaciones ?? [];
+
+    const selectedCliente = clientesList.find(
+        (c) => c.cliente_id === filters.cliente_id,
+    ) ?? null;
+
+    const selectedUbicacion = ubicacionesList.find(
+        (u) => u.ubicacion_id === filters.ubicacion_id,
+    ) ?? null;
 
     const handlePageChange = (_: unknown, newPage: number) => {
         setFilters((prev) => ({ ...prev, page: newPage + 1 }));
@@ -89,20 +114,33 @@ export default function ReservationsListPage() {
 
             {/* Filters */}
             <Card sx={{ p: 2, mb: 3 }}>
-                {filters.cliente_id && (
-                    <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Chip
-                            label={`Filtrado por cliente`}
-                            color="primary"
-                            size="small"
-                            onDelete={() => {
-                                setFilters((prev) => ({ ...prev, cliente_id: undefined, page: 1 }));
-                                setSearchParams((prev) => {
-                                    prev.delete('cliente_id');
-                                    return prev;
-                                });
-                            }}
-                        />
+                {/* Active filter chips */}
+                {(filters.cliente_id || filters.ubicacion_id) && (
+                    <Box sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        {filters.cliente_id && (
+                            <Chip
+                                label={`Cliente: ${selectedCliente?.nombre ?? 'Seleccionado'}`}
+                                color="primary"
+                                size="small"
+                                onDelete={() => {
+                                    setFilters((prev) => ({ ...prev, cliente_id: undefined, page: 1 }));
+                                    setSearchParams((prev) => {
+                                        prev.delete('cliente_id');
+                                        return prev;
+                                    });
+                                }}
+                            />
+                        )}
+                        {filters.ubicacion_id && (
+                            <Chip
+                                label={`Ubicación: ${selectedUbicacion?.nombre ?? 'Seleccionada'}`}
+                                color="secondary"
+                                size="small"
+                                onDelete={() => {
+                                    setFilters((prev) => ({ ...prev, ubicacion_id: undefined, page: 1 }));
+                                }}
+                            />
+                        )}
                     </Box>
                 )}
                 <Box
@@ -113,6 +151,52 @@ export default function ReservationsListPage() {
                         alignItems: 'center',
                     }}
                 >
+                    <Autocomplete<Cliente>
+                        options={clientesList}
+                        getOptionLabel={(opt) => opt.nombre}
+                        value={selectedCliente}
+                        onChange={(_e, val) => {
+                            const id = val?.cliente_id ?? undefined;
+                            setFilters((prev) => ({ ...prev, cliente_id: id, page: 1 }));
+                            setSearchParams((prev) => {
+                                if (id) prev.set('cliente_id', id);
+                                else prev.delete('cliente_id');
+                                return prev;
+                            });
+                        }}
+                        isOptionEqualToValue={(opt, val) => opt.cliente_id === val.cliente_id}
+                        loading={clientesLoading}
+                        loadingText="Cargando clientes…"
+                        renderInput={(params) => (
+                            <TextField {...params} label="Cliente" size="small" />
+                        )}
+                        size="small"
+                        sx={{ minWidth: 200 }}
+                        noOptionsText="Sin resultados"
+                    />
+
+                    <Autocomplete<Ubicacion>
+                        options={ubicacionesList}
+                        getOptionLabel={(opt) => opt.nombre}
+                        value={selectedUbicacion}
+                        onChange={(_e, val) => {
+                            setFilters((prev) => ({
+                                ...prev,
+                                ubicacion_id: val?.ubicacion_id ?? undefined,
+                                page: 1,
+                            }));
+                        }}
+                        isOptionEqualToValue={(opt, val) => opt.ubicacion_id === val.ubicacion_id}
+                        loading={ubicacionesLoading}
+                        loadingText="Cargando ubicaciones…"
+                        renderInput={(params) => (
+                            <TextField {...params} label="Ubicación" size="small" />
+                        )}
+                        size="small"
+                        sx={{ minWidth: 200 }}
+                        noOptionsText="Sin resultados"
+                    />
+
                     <TextField
                         select
                         label="Estatus"
@@ -170,21 +254,6 @@ export default function ReservationsListPage() {
                         }
                         slotProps={{ inputLabel: { shrink: true } }}
                         sx={{ minWidth: 160 }}
-                    />
-
-                    <TextField
-                        placeholder="Buscar por ubicación..."
-                        size="small"
-                        slotProps={{
-                            input: {
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                            },
-                        }}
-                        sx={{ minWidth: 200 }}
                     />
                 </Box>
             </Card>

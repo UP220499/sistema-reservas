@@ -26,6 +26,14 @@ export class ClientQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(500)
   pageSize: number = 20;
+
+  /** Snake-case alias accepted from the frontend (page_size takes priority over pageSize). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  page_size?: number;
 }

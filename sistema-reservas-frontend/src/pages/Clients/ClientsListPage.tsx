@@ -171,28 +171,30 @@ export default function ClientsListPage() {
                                                 {client.primary_phone || primaryPhone?.telefono || '—'}
                                             </TableCell>
                                             <TableCell align="center">
-                                                <Box
-                                                    component="span"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigate(`/reservaciones?cliente_id=${client.cliente_id}`);
-                                                    }}
-                                                    sx={{
-                                                        display: 'inline-flex',
-                                                        alignItems: 'center',
-                                                        gap: 0.5,
-                                                        cursor: 'pointer',
-                                                        color: 'primary.main',
-                                                        fontWeight: 600,
-                                                        '&:hover': { textDecoration: 'underline' },
-                                                    }}
-                                                >
-                                                    {client.reservas_completadas ?? '—'}
-                                                    {client.reservas_completadas != null && (
-                                                        <OpenInNewIcon sx={{ fontSize: 14, opacity: 0.6 }} />
-                                                    )}
-                                                </Box>
-                                                {(client.es_vip || (client.reservas_completadas || 0) >= 3) && (
+                                                {(() => {
+                                                    const reservas = client.loyalty?.reservas_completadas_count ?? client.reservas_completadas ?? 0;
+                                                    return (
+                                                        <>
+                                                            <Box
+                                                                component="span"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    navigate(`/reservaciones?cliente_id=${client.cliente_id}`);
+                                                                }}
+                                                                sx={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 0.5,
+                                                                    cursor: 'pointer',
+                                                                    color: 'primary.main',
+                                                                    fontWeight: 600,
+                                                                    '&:hover': { textDecoration: 'underline' },
+                                                                }}
+                                                            >
+                                                                {reservas}
+                                                                <OpenInNewIcon sx={{ fontSize: 14, opacity: 0.6 }} />
+                                                            </Box>
+                                                            {(client.es_vip || reservas >= 3) && (
                                                     <Chip
                                                         label="Frecuente"
                                                         color="secondary"
@@ -200,6 +202,9 @@ export default function ClientsListPage() {
                                                         sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
                                                     />
                                                 )}
+                                                        </>
+                                                    );
+                                                })()}
                                             </TableCell>
                                             <TableCell>
                                                 <LoyaltyChip loyalty={client.loyalty} />

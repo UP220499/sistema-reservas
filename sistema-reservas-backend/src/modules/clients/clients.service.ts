@@ -19,7 +19,7 @@ export class ClientsService {
 
   async findAll(query: ClientQueryDto) {
     const page = query.page ?? 1;
-    const pageSize = query.pageSize ?? 20;
+    const pageSize = query.page_size ?? query.pageSize ?? 20;
     const skip = (page - 1) * pageSize;
 
     const and: Prisma.clienteWhereInput[] = [];
