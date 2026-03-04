@@ -160,6 +160,35 @@ export class ReservationsService {
         throw new NotFoundException('Active location not found');
       }
 
+      // Block-to-reservation conversion: deactivate source block first
+      // so it no longer occupies the period in the exclusion constraint.
+      let airbnbExternalUid: string | null = null;
+
+      if (dto.source_block_id) {
+        const blockId = this.parseId(dto.source_block_id, 'source_block_id');
+        const block = await this.reservationsRepository.findBlock(tx, blockId);
+
+        if (!block) {
+          throw new NotFoundException('Source block not found');
+        }
+        if (block.origen_bloqueo_code !== 'AIRBNB') {
+          throw new BadRequestException(
+            'source_block_id must reference an AIRBNB block',
+          );
+        }
+        if (block.estatus_bloqueo !== 'ACTIVO') {
+          throw new BadRequestException('Source block is not active');
+        }
+        if (block.ubicacion_id !== ubicacionId) {
+          throw new BadRequestException(
+            'Source block location does not match ubicacion_id',
+          );
+        }
+
+        await this.reservationsRepository.deactivateBlock(tx, blockId);
+        airbnbExternalUid = block.external_uid ?? null;
+      }
+
       const overlapping =
         await this.reservationsRepository.findOverlappingReservation(tx, {
           ubicacionId,
@@ -185,6 +214,7 @@ export class ReservationsService {
           origen_reserva_code: dto.origen_reserva_code,
           total_reserva: totalReservaDecimal,
           notas: dto.notas ?? null,
+          airbnb_external_uid: airbnbExternalUid,
           created_by: auditUserId,
         },
       );
@@ -460,6 +490,10 @@ export class ReservationsService {
         select: {
           reserva_id: true,
           estatus_reserva_code: true,
+          ubicacion_id: true,
+          checkin_datetime: true,
+          checkout_datetime: true,
+          airbnb_external_uid: true,
         },
       });
 
@@ -469,45 +503,84 @@ export class ReservationsService {
 
       const statusRecord = await tx.cat_estatus_reserva.findUnique({
         where: { estatus_reserva_code: dto.estatus_reserva_code },
-        select: { estatus_reserva_code: true },
+        select: { estatus_reserva_code: true, bloquea_disponibilidad: true },
       });
 
       if (!statusRecord) {
         throw new BadRequestException('Invalid estatus_reserva_code');
       }
 
-      if (existing.estatus_reserva_code !== dto.estatus_reserva_code) {
-        const now = new Date();
-
-        const updateData: Prisma.reservaUpdateInput = {
-          cat_estatus_reserva: {
-            connect: { estatus_reserva_code: dto.estatus_reserva_code },
-          },
-          updated_at: now,
-          usuario_reserva_updated_byTousuario: {
-            connect: { usuario_id: auditUserId },
-          },
-        };
-
-        await tx.reserva.update({
-          where: { reserva_id: reservaId },
-          data: updateData,
-        });
-
-        const historyAction =
-          dto.estatus_reserva_code === 'CANCELADA'
-            ? HISTORY_ACTION.CANCELAR
-            : HISTORY_ACTION.EDITAR;
-
-        await this.reservationsRepository.createReservationHistory(tx, {
-          reserva: { connect: { reserva_id: reservaId } },
-          usuario: { connect: { usuario_id: auditUserId } },
-          accion: historyAction,
-          campo: 'estatus_reserva_code',
-          valor_anterior: existing.estatus_reserva_code,
-          valor_nuevo: dto.estatus_reserva_code,
-        });
+      if (existing.estatus_reserva_code === dto.estatus_reserva_code) {
+        return;
       }
+
+      const now = new Date();
+
+      // Before transitioning to a status that blocks availability, claim any
+      // lingering AIRBNB block that overlaps this reservation's period.
+      // This prevents the 23P01 exclusion-constraint violation on ocupacion_ubicacion.
+      let capturedExternalUid: string | null | undefined = undefined;
+
+      if (statusRecord.bloquea_disponibilidad) {
+        if (existing.airbnb_external_uid) {
+          // Idempotent: deactivate by UID — no-op if the block is already INACTIVO.
+          await this.reservationsRepository.deactivateAirbnbBlockByUid(tx, {
+            ubicacionId: existing.ubicacion_id,
+            externalUid: existing.airbnb_external_uid,
+          });
+        } else {
+          // No UID recorded yet: find and claim any overlapping AIRBNB block.
+          const block =
+            await this.reservationsRepository.findActiveAirbnbBlockOverlapping(
+              tx,
+              {
+                ubicacionId: existing.ubicacion_id,
+                checkin: existing.checkin_datetime,
+                checkout: existing.checkout_datetime,
+              },
+            );
+
+          if (block) {
+            await this.reservationsRepository.deactivateBlock(
+              tx,
+              block.bloqueo_id,
+            );
+            capturedExternalUid = block.external_uid ?? null;
+          }
+        }
+      }
+
+      const updateData: Prisma.reservaUpdateInput = {
+        cat_estatus_reserva: {
+          connect: { estatus_reserva_code: dto.estatus_reserva_code },
+        },
+        updated_at: now,
+        usuario_reserva_updated_byTousuario: {
+          connect: { usuario_id: auditUserId },
+        },
+        ...(capturedExternalUid !== undefined
+          ? { airbnb_external_uid: capturedExternalUid }
+          : {}),
+      };
+
+      await tx.reserva.update({
+        where: { reserva_id: reservaId },
+        data: updateData,
+      });
+
+      const historyAction =
+        dto.estatus_reserva_code === 'CANCELADA'
+          ? HISTORY_ACTION.CANCELAR
+          : HISTORY_ACTION.EDITAR;
+
+      await this.reservationsRepository.createReservationHistory(tx, {
+        reserva: { connect: { reserva_id: reservaId } },
+        usuario: { connect: { usuario_id: auditUserId } },
+        accion: historyAction,
+        campo: 'estatus_reserva_code',
+        valor_anterior: existing.estatus_reserva_code,
+        valor_nuevo: dto.estatus_reserva_code,
+      });
     });
 
     const reservation =

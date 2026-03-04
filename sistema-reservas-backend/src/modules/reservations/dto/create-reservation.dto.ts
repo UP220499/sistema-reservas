@@ -59,4 +59,8 @@ export class CreateReservationDto {
   @IsOptional()
   @IsString()
   notas?: string;
+
+  @IsOptional()
+  @IsString()
+  source_block_id?: string;
 }

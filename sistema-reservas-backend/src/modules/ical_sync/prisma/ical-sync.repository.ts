@@ -48,6 +48,21 @@ export class IcalSyncRepository {
         }
       }
 
+      // UIDs already converted to a reservation — do not recreate blocks.
+      const uids = [...eventsByUid.keys()];
+      const claimedRows = await tx.reserva.findMany({
+        where: { airbnb_external_uid: { in: uids } },
+        select: { airbnb_external_uid: true },
+      });
+      const claimedUids = new Set(
+        claimedRows
+          .map((r) => r.airbnb_external_uid)
+          .filter((v): v is string => v !== null),
+      );
+      for (const uid of claimedUids) {
+        eventsByUid.delete(uid);
+      }
+
       const deactivatedResult: Prisma.BatchPayload =
         await tx.bloqueo_calendario.updateMany({
           where: {

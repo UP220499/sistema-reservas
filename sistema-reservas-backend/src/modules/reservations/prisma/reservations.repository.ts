@@ -184,6 +184,52 @@ export class ReservationsRepository {
     });
   }
 
+  findBlock(prismaClient: PrismaClientOrTx, bloqueoId: bigint) {
+    return prismaClient.bloqueo_calendario.findUnique({
+      where: { bloqueo_id: bloqueoId },
+    });
+  }
+
+  findActiveAirbnbBlockOverlapping(
+    prismaClient: PrismaClientOrTx,
+    params: { ubicacionId: bigint; checkin: Date; checkout: Date },
+  ) {
+    const { ubicacionId, checkin, checkout } = params;
+    return prismaClient.bloqueo_calendario.findFirst({
+      where: {
+        ubicacion_id: ubicacionId,
+        origen_bloqueo_code: 'AIRBNB',
+        estatus_bloqueo: 'ACTIVO',
+        inicio_datetime: { lt: checkout },
+        fin_datetime: { gt: checkin },
+      },
+      orderBy: { inicio_datetime: 'asc' },
+      select: { bloqueo_id: true, external_uid: true },
+    });
+  }
+
+  deactivateBlock(prismaClient: Prisma.TransactionClient, bloqueoId: bigint) {
+    return prismaClient.bloqueo_calendario.update({
+      where: { bloqueo_id: bloqueoId },
+      data: { estatus_bloqueo: 'INACTIVO', updated_at: new Date() },
+    });
+  }
+
+  deactivateAirbnbBlockByUid(
+    prismaClient: Prisma.TransactionClient,
+    params: { ubicacionId: bigint; externalUid: string },
+  ) {
+    return prismaClient.bloqueo_calendario.updateMany({
+      where: {
+        ubicacion_id: params.ubicacionId,
+        origen_bloqueo_code: 'AIRBNB',
+        estatus_bloqueo: 'ACTIVO',
+        external_uid: params.externalUid,
+      },
+      data: { estatus_bloqueo: 'INACTIVO', updated_at: new Date() },
+    });
+  }
+
   get prismaClient() {
     return this.prisma;
   }
