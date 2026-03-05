@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { qk } from '../../utils/queryKeys';
+import axios from 'axios';
+import { getErrorMessage } from '../../utils/error';
 import {
     Box,
     Typography,
@@ -20,6 +22,8 @@ import {
     InputAdornment,
     MenuItem,
     Skeleton,
+    Snackbar,
+    Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -53,6 +57,12 @@ function LoyaltyChip({ loyalty }: { loyalty: LoyaltyInfo | undefined }) {
 
 export default function ClientsListPage() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
     const [filters, setFilters] = useState<ClientFilters>({
         page: 1,
         pageSize: 10,
@@ -78,6 +88,30 @@ export default function ClientsListPage() {
             return true;
         });
     }, [data?.items, loyaltyFilter, estadoFilter]);
+
+    const deactivateMutation = useMutation({
+        mutationFn: (id: string) => clientsApi.changeStatus(id, false),
+        onSuccess: (_, clientId) => {
+            queryClient.invalidateQueries({ queryKey: qk.clients.list() });
+            queryClient.invalidateQueries({ queryKey: qk.clients.detail(clientId) });
+            queryClient.invalidateQueries({ queryKey: qk.clients.all() });
+            setSnackbar({ open: true, message: 'Cliente desactivado correctamente.', severity: 'success' });
+        },
+        onError: (err) => {
+            let message = getErrorMessage(err);
+            if (axios.isAxiosError(err) && err.response?.status === 409) {
+                const d = err.response.data as Record<string, unknown>;
+                const count =
+                    typeof d?.count === 'number' ? d.count :
+                    typeof d?.reservaciones_activas_count === 'number' ? d.reservaciones_activas_count :
+                    null;
+                if (count !== null) {
+                    message = `${message} (${count} reservación${count !== 1 ? 'es' : ''} activa${count !== 1 ? 's' : ''})`;
+                }
+            }
+            setSnackbar({ open: true, message, severity: 'error' });
+        },
+    });
 
     const handleSearch = (value: string) => {
         setFilters((prev) => ({ ...prev, search: value, page: 1 }));
@@ -263,15 +297,30 @@ export default function ClientsListPage() {
                                                 />
                                             </TableCell>
                                             <TableCell align="center">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigate(`/clientes/${client.cliente_id}`);
-                                                    }}
-                                                >
-                                                    <VisibilityIcon fontSize="small" />
-                                                </IconButton>
+                                                <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/clientes/${client.cliente_id}`);
+                                                        }}
+                                                    >
+                                                        <VisibilityIcon fontSize="small" />
+                                                    </IconButton>
+                                                    {client.activo && (
+                                                        <Button
+                                                            size="small"
+                                                            color="error"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deactivateMutation.mutate(client.cliente_id);
+                                                            }}
+                                                            disabled={deactivateMutation.isPending}
+                                                        >
+                                                            Desactivar
+                                                        </Button>
+                                                    )}
+                                                </Box>
                                             </TableCell>
                                         </TableRow>
                                     );
@@ -306,6 +355,21 @@ export default function ClientsListPage() {
                     />
                 )}
             </Card>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    severity={snackbar.severity}
+                    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+                    variant="filled"
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }

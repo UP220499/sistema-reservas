@@ -37,6 +37,14 @@ export class BlocksService {
       throw new NotFoundException('Location not found');
     }
 
+    const origenCode = dto.origen_bloqueo_code?.trim() || 'MANUAL';
+
+    if (origenCode === 'AIRBNB') {
+      throw new BadRequestException(
+        'origen_bloqueo_code AIRBNB is not allowed for manual blocks',
+      );
+    }
+
     const data: Prisma.bloqueo_calendarioCreateInput = {
       inicio_datetime: startDate,
       fin_datetime: endDate,
@@ -44,7 +52,7 @@ export class BlocksService {
       external_uid: dto.external_uid ?? null,
       raw_payload: dto.raw_payload ?? null,
       cat_origen_bloqueo: {
-        connect: { origen_bloqueo_code: dto.origen_bloqueo_code },
+        connect: { origen_bloqueo_code: origenCode },
       },
       ubicacion: {
         connect: { ubicacion_id: ubicacionId },

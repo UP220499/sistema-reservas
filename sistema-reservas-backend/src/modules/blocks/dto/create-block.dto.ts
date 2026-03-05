@@ -1,7 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
   IsISO8601,
-  IsNotEmpty,
   IsNumberString,
   IsOptional,
   IsString,
@@ -14,12 +13,12 @@ export class CreateBlockDto {
   )
   ubicacion_id!: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : undefined,
   )
-  origen_bloqueo_code!: string;
+  origen_bloqueo_code?: string;
 
   @IsISO8601()
   @Transform(({ value }: { value: unknown }) =>

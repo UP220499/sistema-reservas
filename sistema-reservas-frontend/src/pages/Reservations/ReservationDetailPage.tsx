@@ -26,6 +26,7 @@ import {
     IconButton,
     Alert,
     Skeleton,
+    Snackbar,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
@@ -33,6 +34,7 @@ import dayjs from 'dayjs';
 import {
     reservationsApi,
     type CreatePaymentPayload,
+    type UpdateTimesPayload,
 } from '../../api/reservations';
 import InfoRow from '../../components/common/InfoRow';
 import {
@@ -93,6 +95,9 @@ export default function ReservationDetailPage() {
     const [error, setError] = useState('');
     const [amountError, setAmountError] = useState('');
     const [backendPaymentError, setBackendPaymentError] = useState<PaymentErrorDetail | null>(null);
+    const [timesDialogOpen, setTimesDialogOpen] = useState(false);
+    const [timesForm, setTimesForm] = useState({ checkinTime: '', checkoutTime: '' });
+    const [timesSnackbar, setTimesSnackbar] = useState({ open: false, message: '' });
 
     const { data: reserva, isLoading } = useQuery({
         queryKey: qk.reservations.detail(id),
@@ -118,6 +123,24 @@ export default function ReservationDetailPage() {
             resetPaymentForm();
         },
         onError: (err) => setBackendPaymentError(getPaymentErrorDetail(err)),
+    });
+
+    const updateTimesMutation = useMutation({
+        mutationFn: (payload: UpdateTimesPayload) =>
+            reservationsApi.updateTimes(id!, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: qk.reservations.detail(id) });
+            queryClient.invalidateQueries({ queryKey: qk.reservations.list() });
+            queryClient.invalidateQueries({ queryKey: qk.calendar.events() });
+            setTimesDialogOpen(false);
+        },
+        onError: (err) => {
+            const message =
+                axios.isAxiosError(err) && err.response?.status === 409
+                    ? 'Conflicto de horarios (traslape detectado)'
+                    : getErrorMessage(err);
+            setTimesSnackbar({ open: true, message });
+        },
     });
 
     const changeStatusMutation = useMutation({
@@ -210,6 +233,22 @@ export default function ReservationDetailPage() {
                     color={statusChipColor(reserva.estatus_reserva_code)}
                     sx={{ fontSize: '0.9rem', px: 1 }}
                 />
+                {['PENDIENTE', 'CONFIRMADA'].includes(reserva.estatus_reserva_code) && (
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        disabled={updateTimesMutation.isPending}
+                        onClick={() => {
+                            setTimesForm({
+                                checkinTime: dayjs(reserva.checkin_datetime).format('HH:mm'),
+                                checkoutTime: dayjs(reserva.checkout_datetime).format('HH:mm'),
+                            });
+                            setTimesDialogOpen(true);
+                        }}
+                    >
+                        Editar horas
+                    </Button>
+                )}
                 {allowedStatusTransitions(reserva.estatus_reserva_code).length > 0 && (
                     <Button
                         variant="outlined"
@@ -572,6 +611,89 @@ export default function ReservationDetailPage() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Edit Times Dialog */}
+            <Dialog
+                open={timesDialogOpen}
+                onClose={() => { if (!updateTimesMutation.isPending) setTimesDialogOpen(false); }}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle>Editar horas</DialogTitle>
+                <DialogContent>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary">
+                                Fecha Check-in (fija)
+                            </Typography>
+                            <Typography variant="body2" fontWeight={600}>
+                                {dayjs(reserva.checkin_datetime).format('DD/MM/YYYY')}
+                            </Typography>
+                            <TextField
+                                label="Hora Check-in"
+                                type="time"
+                                value={timesForm.checkinTime}
+                                onChange={(e) =>
+                                    setTimesForm((prev) => ({ ...prev, checkinTime: e.target.value }))
+                                }
+                                fullWidth
+                                sx={{ mt: 1 }}
+                                slotProps={{ inputLabel: { shrink: true } }}
+                            />
+                        </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary">
+                                Fecha Check-out (fija)
+                            </Typography>
+                            <Typography variant="body2" fontWeight={600}>
+                                {dayjs(reserva.checkout_datetime).format('DD/MM/YYYY')}
+                            </Typography>
+                            <TextField
+                                label="Hora Check-out"
+                                type="time"
+                                value={timesForm.checkoutTime}
+                                onChange={(e) =>
+                                    setTimesForm((prev) => ({ ...prev, checkoutTime: e.target.value }))
+                                }
+                                fullWidth
+                                sx={{ mt: 1 }}
+                                slotProps={{ inputLabel: { shrink: true } }}
+                            />
+                        </Box>
+                    </Box>
+                </DialogContent>
+                <DialogActions>
+                    <Button
+                        onClick={() => setTimesDialogOpen(false)}
+                        disabled={updateTimesMutation.isPending}
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        variant="contained"
+                        disabled={!timesForm.checkinTime || !timesForm.checkoutTime || updateTimesMutation.isPending}
+                        onClick={() => {
+                            if (updateTimesMutation.isPending) return;
+                            const checkinDate = dayjs(reserva.checkin_datetime).format('YYYY-MM-DD');
+                            const checkoutDate = dayjs(reserva.checkout_datetime).format('YYYY-MM-DD');
+                            updateTimesMutation.mutate({
+                                checkin_datetime: new Date(`${checkinDate}T${timesForm.checkinTime}`).toISOString(),
+                                checkout_datetime: new Date(`${checkoutDate}T${timesForm.checkoutTime}`).toISOString(),
+                            });
+                        }}
+                    >
+                        {updateTimesMutation.isPending ? 'Guardando...' : 'Guardar'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Snackbar
+                open={timesSnackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setTimesSnackbar((prev) => ({ ...prev, open: false }))}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                message={timesSnackbar.message}
+            />
 
             {/* Change Status Dialog */}
             <Dialog

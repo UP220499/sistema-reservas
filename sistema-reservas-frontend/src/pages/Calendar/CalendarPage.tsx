@@ -27,6 +27,7 @@ import type { CalendarEvent } from '../../types';
 import { calendarApi } from '../../api/calendar';
 import { catalogsApi } from '../../api/reservations';
 import { statusHexColor, CALENDAR_STATUS_COLORS } from '../../utils/reservationStatus';
+import { getBlockOriginColor, getBlockOriginLabel, BLOCK_ORIGIN_COLORS } from '../../api/blocks';
 
 const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const MONTHS_ES = [
@@ -39,10 +40,7 @@ const getEventColor = (
     defaultColor: string,
 ): string => {
     if (event.tipo === 'BLOQUEO') {
-        if (event.origen_bloqueo_code === 'ICAL') {
-            return '#FF5A5F'; // Airbnb Red
-        }
-        return '#78909c'; // Manual Block (Blue Grey)
+        return getBlockOriginColor(event.origen_bloqueo_code ?? '');
     }
     return statusHexColor(event.estatus_reserva_code, defaultColor);
 };
@@ -207,7 +205,7 @@ export default function CalendarPage() {
             title={
                 event.tipo === 'RESERVA'
                     ? `${event.cliente_nombre ?? '—'} — ${event.ubicacion_nombre ?? '—'}`
-                    : `Bloqueo — ${event.ubicacion_nombre ?? '—'} (clic para crear reservación)`
+                    : `Bloqueo ${getBlockOriginLabel(event.origen_bloqueo_code ?? '')} — ${event.ubicacion_nombre ?? '—'} (clic para crear reservación)`
             }
             arrow
         >
@@ -215,7 +213,9 @@ export default function CalendarPage() {
                 label={
                     event.tipo === 'RESERVA'
                         ? (event.cliente_nombre?.split(' ')[0] ?? '?')
-                        : 'Bloq.'
+                        : event.origen_bloqueo_code === 'AIRBNB'
+                            ? 'iCal'
+                            : 'Man.'
                 }
                 size="small"
                 onClick={(e) => {
@@ -464,7 +464,8 @@ export default function CalendarPage() {
                         { label: 'Pendiente', color: CALENDAR_STATUS_COLORS.PENDIENTE },
                         { label: 'Cancelada', color: CALENDAR_STATUS_COLORS.CANCELADA },
                         { label: 'Completada', color: CALENDAR_STATUS_COLORS.COMPLETADA },
-                        { label: 'Bloqueo', color: '#78909c' },
+                        { label: 'Bloqueo Manual', color: BLOCK_ORIGIN_COLORS.MANUAL },
+                        { label: 'Bloqueo iCal', color: BLOCK_ORIGIN_COLORS.AIRBNB },
                     ].map(({ label, color }) => (
                         <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             <Box

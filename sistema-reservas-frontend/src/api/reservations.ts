@@ -39,6 +39,11 @@ export interface CreatePaymentPayload {
     notas?: string;
 }
 
+export interface UpdateTimesPayload {
+    checkin_datetime: string;
+    checkout_datetime: string;
+}
+
 export const reservationsApi = {
     findAll: async (
         filters: ReservationFilters = {},
@@ -72,6 +77,14 @@ export const reservationsApi = {
         const { data } = await api.patch(`/reservations/${id}/status`, {
             estatus_reserva_code,
         });
+        return data;
+    },
+
+    updateTimes: async (
+        id: string,
+        payload: UpdateTimesPayload,
+    ): Promise<Reserva> => {
+        const { data } = await api.patch(`/reservations/${id}/times`, payload);
         return data;
     },
 

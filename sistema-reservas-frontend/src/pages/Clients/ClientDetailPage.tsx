@@ -124,9 +124,7 @@ export default function ClientDetailPage() {
         mutationFn: () => clientsApi.changeStatus(id!, !client?.activo),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: qk.clients.detail(id) });
-            queryClient.refetchQueries({ queryKey: qk.clients.detail(id) });
-            queryClient.invalidateQueries({ queryKey: qk.clients.list(), exact: false });
-            queryClient.refetchQueries({ queryKey: qk.clients.list(), exact: false, type: 'active' });
+            queryClient.invalidateQueries({ queryKey: qk.clients.list() });
             queryClient.invalidateQueries({ queryKey: qk.clients.all() });
             setConfirmStatusOpen(false);
         },
@@ -138,8 +136,7 @@ export default function ClientDetailPage() {
             clientsApi.addPhone(id!, payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: qk.clients.detail(id) });
-            queryClient.refetchQueries({ queryKey: qk.clients.detail(id) });
-            queryClient.invalidateQueries({ queryKey: qk.clients.list(), exact: false });
+            queryClient.invalidateQueries({ queryKey: qk.clients.list() });
             setPhoneDialogOpen(false);
             setNewPhone('');
             setPhoneError('');
@@ -152,8 +149,7 @@ export default function ClientDetailPage() {
             clientsApi.updatePhone(id!, phoneId, { telefono }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: qk.clients.detail(id) });
-            queryClient.refetchQueries({ queryKey: qk.clients.detail(id) });
-            queryClient.invalidateQueries({ queryKey: qk.clients.list(), exact: false });
+            queryClient.invalidateQueries({ queryKey: qk.clients.list() });
             setPhoneDialogOpen(false);
             setEditingPhone(null);
             setNewPhone('');
@@ -167,8 +163,7 @@ export default function ClientDetailPage() {
             clientsApi.updatePhone(id!, phoneId, { activo: false }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: qk.clients.detail(id) });
-            queryClient.refetchQueries({ queryKey: qk.clients.detail(id) });
-            queryClient.invalidateQueries({ queryKey: qk.clients.list(), exact: false });
+            queryClient.invalidateQueries({ queryKey: qk.clients.list() });
         },
         onError: (err) => setError(getErrorMessage(err)),
     });
@@ -177,8 +172,7 @@ export default function ClientDetailPage() {
         mutationFn: (phoneId: string) => clientsApi.setPrimaryPhone(id!, phoneId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: qk.clients.detail(id) });
-            queryClient.refetchQueries({ queryKey: qk.clients.detail(id) });
-            queryClient.invalidateQueries({ queryKey: qk.clients.list(), exact: false });
+            queryClient.invalidateQueries({ queryKey: qk.clients.list() });
         },
     });
 

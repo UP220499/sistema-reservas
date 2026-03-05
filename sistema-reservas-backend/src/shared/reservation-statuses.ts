@@ -18,6 +18,17 @@ export const ACTIVE_STATS_STATUSES = ['CONFIRMADA', 'EN_CURSO'] as const;
 export const EXCLUDED_REVENUE_STATUSES = ['CANCELADA'] as const;
 
 /**
+ * Statuses that block client deactivation.
+ * A client with a reservation in any of these states still has open
+ * commitments; the operation must be resolved before deactivating.
+ */
+export const BLOCKING_CLIENT_DEACTIVATION_STATUSES = new Set<string>([
+  'PENDIENTE',
+  'CONFIRMADA',
+  'EN_CURSO',
+]);
+
+/**
  * Statuses for which registering a new payment is forbidden.
  *
  * These are terminal or voided states; no new charges should be applied:

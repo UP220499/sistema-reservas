@@ -13,6 +13,7 @@ import { ReservationsService } from './reservations.service';
 import { ReservationQueryDto } from './dto/reservation-query.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
+import { UpdateReservationTimesDto } from './dto/update-reservation-times.dto';
 import { ChangeReservationStatusDto } from './dto/change-reservation-status.dto';
 import { ReservationHistoryQueryDto } from './dto/reservation-history-query.dto';
 import { RequireUser } from '../../common/decorators/require-user.decorator';
@@ -83,6 +84,29 @@ export class ReservationsController {
     @AuditUserId() auditUserId?: bigint,
   ) {
     return this.reservationsService.update(reservationId, dto, auditUserId);
+  }
+
+  /*
+    Sample payload:
+    {
+      "checkin_datetime": "2026-02-10T15:00:00.000Z",
+      "checkout_datetime": "2026-02-12T11:00:00.000Z"
+    }
+    Required header: x-user-id: 42
+    Allowed statuses: PENDIENTE, CONFIRMADA
+  */
+  @Patch(':reservation_id/times')
+  @RequireUser()
+  changeTimes(
+    @Param('reservation_id') reservationId: string,
+    @Body() dto: UpdateReservationTimesDto,
+    @AuditUserId() auditUserId?: bigint,
+  ) {
+    return this.reservationsService.changeTimes(
+      reservationId,
+      dto,
+      auditUserId,
+    );
   }
 
   /*

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { UpdateClientDto } from './dto/update-client.dto';
 import { AddPhoneDto } from './dto/add-phone.dto';
 import { UpdatePhoneDto } from './dto/update-phone.dto';
 import { LoyaltyInfo, computeLoyalty } from './loyalty/loyalty';
+import { BLOCKING_CLIENT_DEACTIVATION_STATUSES } from '../../shared/reservation-statuses';
 
 @Injectable()
 export class ClientsService {
@@ -185,6 +187,25 @@ export class ClientsService {
 
         if (!client) {
           throw new NotFoundException('Client not found');
+        }
+
+        if (!active) {
+          const activeReservationsCount = await tx.reserva.count({
+            where: {
+              cliente_id: id,
+              estatus_reserva_code: {
+                in: [...BLOCKING_CLIENT_DEACTIVATION_STATUSES],
+              },
+            },
+          });
+
+          if (activeReservationsCount > 0) {
+            throw new ConflictException({
+              message:
+                'Client has active reservations and cannot be deactivated',
+              active_reservations_count: activeReservationsCount,
+            });
+          }
         }
 
         if (active) {

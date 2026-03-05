@@ -35,6 +35,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import dayjs from 'dayjs';
 import {
     blocksApi,
+    getBlockOriginLabel,
     type BlockFilters,
     type CreateBlockPayload,
 } from '../../api/blocks';
@@ -131,6 +132,7 @@ export default function BlocksListPage() {
         }
         createMutation.mutate({
             ...form,
+            origen_bloqueo_code: 'MANUAL',
             inicio_datetime: new Date(form.inicio_datetime).toISOString(),
             fin_datetime: new Date(form.fin_datetime).toISOString(),
         });
@@ -291,7 +293,7 @@ export default function BlocksListPage() {
                                         </TableCell>
                                         <TableCell>
                                             <Chip
-                                                label={block.origen_bloqueo_code}
+                                                label={getBlockOriginLabel(block.origen_bloqueo_code)}
                                                 size="small"
                                                 variant="outlined"
                                             />
@@ -403,10 +405,10 @@ export default function BlocksListPage() {
 
                         <TextField
                             label="Origen"
-                            value="MANUAL"
+                            value={getBlockOriginLabel('MANUAL')}
                             fullWidth
                             disabled
-                            helperText="Los bloqueos iCal se crean automáticamente desde Airbnb"
+                            helperText="Creado desde el sistema"
                         />
 
                         <TextField
@@ -506,7 +508,7 @@ export default function BlocksListPage() {
                                 <Divider />
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <Typography variant="body2" color="text.secondary">Origen</Typography>
-                                    <Chip label={detailBlock.origen_bloqueo_code} size="small" variant="outlined" />
+                                    <Chip label={getBlockOriginLabel(detailBlock.origen_bloqueo_code)} size="small" variant="outlined" />
                                 </Box>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <Typography variant="body2" color="text.secondary">Estatus</Typography>
@@ -528,7 +530,7 @@ export default function BlocksListPage() {
                                     </>
                                 )}
 
-                                {detailBlock.origen_bloqueo_code === 'ICAL' && (
+                                {detailBlock.origen_bloqueo_code === 'AIRBNB' && (
                                     <Alert severity="info" sx={{ mt: 1 }}>
                                         Este bloqueo proviene de una sincronización iCal (Airbnb). Los cambios de estatus pueden revertirse en el próximo sync.
                                     </Alert>
@@ -536,7 +538,7 @@ export default function BlocksListPage() {
                             </Box>
                         </DialogContent>
                         <DialogActions sx={{ px: 3, pb: 2 }}>
-                            {detailBlock.estatus_bloqueo === 'ACTIVO' && detailBlock.origen_bloqueo_code === 'ICAL' && (
+                            {detailBlock.estatus_bloqueo === 'ACTIVO' && detailBlock.origen_bloqueo_code === 'AIRBNB' && (
                                 <Button
                                     variant="outlined"
                                     size="small"

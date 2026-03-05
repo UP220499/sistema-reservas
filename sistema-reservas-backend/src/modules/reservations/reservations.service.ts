@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,6 +9,7 @@ import { ReservationsRepository } from './prisma/reservations.repository';
 import { ReservationQueryDto } from './dto/reservation-query.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
+import { UpdateReservationTimesDto } from './dto/update-reservation-times.dto';
 import { ChangeReservationStatusDto } from './dto/change-reservation-status.dto';
 import { ReservationHistoryQueryDto } from './dto/reservation-history-query.dto';
 import {
@@ -588,6 +590,113 @@ export class ReservationsService {
 
     if (!reservation) {
       throw new NotFoundException('Reservation not found after status change');
+    }
+
+    return toReservationDetail(reservation);
+  }
+
+  async changeTimes(
+    reservationId: string,
+    dto: UpdateReservationTimesDto,
+    auditUserId?: bigint,
+  ): Promise<ReservationDetail> {
+    if (auditUserId === undefined) {
+      throw new BadRequestException('Audit user is required');
+    }
+
+    const reservaId = this.parseId(reservationId, 'reservation_id');
+    const checkin = this.parseDate(dto.checkin_datetime, 'checkin_datetime');
+    const checkout = this.parseDate(dto.checkout_datetime, 'checkout_datetime');
+
+    if (checkout <= checkin) {
+      throw new BadRequestException(
+        'checkout_datetime must be greater than checkin_datetime',
+      );
+    }
+
+    const prisma = this.reservationsRepository.prismaClient;
+
+    await prisma.$transaction(async (tx) => {
+      const existing = await this.reservationsRepository.findByIdForUpdate(
+        tx,
+        reservaId,
+      );
+
+      if (!existing) {
+        throw new NotFoundException('Reservation not found');
+      }
+
+      if (
+        existing.estatus_reserva_code !== 'PENDIENTE' &&
+        existing.estatus_reserva_code !== 'CONFIRMADA'
+      ) {
+        throw new ConflictException(
+          'Reservation status does not allow time changes',
+        );
+      }
+
+      const checkinChanged =
+        existing.checkin_datetime.getTime() !== checkin.getTime();
+      const checkoutChanged =
+        existing.checkout_datetime.getTime() !== checkout.getTime();
+
+      if (!checkinChanged && !checkoutChanged) {
+        return;
+      }
+
+      const overlapping =
+        await this.reservationsRepository.findOverlappingReservation(tx, {
+          ubicacionId: existing.ubicacion_id,
+          checkin,
+          checkout,
+          excludeReservationId: reservaId,
+        });
+
+      if (overlapping) {
+        throw new BadRequestException(
+          'The selected location is already booked for the given period',
+        );
+      }
+
+      const now = new Date();
+
+      await this.reservationsRepository.updateReservation(tx, reservaId, {
+        checkin_datetime: checkin,
+        checkout_datetime: checkout,
+        updated_at: now,
+        usuario_reserva_updated_byTousuario: {
+          connect: { usuario_id: auditUserId },
+        },
+      });
+
+      if (checkinChanged) {
+        await this.reservationsRepository.createReservationHistory(tx, {
+          reserva: { connect: { reserva_id: reservaId } },
+          usuario: { connect: { usuario_id: auditUserId } },
+          accion: HISTORY_ACTION.REAGENDAR,
+          campo: 'checkin_datetime',
+          valor_anterior: existing.checkin_datetime.toISOString(),
+          valor_nuevo: checkin.toISOString(),
+        });
+      }
+
+      if (checkoutChanged) {
+        await this.reservationsRepository.createReservationHistory(tx, {
+          reserva: { connect: { reserva_id: reservaId } },
+          usuario: { connect: { usuario_id: auditUserId } },
+          accion: HISTORY_ACTION.REAGENDAR,
+          campo: 'checkout_datetime',
+          valor_anterior: existing.checkout_datetime.toISOString(),
+          valor_nuevo: checkout.toISOString(),
+        });
+      }
+    });
+
+    const reservation =
+      await this.reservationsRepository.findReservationWithRelations(reservaId);
+
+    if (!reservation) {
+      throw new NotFoundException('Reservation not found after update');
     }
 
     return toReservationDetail(reservation);

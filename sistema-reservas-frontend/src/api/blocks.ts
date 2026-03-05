@@ -1,6 +1,25 @@
 import api from './client';
 import type { Bloqueo, PaginatedResponse } from '../types';
 
+// ─── Block origin display helpers ────────────────────────────────────────────
+
+export const BLOCK_ORIGIN_COLORS = {
+    AIRBNB: '#7e57c2',
+    MANUAL: '#78909c',
+} as const;
+
+export function getBlockOriginLabel(code: string): string {
+    if (code === 'AIRBNB') return 'Airbnb (iCal)';
+    return 'Manual';
+}
+
+export function getBlockOriginColor(code: string): string {
+    if (code === 'AIRBNB') return BLOCK_ORIGIN_COLORS.AIRBNB;
+    return BLOCK_ORIGIN_COLORS.MANUAL;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface BlockFilters {
     page?: number;
     page_size?: number;
