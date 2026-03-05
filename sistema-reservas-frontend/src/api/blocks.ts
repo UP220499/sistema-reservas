@@ -8,6 +8,7 @@ export interface BlockFilters {
     from?: string;
     to?: string;
     estatus_bloqueo?: string;
+    origen_bloqueo_code?: string;
 }
 
 export interface CreateBlockPayload {

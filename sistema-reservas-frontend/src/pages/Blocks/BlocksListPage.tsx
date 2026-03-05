@@ -69,6 +69,8 @@ export default function BlocksListPage() {
         queryFn: () => blocksApi.findAll(filters),
     });
 
+    const filteredBlocks = data?.items ?? [];
+
     const { data: ubicaciones } = useQuery({
         queryKey: qk.ubicaciones(),
         queryFn: () => catalogsApi.getUbicaciones(),
@@ -197,6 +199,57 @@ export default function BlocksListPage() {
                         <MenuItem value="ACTIVO">Activo</MenuItem>
                         <MenuItem value="INACTIVO">Inactivo</MenuItem>
                     </TextField>
+
+                    <TextField
+                        select
+                        label="Origen"
+                        size="small"
+                        value={filters.origen_bloqueo_code || ''}
+                        onChange={(e) =>
+                            setFilters((prev) => ({
+                                ...prev,
+                                origen_bloqueo_code: e.target.value || undefined,
+                                page: 1,
+                            }))
+                        }
+                        sx={{ minWidth: 140 }}
+                    >
+                        <MenuItem value="">Todos</MenuItem>
+                        <MenuItem value="MANUAL">Manual</MenuItem>
+                        <MenuItem value="AIRBNB">Airbnb (iCal)</MenuItem>
+                    </TextField>
+
+                    <TextField
+                        type="date"
+                        label="Desde"
+                        size="small"
+                        value={filters.from || ''}
+                        onChange={(e) =>
+                            setFilters((prev) => ({
+                                ...prev,
+                                from: e.target.value || undefined,
+                                page: 1,
+                            }))
+                        }
+                        slotProps={{ inputLabel: { shrink: true } }}
+                        sx={{ minWidth: 160 }}
+                    />
+
+                    <TextField
+                        type="date"
+                        label="Hasta"
+                        size="small"
+                        value={filters.to || ''}
+                        onChange={(e) =>
+                            setFilters((prev) => ({
+                                ...prev,
+                                to: e.target.value || undefined,
+                                page: 1,
+                            }))
+                        }
+                        slotProps={{ inputLabel: { shrink: true } }}
+                        sx={{ minWidth: 160 }}
+                    />
                 </Box>
             </Card>
 
@@ -225,7 +278,7 @@ export default function BlocksListPage() {
                                         ))}
                                     </TableRow>
                                 ))
-                                : data?.items?.map((block) => (
+                                : filteredBlocks.map((block) => (
                                     <TableRow key={block.bloqueo_id} hover>
                                         <TableCell>
                                             {block.ubicacion_nombre || block.ubicacion?.nombre || ubicaciones?.find(u => String(u.ubicacion_id) === String(block.ubicacion_id))?.nombre || '—'}
@@ -280,7 +333,7 @@ export default function BlocksListPage() {
                                     </TableRow>
                                 ))}
 
-                            {!isLoading && (!data?.items || data.items.length === 0) && (
+                            {!isLoading && filteredBlocks.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
                                         <Typography color="text.secondary">

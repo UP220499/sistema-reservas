@@ -251,11 +251,11 @@ export default function ReservationDetailPage() {
                         <InfoRow label="Cliente" value={reserva.cliente?.nombre} />
                         <InfoRow
                             label="Check-in"
-                            value={dayjs(reserva.checkin_datetime).format('DD/MM/YYYY HH:mm')}
+                            value={dayjs(reserva.checkin_datetime).format('DD/MM/YYYY hh:mm A')}
                         />
                         <InfoRow
                             label="Check-out"
-                            value={dayjs(reserva.checkout_datetime).format('DD/MM/YYYY HH:mm')}
+                            value={dayjs(reserva.checkout_datetime).format('DD/MM/YYYY hh:mm A')}
                         />
                         <InfoRow label="Origen" value={reserva.origen_reserva_code} />
                         {reserva.notas && (
@@ -344,7 +344,7 @@ export default function ReservationDetailPage() {
                                     payments.map((pago) => (
                                         <TableRow key={pago.pago_movimiento_id}>
                                             <TableCell>
-                                                {dayjs(pago.fecha_pago).format('DD/MM/YYYY HH:mm')}
+                                                {dayjs(pago.fecha_pago).format('DD/MM/YYYY hh:mm A')}
                                             </TableCell>
                                             <TableCell>
                                                 <Chip

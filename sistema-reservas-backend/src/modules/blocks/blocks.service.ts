@@ -75,22 +75,31 @@ export class BlocksService {
 
     let fromDate: Date | undefined;
     if (query.from) {
-      fromDate = this.parseDate(query.from, 'from');
+      fromDate = this.parseLocalDay(query.from, 'from');
+      // overlap: block ends after the range start
       andFilters.push({ fin_datetime: { gt: fromDate } });
     }
 
-    let toDate: Date | undefined;
+    // toDate is the exclusive upper bound: start-of-day(to) + 1 day
+    // so that "to=today" includes blocks that start on today.
+    let toExclusive: Date | undefined;
     if (query.to) {
-      toDate = this.parseDate(query.to, 'to');
-      andFilters.push({ inicio_datetime: { lt: toDate } });
+      const toStart = this.parseLocalDay(query.to, 'to');
+      toExclusive = new Date(toStart.getTime() + 24 * 60 * 60 * 1000);
+      // overlap: block starts before the exclusive upper bound
+      andFilters.push({ inicio_datetime: { lt: toExclusive } });
     }
 
-    if (fromDate && toDate && toDate <= fromDate) {
-      throw new BadRequestException('to must be greater than from');
+    if (fromDate && toExclusive && toExclusive <= fromDate) {
+      throw new BadRequestException('to must be greater than or equal to from');
     }
 
     if (query.estatus_bloqueo) {
       andFilters.push({ estatus_bloqueo: query.estatus_bloqueo });
+    }
+
+    if (query.origen_bloqueo_code) {
+      andFilters.push({ origen_bloqueo_code: query.origen_bloqueo_code });
     }
 
     const where: Prisma.bloqueo_calendarioWhereInput =
@@ -168,6 +177,23 @@ export class BlocksService {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
       throw new BadRequestException(`${field} must be a valid ISO date`);
+    }
+    return date;
+  }
+
+  // Parses a YYYY-MM-DD (or full ISO datetime) string as LOCAL midnight.
+  // A bare date string like "2026-03-09" is spec-parsed as UTC by `new Date()`,
+  // which can shift the boundary by hours. Appending T00:00:00 (no Z) forces
+  // local-time interpretation.
+  private parseLocalDay(value: string, field: string): Date {
+    const normalized = /^\d{4}-\d{2}-\d{2}$/.test(value.trim())
+      ? `${value.trim()}T00:00:00`
+      : value.trim();
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestException(
+        `${field} must be a valid date (YYYY-MM-DD)`,
+      );
     }
     return date;
   }

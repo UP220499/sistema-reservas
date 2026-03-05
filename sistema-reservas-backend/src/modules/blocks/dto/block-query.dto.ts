@@ -82,4 +82,11 @@ export class BlockQueryDto {
     typeof value === 'string' ? value.trim() : undefined,
   )
   estatus_bloqueo?: string;
+
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : undefined,
+  )
+  origen_bloqueo_code?: string;
 }

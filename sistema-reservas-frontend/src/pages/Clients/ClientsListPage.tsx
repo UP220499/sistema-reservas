@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { qk } from '../../utils/queryKeys';
@@ -18,6 +18,7 @@ import {
     IconButton,
     TextField,
     InputAdornment,
+    MenuItem,
     Skeleton,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -25,7 +26,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import SearchIcon from '@mui/icons-material/Search';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import { clientsApi, type ClientFilters } from '../../api/clients';
-import type { LoyaltyInfo } from '../../types';
+import type { Cliente, LoyaltyInfo } from '../../types';
 
 const LOYALTY_COLOR: Record<string, 'default' | 'warning' | 'success' | 'secondary'> = {
     BRONCE: 'warning',
@@ -57,11 +58,26 @@ export default function ClientsListPage() {
         pageSize: 10,
         search: '',
     });
+    // Client-side filters (applied on current page since pagination is server-side)
+    const [loyaltyFilter, setLoyaltyFilter] = useState('');
+    const [estadoFilter, setEstadoFilter] = useState('');
 
     const { data, isLoading } = useQuery({
         queryKey: qk.clients.list(filters),
         queryFn: () => clientsApi.findAll(filters),
     });
+
+    // Filter items on the current page client-side.
+    // Pagination remains server-side; these filters narrow displayed rows within the page.
+    const filteredItems: Cliente[] = useMemo(() => {
+        const items = data?.items ?? [];
+        return items.filter((c) => {
+            if (loyaltyFilter && (c.loyalty?.nivel_loyalty ?? '') !== loyaltyFilter) return false;
+            if (estadoFilter === 'activo' && !c.activo) return false;
+            if (estadoFilter === 'inactivo' && c.activo) return false;
+            return true;
+        });
+    }, [data?.items, loyaltyFilter, estadoFilter]);
 
     const handleSearch = (value: string) => {
         setFilters((prev) => ({ ...prev, search: value, page: 1 }));
@@ -106,24 +122,54 @@ export default function ClientsListPage() {
                 </Button>
             </Box>
 
-            {/* Search */}
+            {/* Filters */}
             <Card sx={{ p: 2, mb: 3 }}>
-                <TextField
-                    placeholder="Buscar por nombre o correo..."
-                    size="small"
-                    value={filters.search || ''}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    slotProps={{
-                        input: {
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon fontSize="small" />
-                                </InputAdornment>
-                            ),
-                        },
-                    }}
-                    sx={{ minWidth: 300 }}
-                />
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <TextField
+                        placeholder="Buscar por nombre o correo..."
+                        size="small"
+                        value={filters.search || ''}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        slotProps={{
+                            input: {
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <SearchIcon fontSize="small" />
+                                    </InputAdornment>
+                                ),
+                            },
+                        }}
+                        sx={{ minWidth: 300 }}
+                    />
+
+                    <TextField
+                        select
+                        label="Loyalty"
+                        size="small"
+                        value={loyaltyFilter}
+                        onChange={(e) => setLoyaltyFilter(e.target.value)}
+                        sx={{ minWidth: 140 }}
+                    >
+                        <MenuItem value="">Todos</MenuItem>
+                        <MenuItem value="BRONCE">Bronce</MenuItem>
+                        <MenuItem value="PLATA">Plata</MenuItem>
+                        <MenuItem value="ORO">Oro</MenuItem>
+                        <MenuItem value="PLATINO">Platino</MenuItem>
+                    </TextField>
+
+                    <TextField
+                        select
+                        label="Estado"
+                        size="small"
+                        value={estadoFilter}
+                        onChange={(e) => setEstadoFilter(e.target.value)}
+                        sx={{ minWidth: 140 }}
+                    >
+                        <MenuItem value="">Todos</MenuItem>
+                        <MenuItem value="activo">Activo</MenuItem>
+                        <MenuItem value="inactivo">Inactivo</MenuItem>
+                    </TextField>
+                </Box>
             </Card>
 
             {/* Table */}
@@ -152,7 +198,7 @@ export default function ClientsListPage() {
                                         ))}
                                     </TableRow>
                                 ))
-                                : data?.items?.map((client) => {
+                                : filteredItems.map((client) => {
                                     const primaryPhone = client.phones?.find(
                                         (p) => p.es_principal,
                                     );
@@ -231,7 +277,7 @@ export default function ClientsListPage() {
                                     );
                                 })}
 
-                            {!isLoading && (!data?.items || data.items.length === 0) && (
+                            {!isLoading && filteredItems.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                                         <Typography color="text.secondary">
