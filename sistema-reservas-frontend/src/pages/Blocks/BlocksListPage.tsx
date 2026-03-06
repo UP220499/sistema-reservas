@@ -131,20 +131,8 @@ export default function BlocksListPage() {
 
     return (
         <Box>
-            {/* Header */}
-            <Box
-                sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    mb: 3,
-                    flexWrap: 'wrap',
-                    gap: 2,
-                }}
-            >
-                <Typography variant="h5" fontWeight={700}>
-                    Bloqueos
-                </Typography>
+            {/* Actions */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
                 <Button
                     variant="contained"
                     startIcon={<AddIcon />}

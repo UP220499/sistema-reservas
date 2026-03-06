@@ -46,15 +46,6 @@ export default function DashboardPage() {
 
     return (
         <Container maxWidth="xl">
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" gutterBottom fontWeight={700}>
-                    Dashboard
-                </Typography>
-                <Typography variant="body1" color="text.secondary">
-                    Resumen general de operaciones y estadísticas.
-                </Typography>
-            </Box>
-
             <Grid container spacing={3} sx={{ mb: 4 }}>
                 <Grid size={{ xs: 12, sm: 6, md: 4 }}>
                     <StatsCard
