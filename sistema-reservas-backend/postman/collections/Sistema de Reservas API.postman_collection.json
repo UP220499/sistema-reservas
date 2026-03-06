@@ -1,9 +1,19 @@
-{
+﻿{
   "info": {
     "_postman_id": "e3b7880f-88bb-473d-8e81-f091cbf9d40a",
     "name": "Sistema de Reservas API",
     "description": "API collection for the Sistema de Reservas backend (NestJS).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
   },
   "item": [
     {
@@ -25,9 +35,9 @@
               "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/login",
+              "raw": "{{base_url}}/auth/login",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "auth",
@@ -62,7 +72,7 @@
                   "// Save tokens to environment variables",
                   "if (pm.response.code === 201) {",
                   "    const jsonData = pm.response.json();",
-                  "    pm.environment.set('jwt_token', jsonData.access_token);",
+                  "    pm.environment.set('token', jsonData.access_token);",
                   "    pm.environment.set('refresh_token', jsonData.refresh_token);",
                   "    console.log('JWT tokens saved to environment variables');",
                   "}"
@@ -87,9 +97,9 @@
               "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/auth/refresh",
+              "raw": "{{base_url}}/auth/refresh",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "auth",
@@ -117,7 +127,7 @@
                   "// Update tokens in environment",
                   "if (pm.response.code === 201) {",
                   "    const jsonData = pm.response.json();",
-                  "    pm.environment.set('jwt_token', jsonData.access_token);",
+                  "    pm.environment.set('token', jsonData.access_token);",
                   "    pm.environment.set('refresh_token', jsonData.refresh_token);",
                   "    console.log('JWT tokens refreshed and saved');",
                   "}"
@@ -131,17 +141,11 @@
           "id": "auth-profile-003",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}",
-                "description": "JWT access token"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/auth/profile",
+              "raw": "{{base_url}}/auth/profile",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "auth",
@@ -177,49 +181,6 @@
       "description": "Authentication endpoints - Login, token refresh, and user profile. Execute Login first to obtain JWT tokens that will be saved automatically to environment variables."
     },
     {
-      "name": "App",
-      "item": [
-        {
-          "name": "Get Hello",
-          "id": "82638da5-d139-4452-895d-00fa8fe902f5",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}",
-              "host": [
-                "{{baseUrl}}"
-              ]
-            },
-            "description": "Returns a hello message from the app service."
-          },
-          "response": []
-        },
-        {
-          "name": "Database Health Check",
-          "id": "28eb4ef1-0cab-4b6f-9c50-469daaf039fe",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/health/db",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "health",
-                "db"
-              ]
-            },
-            "description": "Checks database connectivity by executing a simple query."
-          },
-          "response": []
-        }
-      ],
-      "id": "6815358d-eadb-4729-949a-c59f51c835b0",
-      "description": "Root application endpoints"
-    },
-    {
       "name": "Availability",
       "item": [
         {
@@ -229,9 +190,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/availability?ubicacion_id={{ubicacion_id}}&from=2026-02-01T00:00:00.000Z&to=2026-02-10T00:00:00.000Z",
+              "raw": "{{base_url}}/availability?ubicacion_id={{location_id}}&from=2026-02-01T00:00:00.000Z&to=2026-02-10T00:00:00.000Z",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "availability"
@@ -239,7 +200,7 @@
               "query": [
                 {
                   "key": "ubicacion_id",
-                  "value": "{{ubicacion_id}}",
+                  "value": "{{location_id}}",
                   "description": "Location ID (required)",
                   "uuid": "3157c42e-7ba0-4e5f-9044-68939756153d"
                 },
@@ -284,9 +245,9 @@
               "raw": "{\n  \"ubicacion_id\": \"1\",\n  \"origen_bloqueo_code\": \"MANUAL\",\n  \"inicio_datetime\": \"2026-02-15T00:00:00.000Z\",\n  \"fin_datetime\": \"2026-02-20T00:00:00.000Z\",\n  \"estatus_bloqueo\": \"ACTIVO\",\n  \"external_uid\": \"\",\n  \"raw_payload\": \"\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/blocks",
+              "raw": "{{base_url}}/blocks",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "blocks"
@@ -303,9 +264,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/blocks?page=1&page_size=20&ubicacion_id=1&from=2026-02-01T00:00:00.000Z&to=2026-02-28T00:00:00.000Z&estatus_bloqueo=ACTIVO",
+              "raw": "{{base_url}}/blocks?page=1&page_size=20&ubicacion_id=1&from=2026-02-01T00:00:00.000Z&to=2026-02-28T00:00:00.000Z&estatus_bloqueo=ACTIVO",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "blocks"
@@ -354,13 +315,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/blocks/{{bloqueo_id}}",
+              "raw": "{{base_url}}/blocks/{{block_id}}",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "blocks",
-                "{{bloqueo_id}}"
+                "{{block_id}}"
               ]
             },
             "description": "Retrieve a specific block by its ID."
@@ -383,13 +344,13 @@
               "raw": "{\n  \"estatus_bloqueo\": \"INACTIVO\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/blocks/{{bloqueo_id}}/status",
+              "raw": "{{base_url}}/blocks/{{block_id}}/status",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "blocks",
-                "{{bloqueo_id}}",
+                "{{block_id}}",
                 "status"
               ]
             },
@@ -411,9 +372,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/calendar?from=2026-02-01T00:00:00.000Z&to=2026-02-28T00:00:00.000Z&ubicacion_id=1&page=1&page_size=20&include=all",
+              "raw": "{{base_url}}/calendar?from=2026-02-01T00:00:00.000Z&to=2026-02-28T00:00:00.000Z&ubicacion_id=1&page=1&page_size=20&include=all",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "calendar"
@@ -461,6 +422,7 @@
     },
     {
       "name": "Clients",
+      "description": "Gestión de clientes: listado, detalle, actualización y teléfonos.",
       "item": [
         {
           "name": "Get All Clients",
@@ -469,9 +431,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/clients?search=&active=true&page=1&pageSize=20",
+              "raw": "{{base_url}}/clients?search=&active=true&page=1&pageSize=20",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "clients"
@@ -510,13 +472,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/clients/{{clientId}}",
+              "raw": "{{base_url}}/clients/{{client_id}}",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "clients",
-                "{{clientId}}"
+                "{{client_id}}"
               ]
             },
             "description": "Retrieve a specific client by ID."
@@ -532,6 +494,11 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{x_user_id}}",
+                "description": "User ID for audit (required)"
               }
             ],
             "body": {
@@ -539,9 +506,9 @@
               "raw": "{\n  \"nombre\": \"Juan Pérez\",\n  \"correo\": \"juan.perez@example.com\",\n  \"phones\": [\n    {\n      \"telefono\": \"+521234567890\",\n      \"es_principal\": true\n    }\n  ]\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/clients",
+              "raw": "{{base_url}}/clients",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "clients"
@@ -560,6 +527,11 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{x_user_id}}",
+                "description": "User ID for audit (required)"
               }
             ],
             "body": {
@@ -567,13 +539,13 @@
               "raw": "{\n  \"nombre\": \"Juan Pérez García\",\n  \"correo\": \"juan.perez.garcia@example.com\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/clients/{{clientId}}",
+              "raw": "{{base_url}}/clients/{{client_id}}",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "clients",
-                "{{clientId}}"
+                "{{client_id}}"
               ]
             },
             "description": "Update client information (name and/or email)."
@@ -589,20 +561,25 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{x_user_id}}",
+                "description": "User ID for audit (required)"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"active\": false\n}"
+              "raw": "{\n  \"activo\": false\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/clients/{{clientId}}/status",
+              "raw": "{{base_url}}/clients/{{client_id}}/status",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "clients",
-                "{{clientId}}",
+                "{{client_id}}",
                 "status"
               ]
             },
@@ -619,6 +596,11 @@
               {
                 "key": "Content-Type",
                 "value": "application/json"
+              },
+              {
+                "key": "x-user-id",
+                "value": "{{x_user_id}}",
+                "description": "User ID for audit (required)"
               }
             ],
             "body": {
@@ -626,13 +608,13 @@
               "raw": "{\n  \"telefono\": \"+520987654321\",\n  \"es_principal\": false\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/clients/{{clientId}}/phones",
+              "raw": "{{base_url}}/clients/{{client_id}}/phones",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "clients",
-                "{{clientId}}",
+                "{{client_id}}",
                 "phones"
               ]
             },
@@ -656,13 +638,13 @@
               "raw": "{\n  \"telefono\": \"+521112223333\",\n  \"activo\": true,\n  \"es_principal\": false\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/clients/{{clientId}}/phones/{{phoneId}}",
+              "raw": "{{base_url}}/clients/{{client_id}}/phones/{{phoneId}}",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "clients",
-                "{{clientId}}",
+                "{{client_id}}",
                 "phones",
                 "{{phoneId}}"
               ]
@@ -678,13 +660,13 @@
             "method": "PUT",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/clients/{{clientId}}/phones/{{phoneId}}/primary",
+              "raw": "{{base_url}}/clients/{{client_id}}/phones/{{phoneId}}/primary",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "clients",
-                "{{clientId}}",
+                "{{client_id}}",
                 "phones",
                 "{{phoneId}}",
                 "primary"
@@ -700,6 +682,7 @@
     },
     {
       "name": "Reservations",
+      "description": "Gestión de reservas: listado, detalle, historial y cambios de estatus.",
       "item": [
         {
           "name": "Get All Reservations",
@@ -708,9 +691,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reservations?page=1&page_size=20&ubicacion_id=1&cliente_id=&estatus_reserva_code=CONFIRMADA&origen=&from=2026-02-01T00:00:00.000Z&to=2026-02-28T00:00:00.000Z",
+              "raw": "{{base_url}}/reservations?page=1&page_size=20&ubicacion_id=1&cliente_id=&estatus_reserva_code=CONFIRMADA&origen=&from=2026-02-01T00:00:00.000Z&to=2026-02-28T00:00:00.000Z",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "reservations"
@@ -769,9 +752,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reservations/{{reservation_id}}",
+              "raw": "{{base_url}}/reservations/{{reservation_id}}",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "reservations",
@@ -789,9 +772,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reservations/{{reservation_id}}/history?page=1&page_size=20",
+              "raw": "{{base_url}}/reservations/{{reservation_id}}/history?page=1&page_size=20",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "reservations",
@@ -826,11 +809,6 @@
                 "value": "application/json"
               },
               {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}",
-                "description": "JWT access token from login"
-              },
-              {
                 "key": "x-user-id",
                 "value": "{{x_user_id}}",
                 "description": "User ID for audit (required)"
@@ -841,9 +819,9 @@
               "raw": "{\n  \"cliente_id\": \"2\",\n  \"ubicacion_id\": \"3\",\n  \"origen_reserva_code\": \"EXTERNA\",\n  \"checkin_datetime\": \"2026-02-10T15:00:00.000Z\",\n  \"checkout_datetime\": \"2026-02-12T11:00:00.000Z\",\n  \"estatus_reserva_code\": \"CONFIRMADA\",\n  \"total_reserva\": 1200,\n  \"notas\": \"Cliente frecuente\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/reservations",
+              "raw": "{{base_url}}/reservations",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "reservations"
@@ -864,11 +842,6 @@
                 "value": "application/json"
               },
               {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}",
-                "description": "JWT access token from login"
-              },
-              {
                 "key": "x-user-id",
                 "value": "{{x_user_id}}",
                 "description": "User ID for audit (required)"
@@ -879,9 +852,9 @@
               "raw": "{\n  \"checkin_datetime\": \"2026-02-15T15:00:00.000Z\",\n  \"checkout_datetime\": \"2026-02-18T11:00:00.000Z\",\n  \"estatus_reserva_code\": \"CONFIRMADA\",\n  \"origen_reserva_code\": \"EXTERNA\",\n  \"total_reserva\": 1500,\n  \"notas\": \"Cliente solicitó cambio\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/reservations/{{reservation_id}}",
+              "raw": "{{base_url}}/reservations/{{reservation_id}}",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "reservations",
@@ -903,11 +876,6 @@
                 "value": "application/json"
               },
               {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}",
-                "description": "JWT access token from login"
-              },
-              {
                 "key": "x-user-id",
                 "value": "{{x_user_id}}",
                 "description": "User ID for audit (required)"
@@ -918,9 +886,9 @@
               "raw": "{\n  \"estatus_reserva_code\": \"CANCELADA\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/reservations/{{reservation_id}}/status",
+              "raw": "{{base_url}}/reservations/{{reservation_id}}/status",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "reservations",
@@ -938,6 +906,7 @@
     },
     {
       "name": "Payments",
+      "description": "Pagos asociados a reservas.",
       "item": [
         {
           "name": "Get Reservation Payments",
@@ -946,9 +915,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/reservations/{{reservation_id}}/payments",
+              "raw": "{{base_url}}/reservations/{{reservation_id}}/payments",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "reservations",
@@ -971,11 +940,6 @@
                 "value": "application/json"
               },
               {
-                "key": "Authorization",
-                "value": "Bearer {{jwt_token}}",
-                "description": "JWT access token from login"
-              },
-              {
                 "key": "x-user-id",
                 "value": "{{x_user_id}}",
                 "description": "User ID for audit (required)"
@@ -986,9 +950,9 @@
               "raw": "{\n  \"tipo_pago_mov_code\": \"EFECTIVO\",\n  \"metodo_pago_code\": \"CASH\",\n  \"monto\": 1500,\n  \"fecha_pago\": \"2026-02-04T18:30:00.000Z\",\n  \"referencia\": \"ABCD-1234\",\n  \"notas\": \"Pago en mostrador\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/reservations/{{reservation_id}}/payments",
+              "raw": "{{base_url}}/reservations/{{reservation_id}}/payments",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "reservations",
@@ -1005,7 +969,8 @@
       "description": "Manage payments for reservations"
     },
     {
-      "name": "iCal Sync",
+      "name": "iCal",
+      "description": "Sincronización de calendarios externos vía iCal.",
       "item": [
         {
           "name": "Sync iCal Calendar",
@@ -1014,9 +979,9 @@
             "method": "POST",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/ical/sync?ubicacion_id=1",
+              "raw": "{{base_url}}/ical/sync?ubicacion_id=1",
               "host": [
-                "{{baseUrl}}"
+                "{{base_url}}"
               ],
               "path": [
                 "ical",
@@ -1044,6 +1009,11 @@
       "id": "26c8aa93-de55-4cf1-b044-2713a50eeeb3",
       "key": "baseUrl",
       "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "base_url",
+      "value": "{{base_url}}",
       "type": "string"
     }
   ]
