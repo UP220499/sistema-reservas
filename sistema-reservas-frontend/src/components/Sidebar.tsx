@@ -21,8 +21,8 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import HomeIcon from '@mui/icons-material/Home';
 
-export const DRAWER_WIDTH = 280;
-export const DRAWER_WIDTH_MINI = 84;
+export const DRAWER_WIDTH = 260;
+export const DRAWER_WIDTH_MINI = 72;
 
 const LOGO_PATH = '/brand/cielito-logo-blanco.png';
 
@@ -76,19 +76,22 @@ export default function Sidebar({
     const drawerContent = (
         <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', bgcolor: SB.bg, overflow: 'hidden' }}>
 
+            {/* ── Thin gold accent bar at top ── */}
+            <Box sx={{ height: 3, bgcolor: SB.accent, flexShrink: 0 }} />
+
             {/* ── Logo header block — dark green, thin gold divider below ── */}
             <Box
                 sx={{
                     bgcolor: SB.bg,
                     borderBottom: `1px solid ${SB.accent}`,
                     px: 2,
-                    py: collapsed ? 2 : 2.5,
+                    py: collapsed ? 1.75 : 2.5,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
-                    gap: 0.75,
+                    gap: 0.5,
                     transition: 'padding 0.2s ease',
                 }}
             >
@@ -101,7 +104,7 @@ export default function Sidebar({
                         src={LOGO_PATH}
                         alt="Cielito Home"
                         sx={{
-                            width: collapsed ? 48 : 180,
+                            width: collapsed ? 44 : 160,
                             maxWidth: '75%',
                             height: 'auto',
                             objectFit: 'contain',
@@ -124,8 +127,20 @@ export default function Sidebar({
                 )}
             </Box>
 
+            {/* Navigation section label — only when expanded */}
+            {!collapsed && (
+                <Box sx={{ px: 2.5, pt: 1.5, pb: 0 }}>
+                    <Typography
+                        variant="overline"
+                        sx={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.625rem', letterSpacing: '0.15em' }}
+                    >
+                        Navegación
+                    </Typography>
+                </Box>
+            )}
+
             {/* Navigation */}
-            <List sx={{ px: collapsed ? 1 : 1.5, py: 1.5, flexGrow: 1, overflow: 'hidden' }}>
+            <List sx={{ px: collapsed ? 0.75 : 1.5, py: 1, flexGrow: 1, overflow: 'hidden' }}>
                 {menuItems.map((item) => {
                     const isActive =
                         item.path === '/'
@@ -144,7 +159,7 @@ export default function Sidebar({
                                 selected={isActive}
                                 sx={{
                                     borderRadius: 1.5,
-                                    mb: 0.5,
+                                    mb: collapsed ? 0.75 : 0.5,
                                     px: collapsed ? 1 : 1.5,
                                     py: 1,
                                     minHeight: 44,
@@ -152,11 +167,14 @@ export default function Sidebar({
                                     color: isActive ? SB.textActive : SB.text,
                                     transition: 'all 0.15s ease',
                                     '&.Mui-selected': {
-                                        bgcolor: SB.activeBg,
-                                        borderLeft: `3px solid ${SB.accent}`,
-                                        pl: collapsed ? '5px' : '9px',
+                                        bgcolor: collapsed
+                                            ? 'rgba(201, 168, 76, 0.20)'
+                                            : SB.activeBg,
+                                        ...(collapsed
+                                            ? {}
+                                            : { borderLeft: `2px solid ${SB.accent}`, pl: '10px' }),
                                         color: SB.textActive,
-                                        '&:hover': { bgcolor: 'rgba(201, 168, 76, 0.2)' },
+                                        '&:hover': { bgcolor: 'rgba(201, 168, 76, 0.26)' },
                                         '& .MuiListItemIcon-root': { color: SB.iconActive },
                                     },
                                     '&:hover:not(.Mui-selected)': { bgcolor: SB.hoverBg },

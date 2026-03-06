@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import {
     Box,
     AppBar,
@@ -21,6 +21,27 @@ import PersonIcon from '@mui/icons-material/Person';
 import Sidebar, { DRAWER_WIDTH, DRAWER_WIDTH_MINI } from './Sidebar';
 import { useAuth } from '../hooks/useAuth';
 
+// ---------------------------------------------------------------------------
+// Page title mapping
+// ---------------------------------------------------------------------------
+const PAGE_INFO: Array<{ test: (p: string) => boolean; title: string; subtitle?: string }> = [
+    { test: (p) => p === '/', title: 'Dashboard' },
+    { test: (p) => p === '/reservaciones/nueva', title: 'Nueva Reservación', subtitle: 'Reservaciones' },
+    { test: (p) => /^\/reservaciones\/[^/]+\/editar$/.test(p), title: 'Editar Reservación', subtitle: 'Reservaciones' },
+    { test: (p) => /^\/reservaciones\/[^/]+$/.test(p), title: 'Detalle de Reservación', subtitle: 'Reservaciones' },
+    { test: (p) => p === '/reservaciones', title: 'Reservaciones' },
+    { test: (p) => p === '/clientes/nuevo', title: 'Nuevo Cliente', subtitle: 'Clientes' },
+    { test: (p) => /^\/clientes\/[^/]+\/editar$/.test(p), title: 'Editar Cliente', subtitle: 'Clientes' },
+    { test: (p) => /^\/clientes\/[^/]+$/.test(p), title: 'Detalle de Cliente', subtitle: 'Clientes' },
+    { test: (p) => p === '/clientes', title: 'Clientes' },
+    { test: (p) => p === '/bloqueos', title: 'Bloqueos' },
+    { test: (p) => p === '/calendario', title: 'Calendario' },
+];
+
+function getPageInfo(pathname: string): { title: string; subtitle?: string } {
+    return PAGE_INFO.find((r) => r.test(pathname)) ?? { title: 'Sistema de Reservas' };
+}
+
 export default function Layout() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -30,6 +51,8 @@ export default function Layout() {
         () => localStorage.getItem('nav_collapsed') === 'true',
     );
     const { user, logout } = useAuth();
+    const location = useLocation();
+    const pageInfo = getPageInfo(location.pathname);
 
     const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
     const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) =>
@@ -83,18 +106,40 @@ export default function Layout() {
                 }}
             >
                 <AppBar position="sticky" color="inherit">
-                    <Toolbar sx={{ minHeight: { xs: 56, sm: 60 }, px: { xs: 2, sm: 3 } }}>
+                    <Toolbar sx={{ minHeight: { xs: 56, sm: 64 }, px: { xs: 2, sm: 3 } }}>
                         {isMobile && (
                             <IconButton
                                 edge="start"
                                 onClick={handleDrawerToggle}
-                                sx={{ mr: 2, color: 'text.secondary' }}
+                                sx={{ mr: 1.5, color: 'text.secondary' }}
                             >
                                 <MenuIcon />
                             </IconButton>
                         )}
 
-                        <Box sx={{ flexGrow: 1 }} />
+                        {/* Page context */}
+                        <Box sx={{ flexGrow: 1 }}>
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    fontWeight: 700,
+                                    fontSize: { xs: '0.9rem', sm: '1rem' },
+                                    lineHeight: 1.3,
+                                    color: 'text.primary',
+                                }}
+                            >
+                                {pageInfo.title}
+                            </Typography>
+                            {pageInfo.subtitle && (
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ display: { xs: 'none', sm: 'block' }, lineHeight: 1 }}
+                                >
+                                    {pageInfo.subtitle}
+                                </Typography>
+                            )}
+                        </Box>
 
                         {/* User profile area */}
                         <Box
@@ -105,8 +150,8 @@ export default function Layout() {
                                 gap: 1.25,
                                 cursor: 'pointer',
                                 borderRadius: 2,
-                                px: 1,
-                                py: 0.5,
+                                px: 1.5,
+                                py: 0.75,
                                 transition: 'background 0.15s',
                                 '&:hover': { bgcolor: 'action.hover' },
                             }}
@@ -122,12 +167,12 @@ export default function Layout() {
                             <Avatar
                                 sx={{
                                     bgcolor: 'primary.main',
-                                    width: 34,
-                                    height: 34,
-                                    fontSize: 13,
+                                    width: 36,
+                                    height: 36,
+                                    fontSize: 14,
                                     fontWeight: 700,
                                     border: '2px solid',
-                                    borderColor: 'primary.light',
+                                    borderColor: 'secondary.main',
                                 }}
                             >
                                 {initials}
