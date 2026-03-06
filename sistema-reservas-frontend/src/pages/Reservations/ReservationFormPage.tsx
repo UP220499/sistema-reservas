@@ -15,9 +15,11 @@ export default function ReservationFormPage() {
     const prefillUbicacion = searchParams.get('ubicacion_id') || '';
     const prefillCheckin = searchParams.get('checkin') || '';
     const prefillCheckout = searchParams.get('checkout') || '';
+    const prefillOrigenBloqueoCode = searchParams.get('origen_bloqueo_code') || '';
 
     const prefill = {
         fromBlock,
+        origenBloqueoCode: prefillOrigenBloqueoCode,
         ubicacion_id: prefillUbicacion,
         checkin: prefillCheckin,
         checkout: prefillCheckout,

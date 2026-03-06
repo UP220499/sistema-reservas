@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { isValidDateRange, adjustToOnFromChange, adjustFromOnToChange } from '../../utils/dateRange';
 import { useQuery } from '@tanstack/react-query';
 import { qk } from '../../utils/queryKeys';
 import {
@@ -46,9 +47,14 @@ export default function ReservationsListPage() {
         cliente_id: clienteIdParam,
     });
 
+    // ISO strings start with YYYY-MM-DD so slicing is safe for comparison
+    const fromDate = filters.from ? filters.from.slice(0, 10) : undefined;
+    const toDate = filters.to ? filters.to.slice(0, 10) : undefined;
+
     const { data, isLoading } = useQuery({
         queryKey: qk.reservations.list(filters),
         queryFn: () => reservationsApi.findAll(filters),
+        enabled: isValidDateRange(fromDate, toDate),
     });
 
     const { data: clientesData, isLoading: clientesLoading } = useQuery({
@@ -211,18 +217,21 @@ export default function ReservationsListPage() {
                         type="date"
                         label="Desde"
                         size="small"
-                        value={
-                            filters.from ? dayjs(filters.from).format('YYYY-MM-DD') : ''
-                        }
-                        onChange={(e) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                from: e.target.value
-                                    ? new Date(e.target.value).toISOString()
-                                    : undefined,
-                                page: 1,
-                            }))
-                        }
+                        value={filters.from ? dayjs(filters.from).format('YYYY-MM-DD') : ''}
+                        onChange={(e) => {
+                            const inputDate = e.target.value; // YYYY-MM-DD or ''
+                            const newFrom = inputDate ? new Date(inputDate).toISOString() : undefined;
+                            setFilters((prev) => {
+                                const prevToDate = prev.to ? prev.to.slice(0, 10) : undefined;
+                                const adjustedTo = adjustToOnFromChange(inputDate || undefined, prevToDate);
+                                return {
+                                    ...prev,
+                                    from: newFrom,
+                                    to: adjustedTo ? prev.to : undefined,
+                                    page: 1,
+                                };
+                            });
+                        }}
                         slotProps={{ inputLabel: { shrink: true } }}
                         sx={{ minWidth: 160 }}
                     />
@@ -232,15 +241,20 @@ export default function ReservationsListPage() {
                         label="Hasta"
                         size="small"
                         value={filters.to ? dayjs(filters.to).format('YYYY-MM-DD') : ''}
-                        onChange={(e) =>
-                            setFilters((prev) => ({
-                                ...prev,
-                                to: e.target.value
-                                    ? new Date(e.target.value).toISOString()
-                                    : undefined,
-                                page: 1,
-                            }))
-                        }
+                        onChange={(e) => {
+                            const inputDate = e.target.value; // YYYY-MM-DD or ''
+                            const newTo = inputDate ? new Date(inputDate).toISOString() : undefined;
+                            setFilters((prev) => {
+                                const prevFromDate = prev.from ? prev.from.slice(0, 10) : undefined;
+                                const adjustedFrom = adjustFromOnToChange(prevFromDate, inputDate || undefined);
+                                return {
+                                    ...prev,
+                                    from: adjustedFrom ? prev.from : undefined,
+                                    to: newTo,
+                                    page: 1,
+                                };
+                            });
+                        }}
                         slotProps={{ inputLabel: { shrink: true } }}
                         sx={{ minWidth: 160 }}
                     />

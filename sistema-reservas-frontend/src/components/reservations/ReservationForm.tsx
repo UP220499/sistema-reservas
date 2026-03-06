@@ -34,6 +34,7 @@ interface ReservationFormProps {
         checkin: string;
         checkout: string;
         fromBlock: boolean;
+        origenBloqueoCode?: string;
     };
 }
 
@@ -45,7 +46,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
     const [form, setForm] = useState<CreateReservationPayload>({
         cliente_id: initialData?.cliente_id || '',
         ubicacion_id: initialData?.ubicacion_id || prefill?.ubicacion_id || '',
-        origen_reserva_code: initialData?.origen_reserva_code || (prefill?.fromBlock ? 'EXTERNA' : 'DIRECTA'),
+        origen_reserva_code: initialData?.origen_reserva_code || (prefill?.fromBlock && prefill.origenBloqueoCode === 'AIRBNB' ? 'EXTERNA' : 'DIRECTA'),
         estatus_reserva_code: initialData?.estatus_reserva_code || 'PENDIENTE',
         checkin_datetime: initialData?.checkin_datetime
             ? dayjs(initialData.checkin_datetime).format('YYYY-MM-DDTHH:mm')
@@ -148,7 +149,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                 </Typography>
             </Box>
 
-            {prefill?.fromBlock && (
+            {prefill?.fromBlock && prefill.origenBloqueoCode === 'AIRBNB' && (
                 <Alert severity="info" sx={{ mb: 2 }}>
                     Creando reservación desde bloqueo de Airbnb — las fechas y ubicación fueron pre-llenadas.
                     Solo falta seleccionar el <strong>cliente</strong> y registrar el <strong>monto total</strong>.

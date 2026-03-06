@@ -162,6 +162,7 @@ export default function CalendarPage() {
                 ubicacion_id: event.ubicacion_id ?? '',
                 checkin: dayjs(event.inicio_datetime).format('YYYY-MM-DDTHH:mm'),
                 checkout: dayjs(event.fin_datetime).format('YYYY-MM-DDTHH:mm'),
+                origen_bloqueo_code: event.origen_bloqueo_code ?? '',
             });
             navigate(`/reservaciones/nueva?${params.toString()}`);
         }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { getErrorMessage } from '../../utils/error';
+import { isValidDateRange, adjustToOnFromChange, adjustFromOnToChange } from '../../utils/dateRange';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import EmptyState from '../../components/common/EmptyState';
 import { useToast } from '../../hooks/useToast';
@@ -72,6 +73,7 @@ export default function BlocksListPage() {
     const { data, isLoading } = useQuery({
         queryKey: qk.blocks.list(filters),
         queryFn: () => blocksApi.findAll(filters),
+        enabled: isValidDateRange(filters.from, filters.to),
     });
 
     const filteredBlocks = data?.items ?? [];
@@ -221,13 +223,15 @@ export default function BlocksListPage() {
                         label="Desde"
                         size="small"
                         value={filters.from || ''}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                            const newFrom = e.target.value || undefined;
                             setFilters((prev) => ({
                                 ...prev,
-                                from: e.target.value || undefined,
+                                from: newFrom,
+                                to: adjustToOnFromChange(newFrom, prev.to),
                                 page: 1,
-                            }))
-                        }
+                            }));
+                        }}
                         slotProps={{ inputLabel: { shrink: true } }}
                         sx={{ minWidth: 160 }}
                     />
@@ -237,13 +241,15 @@ export default function BlocksListPage() {
                         label="Hasta"
                         size="small"
                         value={filters.to || ''}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                            const newTo = e.target.value || undefined;
                             setFilters((prev) => ({
                                 ...prev,
-                                to: e.target.value || undefined,
+                                from: adjustFromOnToChange(prev.from, newTo),
+                                to: newTo,
                                 page: 1,
-                            }))
-                        }
+                            }));
+                        }}
                         slotProps={{ inputLabel: { shrink: true } }}
                         sx={{ minWidth: 160 }}
                     />
