@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { getErrorMessage } from '../../utils/error';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import EmptyState from '../../components/common/EmptyState';
+import { useToast } from '../../hooks/useToast';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { qk } from '../../utils/queryKeys';
@@ -32,6 +34,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import BlockIcon from '@mui/icons-material/Block';
 import dayjs from 'dayjs';
 import {
     blocksApi,
@@ -49,6 +52,7 @@ const statusColors: Record<string, 'success' | 'error' | 'default'> = {
 export default function BlocksListPage() {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
+    const { showToast } = useToast();
     const [filters, setFilters] = useState<BlockFilters>({
         page: 1,
         page_size: 10,
@@ -86,6 +90,7 @@ export default function BlocksListPage() {
             queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
             setCreateOpen(false);
             resetForm();
+            showToast('Bloqueo creado correctamente.');
         },
         onError: (err) => setError(getErrorMessage(err)),
     });
@@ -102,8 +107,9 @@ export default function BlocksListPage() {
         onSuccess: () => {
             invalidateBlockQueries();
             setDetailBlock(null);
+            showToast('Bloqueo cancelado correctamente.');
         },
-        onError: (err) => setError(getErrorMessage(err)),
+        onError: (err) => showToast(getErrorMessage(err), 'error'),
     });
 
     const reactivateMutation = useMutation({
@@ -111,8 +117,9 @@ export default function BlocksListPage() {
         onSuccess: () => {
             invalidateBlockQueries();
             setDetailBlock(null);
+            showToast('Bloqueo reactivado correctamente.');
         },
-        onError: (err) => setError(getErrorMessage(err)),
+        onError: (err) => showToast(getErrorMessage(err), 'error'),
     });
 
     const resetForm = () => {
@@ -325,10 +332,12 @@ export default function BlocksListPage() {
 
                             {!isLoading && filteredBlocks.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                                        <Typography color="text.secondary">
-                                            No se encontraron bloqueos
-                                        </Typography>
+                                    <TableCell colSpan={6} sx={{ border: 0 }}>
+                                        <EmptyState
+                                            icon={<BlockIcon />}
+                                            title="No hay bloqueos en este periodo"
+                                            subtitle="Ajusta los filtros o crea un nuevo bloqueo"
+                                        />
                                     </TableCell>
                                 </TableRow>
                             )}

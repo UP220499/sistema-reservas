@@ -5,7 +5,6 @@ import { qk } from '../../utils/queryKeys';
 import {
     Autocomplete,
     Box,
-    Typography,
     Button,
     Card,
     Table,
@@ -23,7 +22,9 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import EventNoteIcon from '@mui/icons-material/EventNote';
 import dayjs from 'dayjs';
+import EmptyState from '../../components/common/EmptyState';
 import {
     reservationsApi,
     catalogsApi,
@@ -321,10 +322,12 @@ export default function ReservationsListPage() {
 
                             {!isLoading && (!data?.items || data.items.length === 0) && (
                                 <TableRow>
-                                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                                        <Typography color="text.secondary">
-                                            No se encontraron reservaciones
-                                        </Typography>
+                                    <TableCell colSpan={7} sx={{ border: 0 }}>
+                                        <EmptyState
+                                            icon={<EventNoteIcon />}
+                                            title="No hay reservaciones en este rango"
+                                            subtitle="Ajusta los filtros o crea una nueva reservación"
+                                        />
                                     </TableCell>
                                 </TableRow>
                             )}

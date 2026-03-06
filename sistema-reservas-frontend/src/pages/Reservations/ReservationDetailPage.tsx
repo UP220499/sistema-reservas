@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { getErrorMessage } from '../../utils/error';
+import { useToast } from '../../hooks/useToast';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -26,7 +27,6 @@ import {
     IconButton,
     Alert,
     Skeleton,
-    Snackbar,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
@@ -81,6 +81,7 @@ export default function ReservationDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { showToast } = useToast();
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
     const [statusDialogOpen, setStatusDialogOpen] = useState(false);
     const [newStatus, setNewStatus] = useState('');
@@ -97,7 +98,6 @@ export default function ReservationDetailPage() {
     const [backendPaymentError, setBackendPaymentError] = useState<PaymentErrorDetail | null>(null);
     const [timesDialogOpen, setTimesDialogOpen] = useState(false);
     const [timesForm, setTimesForm] = useState({ checkinTime: '', checkoutTime: '' });
-    const [timesSnackbar, setTimesSnackbar] = useState({ open: false, message: '' });
 
     const { data: reserva, isLoading } = useQuery({
         queryKey: qk.reservations.detail(id),
@@ -121,6 +121,7 @@ export default function ReservationDetailPage() {
             queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
             setPaymentDialogOpen(false);
             resetPaymentForm();
+            showToast('Pago registrado correctamente.');
         },
         onError: (err) => setBackendPaymentError(getPaymentErrorDetail(err)),
     });
@@ -133,20 +134,21 @@ export default function ReservationDetailPage() {
             queryClient.invalidateQueries({ queryKey: qk.reservations.list() });
             queryClient.invalidateQueries({ queryKey: qk.calendar.events() });
             setTimesDialogOpen(false);
+            showToast('Horas actualizadas correctamente.');
         },
         onError: (err) => {
             const message =
                 axios.isAxiosError(err) && err.response?.status === 409
                     ? 'Conflicto de horarios (traslape detectado)'
                     : getErrorMessage(err);
-            setTimesSnackbar({ open: true, message });
+            showToast(message, 'error');
         },
     });
 
     const changeStatusMutation = useMutation({
         mutationFn: (status: string) =>
             reservationsApi.changeStatus(id!, status),
-        onSuccess: () => {
+        onSuccess: (_, status) => {
             queryClient.invalidateQueries({ queryKey: qk.reservations.detail(id) });
             queryClient.invalidateQueries({ queryKey: qk.reservations.list() });
             queryClient.invalidateQueries({ queryKey: qk.dashboard.todayAvailability() });
@@ -154,6 +156,8 @@ export default function ReservationDetailPage() {
             queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
             queryClient.invalidateQueries({ queryKey: qk.calendar.events() });
             setStatusDialogOpen(false);
+            const label = status === 'CANCELADA' ? 'cancelada' : status === 'CONFIRMADA' ? 'confirmada' : status === 'COMPLETADA' ? 'completada' : 'actualizada';
+            showToast(`Reservación ${label} correctamente.`);
         },
         onError: (err) => setError(getErrorMessage(err)),
     });
@@ -686,14 +690,6 @@ export default function ReservationDetailPage() {
                     </Button>
                 </DialogActions>
             </Dialog>
-
-            <Snackbar
-                open={timesSnackbar.open}
-                autoHideDuration={6000}
-                onClose={() => setTimesSnackbar((prev) => ({ ...prev, open: false }))}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-                message={timesSnackbar.message}
-            />
 
             {/* Change Status Dialog */}
             <Dialog

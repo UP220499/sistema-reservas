@@ -3,6 +3,7 @@ import { ThemeProvider, CssBaseline } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import theme from './theme/theme';
 import { AuthProvider } from './hooks/AuthProvider';
+import ToastProvider from './components/common/ToastProvider';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import LoginPage from './pages/Login/LoginPage';
@@ -32,6 +33,7 @@ export default function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <BrowserRouter>
+          <ToastProvider>
           <AuthProvider>
             <Routes>
               {/* Public */}
@@ -65,6 +67,7 @@ export default function App() {
               </Route>
             </Routes>
           </AuthProvider>
+          </ToastProvider>
         </BrowserRouter>
       </ThemeProvider>
     </QueryClientProvider>

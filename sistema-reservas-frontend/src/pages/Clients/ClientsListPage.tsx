@@ -22,15 +22,17 @@ import {
     InputAdornment,
     MenuItem,
     Skeleton,
-    Snackbar,
-    Alert,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import SearchIcon from '@mui/icons-material/Search';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import PeopleIcon from '@mui/icons-material/People';
 import { clientsApi, type ClientFilters } from '../../api/clients';
 import type { Cliente, LoyaltyInfo } from '../../types';
+import { useToast } from '../../hooks/useToast';
+import EmptyState from '../../components/common/EmptyState';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 const LOYALTY_COLOR: Record<string, 'default' | 'warning' | 'success' | 'secondary'> = {
     BRONCE: 'warning',
@@ -58,27 +60,23 @@ function LoyaltyChip({ loyalty }: { loyalty: LoyaltyInfo | undefined }) {
 export default function ClientsListPage() {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
+    const { showToast } = useToast();
+
     const [filters, setFilters] = useState<ClientFilters>({
         page: 1,
         pageSize: 10,
         search: '',
     });
-    // Client-side filters (applied on current page since pagination is server-side)
     const [loyaltyFilter, setLoyaltyFilter] = useState('');
     const [estadoFilter, setEstadoFilter] = useState('');
+    const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
+    const [clientToDeactivate, setClientToDeactivate] = useState<string | null>(null);
 
     const { data, isLoading } = useQuery({
         queryKey: qk.clients.list(filters),
         queryFn: () => clientsApi.findAll(filters),
     });
 
-    // Filter items on the current page client-side.
-    // Pagination remains server-side; these filters narrow displayed rows within the page.
     const filteredItems: Cliente[] = useMemo(() => {
         const items = data?.items ?? [];
         return items.filter((c) => {
@@ -95,7 +93,7 @@ export default function ClientsListPage() {
             queryClient.invalidateQueries({ queryKey: qk.clients.list() });
             queryClient.invalidateQueries({ queryKey: qk.clients.detail(clientId) });
             queryClient.invalidateQueries({ queryKey: qk.clients.all() });
-            setSnackbar({ open: true, message: 'Cliente desactivado correctamente.', severity: 'success' });
+            showToast('Cliente desactivado correctamente.');
         },
         onError: (err) => {
             let message = getErrorMessage(err);
@@ -109,7 +107,7 @@ export default function ClientsListPage() {
                     message = `${message} (${count} reservación${count !== 1 ? 'es' : ''} activa${count !== 1 ? 's' : ''})`;
                 }
             }
-            setSnackbar({ open: true, message, severity: 'error' });
+            showToast(message, 'error');
         },
     });
 
@@ -121,9 +119,7 @@ export default function ClientsListPage() {
         setFilters((prev) => ({ ...prev, page: newPage + 1 }));
     };
 
-    const handleRowsPerPageChange = (
-        event: React.ChangeEvent<HTMLInputElement>,
-    ) => {
+    const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setFilters((prev) => ({
             ...prev,
             pageSize: parseInt(event.target.value, 10),
@@ -221,17 +217,13 @@ export default function ClientsListPage() {
                                     </TableRow>
                                 ))
                                 : filteredItems.map((client) => {
-                                    const primaryPhone = client.phones?.find(
-                                        (p) => p.es_principal,
-                                    );
+                                    const primaryPhone = client.phones?.find((p) => p.es_principal);
                                     return (
                                         <TableRow
                                             key={client.cliente_id}
                                             hover
                                             sx={{ cursor: 'pointer' }}
-                                            onClick={() =>
-                                                navigate(`/clientes/${client.cliente_id}`)
-                                            }
+                                            onClick={() => navigate(`/clientes/${client.cliente_id}`)}
                                         >
                                             <TableCell>{client.nombre}</TableCell>
                                             <TableCell>{client.correo || '—'}</TableCell>
@@ -263,13 +255,13 @@ export default function ClientsListPage() {
                                                                 <OpenInNewIcon sx={{ fontSize: 14, opacity: 0.6 }} />
                                                             </Box>
                                                             {(client.es_vip || reservas >= 3) && (
-                                                    <Chip
-                                                        label="Frecuente"
-                                                        color="secondary"
-                                                        size="small"
-                                                        sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
-                                                    />
-                                                )}
+                                                                <Chip
+                                                                    label="Frecuente"
+                                                                    color="secondary"
+                                                                    size="small"
+                                                                    sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
+                                                                />
+                                                            )}
                                                         </>
                                                     );
                                                 })()}
@@ -301,7 +293,8 @@ export default function ClientsListPage() {
                                                             color="error"
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                deactivateMutation.mutate(client.cliente_id);
+                                                                setClientToDeactivate(client.cliente_id);
+                                                                setDeactivateDialogOpen(true);
                                                             }}
                                                             disabled={deactivateMutation.isPending}
                                                         >
@@ -316,10 +309,12 @@ export default function ClientsListPage() {
 
                             {!isLoading && filteredItems.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                                        <Typography color="text.secondary">
-                                            No se encontraron clientes
-                                        </Typography>
+                                    <TableCell colSpan={7} sx={{ border: 0 }}>
+                                        <EmptyState
+                                            icon={<PeopleIcon />}
+                                            title="Sin clientes registrados"
+                                            subtitle="No hay clientes que coincidan con los filtros aplicados"
+                                        />
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -337,27 +332,30 @@ export default function ClientsListPage() {
                         onRowsPerPageChange={handleRowsPerPageChange}
                         rowsPerPageOptions={[5, 10, 20, 50]}
                         labelRowsPerPage="Filas por página"
-                        labelDisplayedRows={({ from, to, count }) =>
-                            `${from}–${to} de ${count}`
-                        }
+                        labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
                     />
                 )}
             </Card>
 
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-            >
-                <Alert
-                    severity={snackbar.severity}
-                    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
-                    variant="filled"
-                >
-                    {snackbar.message}
-                </Alert>
-            </Snackbar>
+            <ConfirmDialog
+                open={deactivateDialogOpen}
+                title="Desactivar Cliente"
+                content="¿Estás seguro que deseas desactivar este cliente? No podrá recibir nuevas reservaciones."
+                confirmText="Desactivar"
+                confirmColor="error"
+                isPending={deactivateMutation.isPending}
+                onClose={() => {
+                    setDeactivateDialogOpen(false);
+                    setClientToDeactivate(null);
+                }}
+                onConfirm={() => {
+                    if (clientToDeactivate) {
+                        deactivateMutation.mutate(clientToDeactivate);
+                        setDeactivateDialogOpen(false);
+                        setClientToDeactivate(null);
+                    }
+                }}
+            />
         </Box>
     );
 }
