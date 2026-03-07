@@ -551,6 +551,8 @@ export default function BlocksListPage() {
                                             ubicacion_id: detailBlock.ubicacion_id,
                                             checkin: dayjs(detailBlock.inicio_datetime).format('YYYY-MM-DDTHH:mm'),
                                             checkout: dayjs(detailBlock.fin_datetime).format('YYYY-MM-DDTHH:mm'),
+                                            block_id: detailBlock.bloqueo_id,
+                                            origen_bloqueo_code: detailBlock.origen_bloqueo_code,
                                         });
                                         navigate(`/reservaciones/nueva?${params.toString()}`);
                                     }}

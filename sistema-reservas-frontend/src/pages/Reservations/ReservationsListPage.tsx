@@ -4,6 +4,7 @@ import { isValidDateRange, adjustToOnFromChange, adjustFromOnToChange } from '..
 import { useQuery } from '@tanstack/react-query';
 import { qk } from '../../utils/queryKeys';
 import {
+    Alert,
     Autocomplete,
     Box,
     Button,
@@ -51,10 +52,13 @@ export default function ReservationsListPage() {
     const fromDate = filters.from ? filters.from.slice(0, 10) : undefined;
     const toDate = filters.to ? filters.to.slice(0, 10) : undefined;
 
+    // Reservations backend requires from strictly less than to (from >= to → 400).
+    const dateRangeInvalid = !!(fromDate && toDate && fromDate >= toDate);
+
     const { data, isLoading } = useQuery({
         queryKey: qk.reservations.list(filters),
         queryFn: () => reservationsApi.findAll(filters),
-        enabled: isValidDateRange(fromDate, toDate),
+        enabled: !dateRangeInvalid && isValidDateRange(fromDate, toDate),
     });
 
     const { data: clientesData, isLoading: clientesLoading } = useQuery({
@@ -260,6 +264,12 @@ export default function ReservationsListPage() {
                     />
                 </Box>
             </Card>
+
+            {dateRangeInvalid && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                    La fecha final debe ser posterior a la fecha inicial.
+                </Alert>
+            )}
 
             {/* Table */}
             <Card>

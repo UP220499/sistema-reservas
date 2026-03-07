@@ -35,6 +35,7 @@ interface ReservationFormProps {
         checkout: string;
         fromBlock: boolean;
         origenBloqueoCode?: string;
+        blockId?: string;
     };
 }
 
@@ -56,6 +57,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
             : prefill?.checkout || dayjs().add(3, 'day').hour(11).minute(0).format('YYYY-MM-DDTHH:mm'),
         total_reserva: initialData?.total_reserva ? Number(initialData.total_reserva) : undefined,
         notas: initialData?.notas || '',
+        source_block_id: prefill?.blockId || undefined,
     });
     const [error, setError] = useState('');
     const [totalError, setTotalError] = useState('');
@@ -82,6 +84,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
     function friendlyReservationError(raw: string): string {
         if (/total_reserva.*required/i.test(raw)) return 'El total de la reservación es requerido';
         if (/total_reserva.*greater/i.test(raw)) return 'El total debe ser mayor a $0';
+        if (/checkout_datetime.*greater.*checkin_datetime/i.test(raw)) return 'La fecha y hora de salida debe ser posterior a la fecha y hora de entrada';
         return raw;
     }
 
@@ -185,7 +188,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                                 <MenuItem key={client.cliente_id} value={client.cliente_id}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         {client.nombre}
-                                        {(client.es_vip || (client.reservas_completadas || 0) >= 3) && (
+                                        {(client.loyalty?.reservas_completadas_count ?? 0) >= 3 && (
                                             <Chip
                                                 label="Frecuente"
                                                 color="secondary"

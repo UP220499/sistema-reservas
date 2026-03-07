@@ -519,7 +519,11 @@ export class ClientsService {
     client: cliente & { cliente_telefono: cliente_telefono[] },
     loyalty: LoyaltyInfo,
   ) {
-    const primaryPhone = client.cliente_telefono[0]?.telefono ?? null;
+    const primaryPhone =
+      client.cliente_telefono.find((p) => p.es_principal && p.activo)
+        ?.telefono ??
+      client.cliente_telefono.find((p) => p.activo)?.telefono ??
+      null;
 
     return {
       cliente_id: client.cliente_id.toString(),

@@ -23,7 +23,10 @@ import {
   toReservationHistoryEntry,
 } from './mappers/reservation-history.mapper';
 import { HISTORY_ACTION } from './constants/history-actions';
-import { DEFAULT_RESERVATION_STATUS } from '../../shared/reservation-statuses';
+import {
+  DEFAULT_RESERVATION_STATUS,
+  BLOCKED_PAYMENT_STATUSES,
+} from '../../shared/reservation-statuses';
 
 @Injectable()
 export class ReservationsService {
@@ -270,6 +273,12 @@ export class ReservationsService {
 
       if (!existing) {
         throw new NotFoundException('Reservation not found');
+      }
+
+      if (BLOCKED_PAYMENT_STATUSES.has(existing.estatus_reserva_code)) {
+        throw new ConflictException(
+          'Reservation cannot be edited in its current status',
+        );
       }
 
       const providedCheckin = dto.checkin_datetime

@@ -28,6 +28,7 @@ export interface CreateReservationPayload {
     checkout_datetime: string;
     total_reserva?: number;
     notas?: string;
+    source_block_id?: string;
 }
 
 export interface CreatePaymentPayload {
