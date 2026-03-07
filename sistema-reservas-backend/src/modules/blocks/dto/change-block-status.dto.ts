@@ -1,9 +1,10 @@
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsIn } from 'class-validator';
 
 export class ChangeBlockStatusDto {
-  @IsString()
-  @IsNotEmpty()
+  @IsIn(['ACTIVO', 'INACTIVO'], {
+    message: 'estatus_bloqueo must be ACTIVO or INACTIVO',
+  })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : undefined,
   )

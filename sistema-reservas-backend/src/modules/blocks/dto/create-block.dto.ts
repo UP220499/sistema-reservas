@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import {
   IsISO8601,
+  IsIn,
   IsNumberString,
   IsOptional,
   IsString,
@@ -14,7 +15,9 @@ export class CreateBlockDto {
   ubicacion_id!: string;
 
   @IsOptional()
-  @IsString()
+  @IsIn(['MANUAL', 'AIRBNB'], {
+    message: 'origen_bloqueo_code must be MANUAL or AIRBNB',
+  })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : undefined,
   )
@@ -33,7 +36,9 @@ export class CreateBlockDto {
   fin_datetime!: string;
 
   @IsOptional()
-  @IsString()
+  @IsIn(['ACTIVO', 'INACTIVO'], {
+    message: 'estatus_bloqueo must be ACTIVO or INACTIVO',
+  })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : undefined,
   )

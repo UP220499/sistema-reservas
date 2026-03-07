@@ -16,8 +16,11 @@ export function statusLabel(code: string): string {
     switch (code) {
         case 'PENDIENTE': return 'Pendiente';
         case 'CONFIRMADA': return 'Confirmada';
+        case 'EN_CURSO': return 'En Curso';
         case 'CANCELADA': return 'Cancelada';
         case 'COMPLETADA': return 'Completada';
+        case 'FINALIZADA': return 'Finalizada';
+        case 'NO_SHOW': return 'No Show';
         default: return code;
     }
 }
@@ -29,8 +32,11 @@ export function statusChipColor(
     switch (code) {
         case 'PENDIENTE': return 'warning';
         case 'CONFIRMADA': return 'success';
+        case 'EN_CURSO': return 'success';
         case 'CANCELADA': return 'error';
+        case 'NO_SHOW': return 'error';
         case 'COMPLETADA': return 'info';
+        case 'FINALIZADA': return 'info';
         default: return 'default';
     }
 }
@@ -62,5 +68,5 @@ export function allowedStatusTransitions(code: string): string[] {
 
 /** True when payments can be registered (non-terminal active reservation). */
 export function canPay(code: string): boolean {
-    return code === 'PENDIENTE' || code === 'CONFIRMADA';
+    return code === 'PENDIENTE' || code === 'CONFIRMADA' || code === 'EN_CURSO';
 }

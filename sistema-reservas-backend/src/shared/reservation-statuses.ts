@@ -1,3 +1,17 @@
+/** All valid reservation status codes (mirrors cat_estatus_reserva table). */
+export const ALL_RESERVATION_STATUSES = [
+  'PENDIENTE',
+  'CONFIRMADA',
+  'EN_CURSO',
+  'CANCELADA',
+  'COMPLETADA',
+  'FINALIZADA',
+  'NO_SHOW',
+] as const;
+
+/** Valid values for origen_reserva_code. */
+export const ALL_RESERVATION_ORIGINS = ['DIRECTA', 'EXTERNA'] as const;
+
 /** Default status assigned when creating a new reservation via the API. */
 export const DEFAULT_RESERVATION_STATUS = 'CONFIRMADA' as const;
 

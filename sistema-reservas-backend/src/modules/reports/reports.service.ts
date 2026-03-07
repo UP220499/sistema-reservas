@@ -22,21 +22,6 @@ const MX_TZ = 'America/Mexico_City';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
-/** Format a Date as 'YYYY-MM-DD' using local calendar. */
-function localDateStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
-/** Format a Date as 'YYYY-MM' using local calendar. */
-function localMonthStr(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  return `${y}-${m}`;
-}
-
 /**
  * Returns the UTC offset for MX_TZ at the given instant, in milliseconds.
  * CST = -6 h = -21 600 000 ms; CDT = -5 h = -18 000 000 ms.
@@ -65,6 +50,42 @@ function getMxOffsetMs(at: Date): number {
     );
   };
   return epochOf(MX_TZ) - epochOf('UTC');
+}
+
+/** Returns MX-local date parts (year, 1-based month, day) for the given UTC instant. */
+function mxLocalDate(at: Date): { year: number; month: number; day: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: MX_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(at);
+  const g = (t: Intl.DateTimeFormatPartTypes): number =>
+    Number(parts.find((p) => p.type === t)?.value ?? 0);
+  return { year: g('year'), month: g('month'), day: g('day') };
+}
+
+/** Format a Date as 'YYYY-MM-DD' in MX local calendar. */
+function localDateStr(d: Date): string {
+  const { year, month, day } = mxLocalDate(d);
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** Format a Date as 'YYYY-MM' in MX local calendar. */
+function localMonthStr(d: Date): string {
+  const { year, month } = mxLocalDate(d);
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+/**
+ * Returns UTC Date for MX midnight (00:00:00 MX) of the given calendar date.
+ * Uses a noon-UTC probe to safely determine the MX offset (avoids DST edge cases).
+ */
+function mxMidnightUtc(year: number, month1: number, day: number): Date {
+  const probe = new Date(Date.UTC(year, month1 - 1, day, 12, 0, 0));
+  const offsetMs = getMxOffsetMs(probe);
+  // UTC midnight of that date minus the (negative) MX offset = MX midnight in UTC.
+  return new Date(Date.UTC(year, month1 - 1, day) - offsetMs);
 }
 
 /**
@@ -104,22 +125,12 @@ export class ReportsService {
   // ── /reports/stats ──────────────────────────────────────────────────────────
 
   async getStats() {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-
-    const todayEnd = new Date(todayStart);
-    todayEnd.setDate(todayEnd.getDate() + 1);
-
-    const monthStart = new Date(
-      todayStart.getFullYear(),
-      todayStart.getMonth(),
-      1,
-    );
-    const monthEnd = new Date(
-      todayStart.getFullYear(),
-      todayStart.getMonth() + 1,
-      1,
-    );
+    const { todayStart, todayEnd } = todayBoundsMx();
+    const { year, month } = mxLocalDate(todayStart);
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const monthStart = mxMidnightUtc(year, month, 1);
+    const monthEnd = mxMidnightUtc(nextYear, nextMonth, 1);
 
     const [
       checkins_hoy,
@@ -261,8 +272,7 @@ export class ReportsService {
   // ── /reports/occupancy ──────────────────────────────────────────────────────
 
   async getOccupancy(): Promise<OccupancyDay[]> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const { todayStart: today } = todayBoundsMx();
 
     // [today-29d, today+1d) → 30 calendar days including today.
     const rangeStart = new Date(today);
@@ -341,14 +351,21 @@ export class ReportsService {
 
   async getRevenue(): Promise<RevenueMonth[]> {
     const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth(); // 0-based
+    const { year: currentYear, month: currentMonth } = mxLocalDate(now); // month is 1-based
 
-    // Build 6 month ranges [start, end) from oldest to current.
+    // Build 6 month ranges [start, end) from oldest to current in MX timezone.
     const monthRanges = Array.from({ length: 6 }, (_, i) => {
       const offset = 5 - i; // 5 → 0
-      const start = new Date(currentYear, currentMonth - offset, 1);
-      const end = new Date(currentYear, currentMonth - offset + 1, 1);
+      let m = currentMonth - offset;
+      let y = currentYear;
+      while (m < 1) {
+        m += 12;
+        y--;
+      }
+      const nextM = m === 12 ? 1 : m + 1;
+      const nextY = m === 12 ? y + 1 : y;
+      const start = mxMidnightUtc(y, m, 1);
+      const end = mxMidnightUtc(nextY, nextM, 1);
       return { start, end };
     });
 

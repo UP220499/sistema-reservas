@@ -1,12 +1,17 @@
 import { Transform } from 'class-transformer';
 import {
   IsDefined,
+  IsIn,
   IsISO8601,
   IsNumber,
   IsOptional,
   IsString,
   ValidateIf,
 } from 'class-validator';
+import {
+  ALL_RESERVATION_ORIGINS,
+  ALL_RESERVATION_STATUSES,
+} from '../../../shared/reservation-statuses';
 
 export class CreateReservationDto {
   @IsString()
@@ -15,11 +20,15 @@ export class CreateReservationDto {
   @IsString()
   ubicacion_id!: string;
 
-  @IsString()
+  @IsIn([...ALL_RESERVATION_ORIGINS], {
+    message: `origen_reserva_code must be one of: ${ALL_RESERVATION_ORIGINS.join(', ')}`,
+  })
   origen_reserva_code!: string;
 
   @IsOptional()
-  @IsString()
+  @IsIn([...ALL_RESERVATION_STATUSES], {
+    message: `estatus_reserva_code must be one of: ${ALL_RESERVATION_STATUSES.join(', ')}`,
+  })
   estatus_reserva_code?: string;
 
   @IsISO8601()

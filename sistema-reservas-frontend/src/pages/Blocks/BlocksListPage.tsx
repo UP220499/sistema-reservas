@@ -139,6 +139,10 @@ export default function BlocksListPage() {
             setError('Selecciona una ubicación');
             return;
         }
+        if (form.fin_datetime <= form.inicio_datetime) {
+            setError('La fecha y hora de fin debe ser posterior a la fecha y hora de inicio');
+            return;
+        }
         createMutation.mutate({
             ...form,
             origen_bloqueo_code: 'MANUAL',

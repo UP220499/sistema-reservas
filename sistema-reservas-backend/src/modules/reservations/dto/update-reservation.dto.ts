@@ -1,5 +1,15 @@
 import { Transform } from 'class-transformer';
-import { IsISO8601, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsIn,
+  IsISO8601,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import {
+  ALL_RESERVATION_ORIGINS,
+  ALL_RESERVATION_STATUSES,
+} from '../../../shared/reservation-statuses';
 
 export class UpdateReservationDto {
   @IsOptional()
@@ -11,11 +21,15 @@ export class UpdateReservationDto {
   checkout_datetime?: string;
 
   @IsOptional()
-  @IsString()
+  @IsIn([...ALL_RESERVATION_STATUSES], {
+    message: `estatus_reserva_code must be one of: ${ALL_RESERVATION_STATUSES.join(', ')}`,
+  })
   estatus_reserva_code?: string;
 
   @IsOptional()
-  @IsString()
+  @IsIn([...ALL_RESERVATION_ORIGINS], {
+    message: `origen_reserva_code must be one of: ${ALL_RESERVATION_ORIGINS.join(', ')}`,
+  })
   origen_reserva_code?: string;
 
   @IsOptional()
