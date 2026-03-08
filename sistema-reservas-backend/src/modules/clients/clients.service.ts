@@ -72,7 +72,7 @@ export class ClientsService {
         );
       }),
       page,
-      pageSize,
+      page_size: pageSize,
       total,
     };
   }

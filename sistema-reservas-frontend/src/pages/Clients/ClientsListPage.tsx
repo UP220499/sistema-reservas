@@ -327,7 +327,7 @@ export default function ClientsListPage() {
                         component="div"
                         count={data.total}
                         page={(data.page || 1) - 1}
-                        rowsPerPage={data.pageSize || 10}
+                        rowsPerPage={data.page_size || 10}
                         onPageChange={handlePageChange}
                         onRowsPerPageChange={handleRowsPerPageChange}
                         rowsPerPageOptions={[5, 10, 20, 50]}

@@ -110,11 +110,16 @@ export class AuthService {
         nombre: true,
         username: true,
         rol_code: true,
+        activo: true,
       },
     });
 
     if (!user) {
       throw new UnauthorizedException('Usuario no encontrado');
+    }
+
+    if (!user.activo) {
+      throw new UnauthorizedException('User is inactive');
     }
 
     return {

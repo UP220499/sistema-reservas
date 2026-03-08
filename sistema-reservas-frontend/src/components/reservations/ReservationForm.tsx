@@ -61,7 +61,15 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
     });
     const [error, setError] = useState('');
     const [totalError, setTotalError] = useState('');
+    const [dateRangeError, setDateRangeError] = useState('');
     const [confirmHistoricOpen, setConfirmHistoricOpen] = useState(false);
+
+    function validateDateRange(checkin: string, checkout: string): string {
+        if (checkin && checkout && new Date(checkout) <= new Date(checkin)) {
+            return 'La fecha y hora de salida debe ser posterior a la fecha y hora de entrada';
+        }
+        return '';
+    }
 
     // Load clients for dropdown
     const { data: clientsData } = useQuery({
@@ -123,6 +131,12 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
         const tErr = validateTotal(form.total_reserva);
         if (tErr) {
             setTotalError(tErr);
+            return;
+        }
+
+        const dErr = validateDateRange(form.checkin_datetime, form.checkout_datetime);
+        if (dErr) {
+            setDateRangeError(dErr);
             return;
         }
 
@@ -246,9 +260,10 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                             label="Check-in"
                             type="datetime-local"
                             value={form.checkin_datetime}
-                            onChange={(e) =>
-                                updateField('checkin_datetime', e.target.value)
-                            }
+                            onChange={(e) => {
+                                updateField('checkin_datetime', e.target.value);
+                                setDateRangeError(validateDateRange(e.target.value, form.checkout_datetime));
+                            }}
                             fullWidth
                             required
                             slotProps={{ inputLabel: { shrink: true } }}
@@ -258,9 +273,12 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                             label="Check-out"
                             type="datetime-local"
                             value={form.checkout_datetime}
-                            onChange={(e) =>
-                                updateField('checkout_datetime', e.target.value)
-                            }
+                            onChange={(e) => {
+                                updateField('checkout_datetime', e.target.value);
+                                setDateRangeError(validateDateRange(form.checkin_datetime, e.target.value));
+                            }}
+                            error={!!dateRangeError}
+                            helperText={dateRangeError || undefined}
                             fullWidth
                             required
                             slotProps={{ inputLabel: { shrink: true } }}
@@ -313,7 +331,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                             <Button
                                 type="submit"
                                 variant="contained"
-                                disabled={mutation.isPending || !!totalError}
+                                disabled={mutation.isPending || !!totalError || !!dateRangeError}
                             >
                                 {mutation.isPending
                                     ? 'Guardando...'
