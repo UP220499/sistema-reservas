@@ -10,6 +10,49 @@ import { CreateBlockDto } from './dto/create-block.dto';
 import { BlockQueryDto } from './dto/block-query.dto';
 import { BlockMapper, BlockResponse } from './mappers/block.mapper';
 
+/** IANA timezone for MX local-calendar calculations. */
+const MX_TZ = 'America/Mexico_City';
+
+/**
+ * Returns the UTC offset for MX_TZ at the given instant, in milliseconds.
+ * CST = -6 h = -21_600_000 ms; CDT = -5 h = -18_000_000 ms.
+ */
+function getMxOffsetMs(at: Date): number {
+  const epochOf = (tz: string): number => {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).formatToParts(at);
+    const g = (t: Intl.DateTimeFormatPartTypes): number =>
+      Number(parts.find((p) => p.type === t)?.value ?? 0);
+    return Date.UTC(
+      g('year'),
+      g('month') - 1,
+      g('day'),
+      g('hour'),
+      g('minute'),
+      g('second'),
+    );
+  };
+  return epochOf(MX_TZ) - epochOf('UTC');
+}
+
+/**
+ * Returns a UTC Date representing midnight (00:00:00) in MX_TZ for the given
+ * calendar date. Uses a noon-UTC probe to safely handle DST transitions.
+ */
+function mxMidnightUtc(year: number, month1: number, day: number): Date {
+  const probe = new Date(Date.UTC(year, month1 - 1, day, 12, 0, 0));
+  const offsetMs = getMxOffsetMs(probe);
+  return new Date(Date.UTC(year, month1 - 1, day) - offsetMs);
+}
+
 interface BlockListResponse {
   items: BlockResponse[];
   page: number;
@@ -189,15 +232,17 @@ export class BlocksService {
     return date;
   }
 
-  // Parses a YYYY-MM-DD (or full ISO datetime) string as LOCAL midnight.
-  // A bare date string like "2026-03-09" is spec-parsed as UTC by `new Date()`,
-  // which can shift the boundary by hours. Appending T00:00:00 (no Z) forces
-  // local-time interpretation.
+  // Parses a YYYY-MM-DD string as midnight in America/Mexico_City (UTC-6/UTC-5).
+  // A bare date like "2026-03-09" is interpreted as the start of that calendar
+  // day in MX time, consistent with how the rest of the system handles date
+  // boundaries (reports, availability).
   private parseLocalDay(value: string, field: string): Date {
-    const normalized = /^\d{4}-\d{2}-\d{2}$/.test(value.trim())
-      ? `${value.trim()}T00:00:00`
-      : value.trim();
-    const date = new Date(normalized);
+    const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+    if (dateMatch) {
+      const [, y, m, d] = dateMatch;
+      return mxMidnightUtc(Number(y), Number(m), Number(d));
+    }
+    const date = new Date(value.trim());
     if (Number.isNaN(date.getTime())) {
       throw new BadRequestException(
         `${field} must be a valid date (YYYY-MM-DD)`,

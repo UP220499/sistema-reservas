@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
+  IsIn,
   IsISO8601,
   IsNumber,
   IsOptional,
@@ -25,9 +26,15 @@ function toNumber(value: unknown): number {
 
 export class CreatePaymentDto {
   @IsString()
+  @IsIn(['ANTICIPO', 'LIQUIDACION'], {
+    message: 'tipo_pago_mov_code must be ANTICIPO or LIQUIDACION',
+  })
   tipo_pago_mov_code!: string;
 
   @IsString()
+  @IsIn(['EFECTIVO', 'TRANSFERENCIA', 'TARJETA'], {
+    message: 'metodo_pago_code must be EFECTIVO, TRANSFERENCIA, or TARJETA',
+  })
   metodo_pago_code!: string;
 
   @Transform(({ value }) => toNumber(value))

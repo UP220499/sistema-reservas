@@ -288,6 +288,15 @@ export class ReservationsService {
         ? this.parseDate(dto.checkout_datetime, 'checkout_datetime')
         : undefined;
 
+      if (
+        existing.estatus_reserva_code === 'EN_CURSO' &&
+        (providedCheckin !== undefined || providedCheckout !== undefined)
+      ) {
+        throw new ConflictException(
+          'Reservation dates cannot be edited in its current status',
+        );
+      }
+
       const nextCheckin = providedCheckin ?? existing.checkin_datetime;
       const nextCheckout = providedCheckout ?? existing.checkout_datetime;
 
