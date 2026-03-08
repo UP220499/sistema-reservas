@@ -163,6 +163,7 @@ export default function CalendarPage() {
                 checkin: dayjs(event.inicio_datetime).format('YYYY-MM-DDTHH:mm'),
                 checkout: dayjs(event.fin_datetime).format('YYYY-MM-DDTHH:mm'),
                 origen_bloqueo_code: event.origen_bloqueo_code ?? '',
+                block_id: event.id,
             });
             navigate(`/reservaciones/nueva?${params.toString()}`);
         }

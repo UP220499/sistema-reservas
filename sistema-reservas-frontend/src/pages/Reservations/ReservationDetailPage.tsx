@@ -68,8 +68,11 @@ function getPaymentErrorDetail(err: unknown): PaymentErrorDetail {
             if (typeof d.message === 'string' && d.message.trim()) {
                 message = d.message;
             }
-            if (typeof d.remaining_balance === 'number') {
-                remaining_balance = d.remaining_balance;
+            if (d.remaining_balance !== undefined && d.remaining_balance !== null) {
+                const parsed = Number(d.remaining_balance);
+                if (isFinite(parsed)) {
+                    remaining_balance = parsed;
+                }
             }
         }
         return { message, remaining_balance };
