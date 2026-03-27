@@ -23,6 +23,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TodayIcon from '@mui/icons-material/Today';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import type { CalendarEvent } from '../../types';
 import { calendarApi } from '../../api/calendar';
 import { catalogsApi } from '../../api/reservations';
@@ -30,6 +31,8 @@ import { statusHexColor, CALENDAR_STATUS_COLORS } from '../../utils/reservationS
 import { getBlockOriginColor, getBlockOriginLabel, BLOCK_ORIGIN_COLORS } from '../../api/blocks';
 
 const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+dayjs.extend(utc);
+
 const MONTHS_ES = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
@@ -127,14 +130,11 @@ export default function CalendarPage() {
         if (!data?.items) return map;
 
         data.items.forEach((event) => {
-            const start = dayjs(event.inicio_datetime);
-            const end = dayjs(event.fin_datetime);
-            let current = start;
+            const start = dayjs.utc(event.inicio_datetime);
+            const end = dayjs.utc(event.fin_datetime);
+            let current = start.startOf('day');
 
-            while (
-                current.isBefore(end, 'day') ||
-                current.isSame(end, 'day')
-            ) {
+            while (current.isBefore(end, 'day')) {
                 const key = current.format('YYYY-MM-DD');
                 if (!map.has(key)) map.set(key, []);
                 map.get(key)!.push(event);
@@ -160,8 +160,8 @@ export default function CalendarPage() {
             const params = new URLSearchParams({
                 from: 'bloqueo',
                 ubicacion_id: event.ubicacion_id ?? '',
-                checkin: dayjs(event.inicio_datetime).format('YYYY-MM-DDTHH:mm'),
-                checkout: dayjs(event.fin_datetime).format('YYYY-MM-DDTHH:mm'),
+                checkin: dayjs.utc(event.inicio_datetime).format('YYYY-MM-DDTHH:mm'),
+                checkout: dayjs.utc(event.fin_datetime).format('YYYY-MM-DDTHH:mm'),
                 origen_bloqueo_code: event.origen_bloqueo_code ?? '',
                 block_id: event.id,
             });
