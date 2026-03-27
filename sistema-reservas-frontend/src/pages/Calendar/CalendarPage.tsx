@@ -23,6 +23,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TodayIcon from '@mui/icons-material/Today';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
 import type { CalendarEvent } from '../../types';
 import { calendarApi } from '../../api/calendar';
 import { catalogsApi } from '../../api/reservations';
@@ -30,6 +31,8 @@ import { statusHexColor, CALENDAR_STATUS_COLORS } from '../../utils/reservationS
 import { getBlockOriginColor, getBlockOriginLabel, BLOCK_ORIGIN_COLORS } from '../../api/blocks';
 
 const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+dayjs.extend(utc);
+
 const MONTHS_ES = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
@@ -44,6 +47,47 @@ const getEventColor = (
     }
     return statusHexColor(event.estatus_reserva_code, defaultColor);
 };
+
+const DATE_TIME_FORMAT = 'DD/MM/YYYY HH:mm';
+
+function getUtcRange(event: CalendarEvent): { start: dayjs.Dayjs; end: dayjs.Dayjs } {
+    return {
+        start: dayjs.utc(event.inicio_datetime),
+        end: dayjs.utc(event.fin_datetime),
+    };
+}
+
+function isAllDayUtcEvent(event: CalendarEvent): boolean {
+    const { start, end } = getUtcRange(event);
+    const isMidnightBoundary =
+        start.hour() === 0 &&
+        start.minute() === 0 &&
+        start.second() === 0 &&
+        end.hour() === 0 &&
+        end.minute() === 0 &&
+        end.second() === 0;
+
+    if (!isMidnightBoundary) {
+        return false;
+    }
+
+    const durationMinutes = end.diff(start, 'minute');
+    return durationMinutes > 0 && durationMinutes % (24 * 60) === 0;
+}
+
+function formatEventWindow(event: CalendarEvent): string {
+    const { start, end } = getUtcRange(event);
+
+    if (isAllDayUtcEvent(event)) {
+        return `${start.format('DD/MM/YYYY')} → salida ${end.format('DD/MM/YYYY')} (all-day)`;
+    }
+
+    if (start.isSame(end, 'day')) {
+        return `${start.format(DATE_TIME_FORMAT)} - ${end.format('HH:mm')} UTC`;
+    }
+
+    return `${start.format(DATE_TIME_FORMAT)} → ${end.format(DATE_TIME_FORMAT)} UTC`;
+}
 
 export default function CalendarPage() {
     const theme = useTheme();
@@ -127,14 +171,11 @@ export default function CalendarPage() {
         if (!data?.items) return map;
 
         data.items.forEach((event) => {
-            const start = dayjs(event.inicio_datetime);
-            const end = dayjs(event.fin_datetime);
-            let current = start;
+            const start = dayjs.utc(event.inicio_datetime);
+            const end = dayjs.utc(event.fin_datetime);
+            let current = start.startOf('day');
 
-            while (
-                current.isBefore(end, 'day') ||
-                current.isSame(end, 'day')
-            ) {
+            while (current.isBefore(end)) {
                 const key = current.format('YYYY-MM-DD');
                 if (!map.has(key)) map.set(key, []);
                 map.get(key)!.push(event);
@@ -160,8 +201,8 @@ export default function CalendarPage() {
             const params = new URLSearchParams({
                 from: 'bloqueo',
                 ubicacion_id: event.ubicacion_id ?? '',
-                checkin: dayjs(event.inicio_datetime).format('YYYY-MM-DDTHH:mm'),
-                checkout: dayjs(event.fin_datetime).format('YYYY-MM-DDTHH:mm'),
+                checkin: dayjs.utc(event.inicio_datetime).format('YYYY-MM-DDTHH:mm'),
+                checkout: dayjs.utc(event.fin_datetime).format('YYYY-MM-DDTHH:mm'),
                 origen_bloqueo_code: event.origen_bloqueo_code ?? '',
                 block_id: event.id,
             });
@@ -205,9 +246,21 @@ export default function CalendarPage() {
         <Tooltip
             key={`${event.id}-${index}`}
             title={
-                event.tipo === 'RESERVA'
-                    ? `${event.cliente_nombre ?? '—'} — ${event.ubicacion_nombre ?? '—'}`
-                    : `Bloqueo ${getBlockOriginLabel(event.origen_bloqueo_code ?? '')} — ${event.ubicacion_nombre ?? '—'} (clic para crear reservación)`
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                    <Typography variant="caption" fontWeight={700} sx={{ color: 'common.white' }}>
+                        {event.tipo === 'RESERVA'
+                            ? `${event.cliente_nombre ?? '—'} — ${event.ubicacion_nombre ?? '—'}`
+                            : `Bloqueo ${getBlockOriginLabel(event.origen_bloqueo_code ?? '')} — ${event.ubicacion_nombre ?? '—'}`}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'common.white' }}>
+                        {formatEventWindow(event)}
+                    </Typography>
+                    {event.tipo === 'BLOQUEO' && event.origen_bloqueo_code === 'AIRBNB' && isAllDayUtcEvent(event) && (
+                        <Typography variant="caption" sx={{ color: 'common.white' }}>
+                            Checkout no se pinta como día ocupado.
+                        </Typography>
+                    )}
+                </Box>
             }
             arrow
         >
