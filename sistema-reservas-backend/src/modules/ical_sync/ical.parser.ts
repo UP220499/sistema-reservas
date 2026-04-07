@@ -151,15 +151,7 @@ function parseDateValue(value: string): Date | null {
 
   const [, year, month, day] = dateMatch;
   const parsed = new Date(
-    Date.UTC(
-      Number(year),
-      Number(month) - 1,
-      Number(day),
-      0,
-      0,
-      0,
-      0,
-    ),
+    Date.UTC(Number(year), Number(month) - 1, Number(day), 0, 0, 0, 0),
   );
 
   return Number.isNaN(parsed.getTime()) ? null : parsed;

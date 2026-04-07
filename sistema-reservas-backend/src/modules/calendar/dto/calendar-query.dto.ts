@@ -61,7 +61,7 @@ export class CalendarQueryDto {
   @Transform(({ value }: { value: unknown }) => transformPageLike(value))
   @IsInt()
   @Min(1)
-  @Max(100)
+  @Max(500)
   page_size?: number;
 
   @IsOptional()
