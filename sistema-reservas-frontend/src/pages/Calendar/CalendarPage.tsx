@@ -29,6 +29,7 @@ import { calendarApi } from '../../api/calendar';
 import { catalogsApi } from '../../api/reservations';
 import { statusHexColor, CALENDAR_STATUS_COLORS } from '../../utils/reservationStatus';
 import { getBlockOriginColor, getBlockOriginLabel, BLOCK_ORIGIN_COLORS } from '../../api/blocks';
+import { getLocationColor } from '../../utils/locationColors';
 
 const DAYS_ES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 dayjs.extend(utc);
@@ -106,7 +107,7 @@ export default function CalendarPage() {
                 from,
                 to,
                 include: filter,
-                page_size: 100,
+                page_size: 500,
             }),
     });
 
@@ -210,38 +211,6 @@ export default function CalendarPage() {
         }
     };
 
-    const LOCATION_COLORS = [
-        '#009688', // Teal
-        '#9c27b0', // Purple
-        '#3f51b5', // Indigo
-        '#795548', // Brown
-        '#e91e63', // Pink
-        '#607d8b', // Blue Grey
-        '#ff5722', // Deep Orange
-        '#4caf50', // Green
-        '#f44336', // Red
-        '#2196f3', // Blue
-        '#ff9800', // Orange
-        '#00bcd4', // Cyan
-        '#8bc34a', // Light Green
-        '#ffc107', // Amber
-        '#673ab7', // Deep Purple
-        '#cddc39', // Lime
-        '#9e9e9e', // Grey
-        '#3f51b5', // Indigo
-        '#009688', // Teal
-        '#ffeb3b', // Yellow
-    ];
-
-    const getLocationColor = (id: string) => {
-        let hash = 0;
-        for (let i = 0; i < id.length; i++) {
-            hash = id.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        const index = Math.abs(hash) % LOCATION_COLORS.length;
-        return LOCATION_COLORS[index];
-    };
-
     const renderEventChip = (event: CalendarEvent, index: number) => (
         <Tooltip
             key={`${event.id}-${index}`}
@@ -263,6 +232,9 @@ export default function CalendarPage() {
                 </Box>
             }
             arrow
+            disableInteractive
+            enterDelay={60}
+            leaveDelay={0}
         >
             <Chip
                 label={
