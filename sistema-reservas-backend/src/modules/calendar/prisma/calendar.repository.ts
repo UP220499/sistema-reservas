@@ -21,6 +21,7 @@ export class CalendarRepository {
         cat_estatus_reserva: {
           bloquea_disponibilidad: true,
         },
+        ubicacion: { activa: true },
       },
       select: {
         reserva_id: true,
@@ -58,6 +59,7 @@ export class CalendarRepository {
         ...(ubicacionId ? { ubicacion_id: ubicacionId } : {}),
         inicio_datetime: { lt: to },
         fin_datetime: { gt: from },
+        ubicacion: { activa: true },
       },
       select: {
         bloqueo_id: true,
