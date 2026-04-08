@@ -10,7 +10,14 @@ async function bootstrap() {
 
   app.disable('etag');
 
-  app.enableCors();
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+    : [];
+
+  app.enableCors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    credentials: true,
+  });
   app.use(helmet());
 
   app.useGlobalPipes(
