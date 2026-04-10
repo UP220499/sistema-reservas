@@ -1,6 +1,8 @@
 import { Controller, Get, Header } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ReportsService } from './reports.service';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireUser } from '../../common/decorators/require-user.decorator';
 
 @ApiTags('Reports')
 @Controller('reports')
@@ -30,6 +32,8 @@ export class ReportsController {
   }
 
   @Get('occupancy')
+  @RequireUser()
+  @Roles('ADMIN')
   @Header(
     'Cache-Control',
     'no-store, no-cache, must-revalidate, proxy-revalidate',
@@ -41,6 +45,8 @@ export class ReportsController {
   }
 
   @Get('revenue')
+  @RequireUser()
+  @Roles('ADMIN')
   @Header(
     'Cache-Control',
     'no-store, no-cache, must-revalidate, proxy-revalidate',

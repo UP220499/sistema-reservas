@@ -14,6 +14,7 @@ import { BlocksModule } from './modules/blocks/blocks.module';
 import { AvailabilityModule } from './modules/availability/availability.module';
 import { IcalSyncModule } from './modules/ical_sync/ical-sync.module';
 import { UserIdentityGuard } from './common/guards/user-identity.guard';
+import { RolesGuard } from './common/guards/roles.guard';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter';
@@ -58,6 +59,10 @@ import { ReportsModule } from './modules/reports/reports.module';
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
     },
     {
       provide: APP_GUARD,

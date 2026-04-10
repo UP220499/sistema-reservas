@@ -98,6 +98,7 @@ function LoyaltyCard({ loyalty }: { loyalty: LoyaltyInfo }) {
 }
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import InfoRow from '../../components/common/InfoRow';
+import { useIsAdmin } from '../../hooks/useIsAdmin';
 
 export default function ClientDetailPage() {
     const { id } = useParams<{ id: string }>();
@@ -111,6 +112,7 @@ export default function ClientDetailPage() {
     const [confirmStatusOpen, setConfirmStatusOpen] = useState(false);
     const [deletePhoneOpen, setDeletePhoneOpen] = useState(false);
     const [phoneToDelete, setPhoneToDelete] = useState<string | null>(null);
+    const isAdmin = useIsAdmin();
 
 
 
@@ -232,15 +234,17 @@ export default function ClientDetailPage() {
                 >
                     Editar Info
                 </Button>
-                <Button
-                    variant="outlined"
-                    size="small"
-                    color={client.activo ? 'error' : 'success'}
-                    disabled={toggleStatusMutation.isPending}
-                    onClick={() => setConfirmStatusOpen(true)}
-                >
-                    {client.activo ? 'Desactivar' : 'Activar'}
-                </Button>
+                {(isAdmin || !client.activo) && (
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        color={client.activo ? 'error' : 'success'}
+                        disabled={toggleStatusMutation.isPending}
+                        onClick={() => setConfirmStatusOpen(true)}
+                    >
+                        {client.activo ? 'Desactivar' : 'Activar'}
+                    </Button>
+                )}
             </Box>
 
             {error && (

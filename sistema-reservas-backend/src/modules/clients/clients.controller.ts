@@ -1,14 +1,18 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   Patch,
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
 import { ClientsService } from './clients.service';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
+import { RequireUser } from '../../common/decorators/require-user.decorator';
 import { ClientQueryDto } from './dto/client-query.dto';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -46,10 +50,17 @@ export class ClientsController {
   }
 
   @Patch(':clientId/status')
+  @RequireUser()
   changeStatus(
     @Param('clientId') clientId: string,
     @Body() dto: ChangeStatusDto,
+    @Req() req?: { user?: JwtPayload },
   ): Promise<any> {
+    if (!dto.active && req?.user?.rol !== 'ADMIN') {
+      throw new ForbiddenException(
+        'Solo un administrador puede desactivar clientes',
+      );
+    }
     return this.clientsService.changeStatus(clientId, dto.active);
   }
 

@@ -44,6 +44,7 @@ import {
     allowedStatusTransitions,
 } from '../../utils/reservationStatus';
 import { qk } from '../../utils/queryKeys';
+import { useIsAdmin } from '../../hooks/useIsAdmin';
 
 /** Returns an error message or '' if valid. */
 function validateAmount(monto: number, saldo: number): string {
@@ -101,6 +102,8 @@ export default function ReservationDetailPage() {
     const [backendPaymentError, setBackendPaymentError] = useState<PaymentErrorDetail | null>(null);
     const [timesDialogOpen, setTimesDialogOpen] = useState(false);
     const [timesForm, setTimesForm] = useState({ checkinTime: '', checkoutTime: '' });
+
+    const isAdmin = useIsAdmin();
 
     const { data: reserva, isLoading } = useQuery({
         queryKey: qk.reservations.detail(id),
@@ -256,20 +259,23 @@ export default function ReservationDetailPage() {
                         Editar horas
                     </Button>
                 )}
-                {allowedStatusTransitions(reserva.estatus_reserva_code).length > 0 && (
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        disabled={changeStatusMutation.isPending}
-                        onClick={() => {
-                            const transitions = allowedStatusTransitions(reserva.estatus_reserva_code);
-                            setNewStatus(transitions[0] ?? '');
-                            setStatusDialogOpen(true);
-                        }}
-                    >
-                        Cambiar Estatus
-                    </Button>
-                )}
+                {(() => {
+                    const transitions = allowedStatusTransitions(reserva.estatus_reserva_code)
+                        .filter((code) => isAdmin || code !== 'CANCELADA');
+                    return transitions.length > 0 && (
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            disabled={changeStatusMutation.isPending}
+                            onClick={() => {
+                                setNewStatus(transitions[0] ?? '');
+                                setStatusDialogOpen(true);
+                            }}
+                        >
+                            Cambiar Estatus
+                        </Button>
+                    );
+                })()}
             </Box>
 
             {error && (
@@ -711,7 +717,9 @@ export default function ReservationDetailPage() {
                         fullWidth
                         sx={{ mt: 1 }}
                     >
-                        {allowedStatusTransitions(reserva.estatus_reserva_code).map((code) => (
+                        {allowedStatusTransitions(reserva.estatus_reserva_code)
+                            .filter((code) => isAdmin || code !== 'CANCELADA')
+                            .map((code) => (
                             <MenuItem key={code} value={code}>
                                 {statusLabel(code)}
                             </MenuItem>

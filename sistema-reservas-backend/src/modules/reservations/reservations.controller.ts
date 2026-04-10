@@ -1,14 +1,17 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   Patch,
   Post,
   Put,
   Query,
+  Req,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { JwtPayload } from '../auth/strategies/jwt.strategy';
 import { ReservationsService } from './reservations.service';
 import { ReservationQueryDto } from './dto/reservation-query.dto';
 import { CreateReservationDto } from './dto/create-reservation.dto';
@@ -122,7 +125,16 @@ export class ReservationsController {
     @Param('reservation_id') reservationId: string,
     @Body() dto: ChangeReservationStatusDto,
     @AuditUserId() auditUserId?: bigint,
+    @Req() req?: { user?: JwtPayload },
   ) {
+    if (
+      dto.estatus_reserva_code === 'CANCELADA' &&
+      req?.user?.rol !== 'ADMIN'
+    ) {
+      throw new ForbiddenException(
+        'Solo un administrador puede cancelar reservas',
+      );
+    }
     return this.reservationsService.changeStatus(
       reservationId,
       dto,

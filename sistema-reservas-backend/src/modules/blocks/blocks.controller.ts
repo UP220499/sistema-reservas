@@ -13,6 +13,8 @@ import { BlockQueryDto } from './dto/block-query.dto';
 import { ChangeBlockStatusDto } from './dto/change-block-status.dto';
 import { BlockResponse } from './mappers/block.mapper';
 import { ApiTags } from '@nestjs/swagger';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { RequireUser } from '../../common/decorators/require-user.decorator';
 
 interface BlockListResponse {
   items: BlockResponse[];
@@ -27,6 +29,8 @@ export class BlocksController {
   constructor(private readonly blocksService: BlocksService) {}
 
   @Post()
+  @RequireUser()
+  @Roles('ADMIN')
   create(@Body() dto: CreateBlockDto): Promise<BlockResponse> {
     return this.blocksService.create(dto);
   }
@@ -42,6 +46,8 @@ export class BlocksController {
   }
 
   @Patch(':bloqueo_id/status')
+  @RequireUser()
+  @Roles('ADMIN')
   changeStatus(
     @Param('bloqueo_id') bloqueoId: string,
     @Body() dto: ChangeBlockStatusDto,

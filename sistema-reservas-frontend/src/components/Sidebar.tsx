@@ -20,6 +20,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import HomeIcon from '@mui/icons-material/Home';
+import { useIsAdmin } from '../hooks/useIsAdmin';
 
 export const DRAWER_WIDTH = 260;
 export const DRAWER_WIDTH_MINI = 72;
@@ -47,11 +48,11 @@ interface SidebarProps {
 }
 
 const menuItems = [
-    { label: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { label: 'Reservaciones', icon: <EventNoteIcon />, path: '/reservaciones' },
-    { label: 'Clientes', icon: <PeopleIcon />, path: '/clientes' },
-    { label: 'Bloqueos', icon: <BlockIcon />, path: '/bloqueos' },
-    { label: 'Calendario', icon: <CalendarMonthIcon />, path: '/calendario' },
+    { label: 'Dashboard', icon: <DashboardIcon />, path: '/', adminOnly: false },
+    { label: 'Reservaciones', icon: <EventNoteIcon />, path: '/reservaciones', adminOnly: false },
+    { label: 'Clientes', icon: <PeopleIcon />, path: '/clientes', adminOnly: false },
+    { label: 'Bloqueos', icon: <BlockIcon />, path: '/bloqueos', adminOnly: true },
+    { label: 'Calendario', icon: <CalendarMonthIcon />, path: '/calendario', adminOnly: false },
 ];
 
 export default function Sidebar({
@@ -64,6 +65,11 @@ export default function Sidebar({
     const location = useLocation();
     const navigate = useNavigate();
     const [logoError, setLogoError] = useState(false);
+    const isAdmin = useIsAdmin();
+
+    const visibleMenuItems = menuItems.filter(
+        (item) => !item.adminOnly || isAdmin,
+    );
 
     const handleNavigation = (path: string) => {
         navigate(path);
@@ -141,7 +147,7 @@ export default function Sidebar({
 
             {/* Navigation */}
             <List sx={{ px: collapsed ? 0.75 : 1.5, py: 1, flexGrow: 1, overflow: 'hidden' }}>
-                {menuItems.map((item) => {
+                {visibleMenuItems.map((item) => {
                     const isActive =
                         item.path === '/'
                             ? location.pathname === '/'
