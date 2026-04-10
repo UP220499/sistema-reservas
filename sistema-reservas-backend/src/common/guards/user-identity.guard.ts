@@ -71,7 +71,12 @@ export class UserIdentityGuard implements CanActivate {
 
     const user = await this.prismaService.usuario.findUnique({
       where: { usuario_id: userId },
-      select: { usuario_id: true, activo: true },
+      select: {
+        usuario_id: true,
+        activo: true,
+        username: true,
+        rol_code: true,
+      },
     });
 
     if (!user || !user.activo) {
@@ -79,6 +84,14 @@ export class UserIdentityGuard implements CanActivate {
     }
 
     request.auditUserId = userId;
+
+    if (!request.user) {
+      request.user = {
+        sub: user.usuario_id.toString(),
+        username: user.username,
+        rol: user.rol_code,
+      };
+    }
 
     return true;
   }
