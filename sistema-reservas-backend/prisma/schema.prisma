@@ -17,6 +17,7 @@ model bloqueo_calendario {
   estatus_bloqueo     String
   external_uid        String?
   raw_payload         String?
+  notas               String?
   created_at          DateTime           @default(now()) @db.Timestamptz(6)
   updated_at          DateTime?          @db.Timestamptz(6)
   cat_origen_bloqueo  cat_origen_bloqueo @relation(fields: [origen_bloqueo_code], references: [origen_bloqueo_code], onDelete: NoAction, onUpdate: NoAction)

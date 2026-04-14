@@ -88,6 +88,7 @@ export interface Bloqueo {
     estatus_bloqueo: string;
     origen_bloqueo_code: string;
     external_uid: string | null;
+    notas?: string | null;
     ubicacion?: { nombre: string };
     ubicacion_nombre?: string;
 }

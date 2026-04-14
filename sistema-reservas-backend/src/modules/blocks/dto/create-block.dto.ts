@@ -54,4 +54,11 @@ export class CreateBlockDto {
   @IsOptional()
   @IsString()
   raw_payload?: string;
+
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : undefined,
+  )
+  notas?: string;
 }

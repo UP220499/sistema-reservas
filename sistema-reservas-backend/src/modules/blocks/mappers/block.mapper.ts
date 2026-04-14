@@ -9,6 +9,7 @@ export interface BlockResponse {
   estatus_bloqueo: string;
   external_uid: string | null;
   raw_payload: string | null;
+  notas: string | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -24,6 +25,7 @@ export class BlockMapper {
       estatus_bloqueo: block.estatus_bloqueo,
       external_uid: block.external_uid ?? null,
       raw_payload: block.raw_payload ?? null,
+      notas: block.notas ?? null,
       created_at: block.created_at.toISOString(),
       updated_at: block.updated_at ? block.updated_at.toISOString() : null,
     };
