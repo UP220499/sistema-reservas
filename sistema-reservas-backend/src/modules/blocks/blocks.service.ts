@@ -94,6 +94,7 @@ export class BlocksService {
       estatus_bloqueo: dto.estatus_bloqueo?.trim() || 'ACTIVO',
       external_uid: dto.external_uid ?? null,
       raw_payload: dto.raw_payload ?? null,
+      notas: dto.notas?.trim() ?? null,
       cat_origen_bloqueo: {
         connect: { origen_bloqueo_code: origenCode },
       },

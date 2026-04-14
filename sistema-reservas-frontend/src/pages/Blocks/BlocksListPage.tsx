@@ -65,6 +65,7 @@ export default function BlocksListPage() {
         origen_bloqueo_code: 'MANUAL',
         inicio_datetime: dayjs().add(1, 'day').hour(15).minute(0).format('YYYY-MM-DDTHH:mm'),
         fin_datetime: dayjs().add(3, 'day').hour(11).minute(0).format('YYYY-MM-DDTHH:mm'),
+        notas: '',
     });
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [blockToCancel, setBlockToCancel] = useState<string | null>(null);
@@ -130,6 +131,7 @@ export default function BlocksListPage() {
             origen_bloqueo_code: 'MANUAL',
             inicio_datetime: dayjs().add(1, 'day').hour(15).minute(0).format('YYYY-MM-DDTHH:mm'),
             fin_datetime: dayjs().add(3, 'day').hour(11).minute(0).format('YYYY-MM-DDTHH:mm'),
+            notas: '',
         });
         setError('');
     };
@@ -447,6 +449,21 @@ export default function BlocksListPage() {
                             required
                             slotProps={{ inputLabel: { shrink: true } }}
                         />
+
+                        <TextField
+                            label="Nota / Motivo"
+                            multiline
+                            rows={3}
+                            value={form.notas}
+                            onChange={(e) =>
+                                setForm((prev) => ({
+                                    ...prev,
+                                    notas: e.target.value,
+                                }))
+                            }
+                            fullWidth
+                            placeholder="Ej. Mantenimiento de tuberías, Pintura, Fuga de agua"
+                        />
                     </Box>
                 </DialogContent>
                 <DialogActions>
@@ -525,6 +542,17 @@ export default function BlocksListPage() {
                                         size="small"
                                     />
                                 </Box>
+                                {detailBlock.notas && (
+                                    <>
+                                        <Divider />
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                            <Typography variant="body2" color="text.secondary">Nota / Motivo</Typography>
+                                            <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', p: 1.5, bgcolor: 'background.default', borderRadius: 1 }}>
+                                                {detailBlock.notas}
+                                            </Typography>
+                                        </Box>
+                                    </>
+                                )}
                                 {detailBlock.external_uid && (
                                     <>
                                         <Divider />

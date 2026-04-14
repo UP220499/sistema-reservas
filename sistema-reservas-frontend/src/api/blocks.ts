@@ -37,6 +37,7 @@ export interface CreateBlockPayload {
     fin_datetime: string;
     estatus_bloqueo?: string;
     external_uid?: string;
+    notas?: string;
 }
 
 export const blocksApi = {
