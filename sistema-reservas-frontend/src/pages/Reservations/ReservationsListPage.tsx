@@ -36,8 +36,10 @@ import { clientsApi } from '../../api/clients';
 import { displayCurrency } from '../../utils/display';
 import { statusLabel, statusChipColor } from '../../utils/reservationStatus';
 import type { Cliente, Ubicacion } from '../../types';
+import { useIsAdmin } from '../../hooks/useIsAdmin';
 
 export default function ReservationsListPage() {
+    const isAdmin = useIsAdmin();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const clienteIdParam = searchParams.get('cliente_id') || undefined;
@@ -281,7 +283,7 @@ export default function ReservationsListPage() {
                                 <TableCell>Cliente</TableCell>
                                 <TableCell>Check-in</TableCell>
                                 <TableCell>Check-out</TableCell>
-                                <TableCell>Total</TableCell>
+                                {isAdmin && <TableCell>Total</TableCell>}
                                 <TableCell>Estatus</TableCell>
                                 <TableCell align="center">Acciones</TableCell>
                             </TableRow>
@@ -290,7 +292,7 @@ export default function ReservationsListPage() {
                             {isLoading
                                 ? Array.from({ length: 5 }).map((_, i) => (
                                     <TableRow key={i}>
-                                        {Array.from({ length: 7 }).map((__, j) => (
+                                        {Array.from({ length: isAdmin ? 7 : 6 }).map((__, j) => (
                                             <TableCell key={j}>
                                                 <Skeleton />
                                             </TableCell>
@@ -318,9 +320,11 @@ export default function ReservationsListPage() {
                                         <TableCell>
                                             {dayjs(reserva.checkout_datetime).format('DD/MM/YYYY')}
                                         </TableCell>
-                                        <TableCell>
-                                            {displayCurrency(reserva.total_reserva)}
-                                        </TableCell>
+                                        {isAdmin && (
+                                            <TableCell>
+                                                {displayCurrency(reserva.total_reserva)}
+                                            </TableCell>
+                                        )}
                                         <TableCell>
                                             <Chip
                                                 label={reserva.estatus_reserva?.nombre || statusLabel(reserva.estatus_reserva_code)}
@@ -346,7 +350,7 @@ export default function ReservationsListPage() {
 
                             {!isLoading && (!data?.items || data.items.length === 0) && (
                                 <TableRow>
-                                    <TableCell colSpan={7} sx={{ border: 0 }}>
+                                    <TableCell colSpan={isAdmin ? 7 : 6} sx={{ border: 0 }}>
                                         <EmptyState
                                             icon={<EventNoteIcon />}
                                             title="No hay reservaciones en este rango"

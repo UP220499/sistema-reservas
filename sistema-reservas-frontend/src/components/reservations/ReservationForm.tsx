@@ -25,6 +25,7 @@ import {
 import { clientsApi } from '../../api/clients';
 import { getErrorMessage } from '../../utils/error';
 import ConfirmDialog from '../common/ConfirmDialog';
+import { useIsAdmin } from '../../hooks/useIsAdmin';
 
 interface ReservationFormProps {
     initialData?: Reserva;
@@ -43,6 +44,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const isEditing = !!reservationId;
+    const isAdmin = useIsAdmin();
 
     const [form, setForm] = useState<CreateReservationPayload>({
         cliente_id: initialData?.cliente_id || '',
@@ -84,6 +86,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
     });
 
     function validateTotal(v: number | undefined): string {
+        if (!isAdmin) return '';
         if (v === undefined || isNaN(v)) return 'El total es requerido';
         if (v <= 0) return 'El total debe ser mayor a $0';
         return '';
@@ -284,24 +287,26 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                             slotProps={{ inputLabel: { shrink: true } }}
                         />
 
-                        <TextField
-                            label="Total"
-                            type="number"
-                            value={form.total_reserva ?? ''}
-                            onChange={(e) => {
-                                const parsed = e.target.value ? parseFloat(e.target.value) : undefined;
-                                updateField('total_reserva', parsed);
-                                setTotalError(validateTotal(parsed));
-                            }}
-                            required
-                            error={!!totalError}
-                            helperText={totalError || ' '}
-                            fullWidth
-                            slotProps={{
-                                input: { startAdornment: <span>$&nbsp;</span> },
-                                htmlInput: { min: 0.01, step: 0.01 },
-                            }}
-                        />
+                        {isAdmin && (
+                            <TextField
+                                label="Total"
+                                type="number"
+                                value={form.total_reserva ?? ''}
+                                onChange={(e) => {
+                                    const parsed = e.target.value ? parseFloat(e.target.value) : undefined;
+                                    updateField('total_reserva', parsed);
+                                    setTotalError(validateTotal(parsed));
+                                }}
+                                required
+                                error={!!totalError}
+                                helperText={totalError || ' '}
+                                fullWidth
+                                slotProps={{
+                                    input: { startAdornment: <span>$&nbsp;</span> },
+                                    htmlInput: { min: 0.01, step: 0.01 },
+                                }}
+                            />
+                        )}
 
                         <TextField
                             label="Notas"

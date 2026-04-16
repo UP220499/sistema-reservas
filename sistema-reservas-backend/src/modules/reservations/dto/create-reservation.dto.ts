@@ -56,8 +56,7 @@ export class CreateReservationDto {
 
     return NaN;
   })
-  @IsDefined({ message: 'total_reserva is required' })
-  // Only run @IsNumber when the value is defined; avoids duplicate errors for missing values.
+  @IsOptional()
   @ValidateIf((o: CreateReservationDto) => o.total_reserva !== undefined)
   @IsNumber(
     { allowNaN: false, allowInfinity: false },

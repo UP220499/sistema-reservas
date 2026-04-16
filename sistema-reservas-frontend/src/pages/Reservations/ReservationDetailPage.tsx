@@ -288,7 +288,7 @@ export default function ReservationDetailPage() {
             <Box
                 sx={{
                     display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gridTemplateColumns: { xs: '1fr', md: isAdmin ? '1fr 1fr' : '1fr' },
                     gap: 3,
                     mb: 3,
                 }}
@@ -316,124 +316,128 @@ export default function ReservationDetailPage() {
                     </CardContent>
                 </Card>
 
-                <Card>
-                    <CardContent>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                            Resumen Financiero
-                        </Typography>
-                        <Divider sx={{ mb: 2 }} />
-                        <InfoRow
-                            label="Total Reserva"
-                            value={`$${totalReserva.toLocaleString()}`}
-                        />
-                        <InfoRow
-                            label="Total Pagado"
-                            value={`$${totalPagado.toLocaleString()}`}
-                            valueColor="success.main"
-                        />
-                        <InfoRow
-                            label="Saldo Pendiente"
-                            value={`$${saldoPendiente.toLocaleString()}`}
-                            valueColor={saldoPendiente > 0 ? 'error.main' : 'success.main'}
-                        />
-                    </CardContent>
-                </Card>
+                {isAdmin && (
+                    <Card>
+                        <CardContent>
+                            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                Resumen Financiero
+                            </Typography>
+                            <Divider sx={{ mb: 2 }} />
+                            <InfoRow
+                                label="Total Reserva"
+                                value={`$${totalReserva.toLocaleString()}`}
+                            />
+                            <InfoRow
+                                label="Total Pagado"
+                                value={`$${totalPagado.toLocaleString()}`}
+                                valueColor="success.main"
+                            />
+                            <InfoRow
+                                label="Saldo Pendiente"
+                                value={`$${saldoPendiente.toLocaleString()}`}
+                                valueColor={saldoPendiente > 0 ? 'error.main' : 'success.main'}
+                            />
+                        </CardContent>
+                    </Card>
+                )}
             </Box>
 
             {/* Payments Section */}
-            <Card>
-                <CardContent>
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            mb: 2,
-                        }}
-                    >
-                        <Typography variant="subtitle2" color="text.secondary">
-                            Pagos
-                        </Typography>
-                        {canPay(reserva.estatus_reserva_code) && (
-                            <Button
-                                size="small"
-                                startIcon={<AddIcon />}
-                                onClick={() => {
-                                    resetPaymentForm();
-                                    setPaymentDialogOpen(true);
-                                }}
-                            >
-                                Registrar Pago
-                            </Button>
-                        )}
-                    </Box>
-                    <Divider sx={{ mb: 2 }} />
+            {isAdmin && (
+                <Card>
+                    <CardContent>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                mb: 2,
+                            }}
+                        >
+                            <Typography variant="subtitle2" color="text.secondary">
+                                Pagos
+                            </Typography>
+                            {canPay(reserva.estatus_reserva_code) && (
+                                <Button
+                                    size="small"
+                                    startIcon={<AddIcon />}
+                                    onClick={() => {
+                                        resetPaymentForm();
+                                        setPaymentDialogOpen(true);
+                                    }}
+                                >
+                                    Registrar Pago
+                                </Button>
+                            )}
+                        </Box>
+                        <Divider sx={{ mb: 2 }} />
 
-                    <TableContainer>
-                        <Table size="small">
-                            <TableHead>
-                                <TableRow>
-                                    <TableCell>Fecha</TableCell>
-                                    <TableCell>Tipo</TableCell>
-                                    <TableCell>Método</TableCell>
-                                    <TableCell align="right">Monto</TableCell>
-                                    <TableCell>Referencia</TableCell>
-                                    <TableCell>Notas</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {paymentsLoading ? (
-                                    Array.from({ length: 2 }).map((_, i) => (
-                                        <TableRow key={i}>
-                                            {Array.from({ length: 6 }).map((__, j) => (
-                                                <TableCell key={j}>
-                                                    <Skeleton />
-                                                </TableCell>
-                                            ))}
-                                        </TableRow>
-                                    ))
-                                ) : payments && payments.length > 0 ? (
-                                    payments.map((pago) => (
-                                        <TableRow key={pago.pago_movimiento_id}>
-                                            <TableCell>
-                                                {dayjs(pago.fecha_pago).format('DD/MM/YYYY hh:mm A')}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Chip
-                                                    label={pago.tipo_pago_mov_code}
-                                                    size="small"
-                                                    color={
-                                                        pago.tipo_pago_mov_code === 'ANTICIPO'
-                                                            ? 'warning'
-                                                            : pago.tipo_pago_mov_code === 'LIQUIDACION'
-                                                                ? 'success'
-                                                                : 'info'
-                                                    }
-                                                    variant="outlined"
-                                                />
-                                            </TableCell>
-                                            <TableCell>{pago.metodo_pago_code}</TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 600 }}>
-                                                ${Number(pago.monto).toLocaleString()}
-                                            </TableCell>
-                                            <TableCell>{pago.referencia || '—'}</TableCell>
-                                            <TableCell>{pago.notas || '—'}</TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : (
+                        <TableContainer>
+                            <Table size="small">
+                                <TableHead>
                                     <TableRow>
-                                        <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                                            <Typography variant="body2" color="text.secondary">
-                                                No hay pagos registrados
-                                            </Typography>
-                                        </TableCell>
+                                        <TableCell>Fecha</TableCell>
+                                        <TableCell>Tipo</TableCell>
+                                        <TableCell>Método</TableCell>
+                                        <TableCell align="right">Monto</TableCell>
+                                        <TableCell>Referencia</TableCell>
+                                        <TableCell>Notas</TableCell>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </CardContent>
-            </Card>
+                                </TableHead>
+                                <TableBody>
+                                    {paymentsLoading ? (
+                                        Array.from({ length: 2 }).map((_, i) => (
+                                            <TableRow key={i}>
+                                                {Array.from({ length: 6 }).map((__, j) => (
+                                                    <TableCell key={j}>
+                                                        <Skeleton />
+                                                    </TableCell>
+                                                ))}
+                                            </TableRow>
+                                        ))
+                                    ) : payments && payments.length > 0 ? (
+                                        payments.map((pago) => (
+                                            <TableRow key={pago.pago_movimiento_id}>
+                                                <TableCell>
+                                                    {dayjs(pago.fecha_pago).format('DD/MM/YYYY hh:mm A')}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Chip
+                                                        label={pago.tipo_pago_mov_code}
+                                                        size="small"
+                                                        color={
+                                                            pago.tipo_pago_mov_code === 'ANTICIPO'
+                                                                ? 'warning'
+                                                                : pago.tipo_pago_mov_code === 'LIQUIDACION'
+                                                                    ? 'success'
+                                                                    : 'info'
+                                                        }
+                                                        variant="outlined"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>{pago.metodo_pago_code}</TableCell>
+                                                <TableCell align="right" sx={{ fontWeight: 600 }}>
+                                                    ${Number(pago.monto).toLocaleString()}
+                                                </TableCell>
+                                                <TableCell>{pago.referencia || '—'}</TableCell>
+                                                <TableCell>{pago.notas || '—'}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    No hay pagos registrados
+                                                </Typography>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Add Payment Dialog */}
             <Dialog
