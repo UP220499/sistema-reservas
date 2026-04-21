@@ -34,14 +34,12 @@ import dayjs from 'dayjs';
 import {
     reservationsApi,
     type CreatePaymentPayload,
-    type UpdateTimesPayload,
 } from '../../api/reservations';
 import InfoRow from '../../components/common/InfoRow';
 import {
     statusLabel,
     statusChipColor,
     canPay,
-    allowedStatusTransitions,
 } from '../../utils/reservationStatus';
 import { qk } from '../../utils/queryKeys';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
@@ -87,8 +85,6 @@ export default function ReservationDetailPage() {
     const queryClient = useQueryClient();
     const { showToast } = useToast();
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-    const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-    const [newStatus, setNewStatus] = useState('');
     const [paymentForm, setPaymentForm] = useState<CreatePaymentPayload>({
         tipo_pago_mov_code: 'ANTICIPO',
         metodo_pago_code: 'EFECTIVO',
@@ -100,8 +96,6 @@ export default function ReservationDetailPage() {
     const [error, setError] = useState('');
     const [amountError, setAmountError] = useState('');
     const [backendPaymentError, setBackendPaymentError] = useState<PaymentErrorDetail | null>(null);
-    const [timesDialogOpen, setTimesDialogOpen] = useState(false);
-    const [timesForm, setTimesForm] = useState({ checkinTime: '', checkoutTime: '' });
 
     const isAdmin = useIsAdmin();
 
@@ -130,42 +124,6 @@ export default function ReservationDetailPage() {
             showToast('Pago registrado correctamente.');
         },
         onError: (err) => setBackendPaymentError(getPaymentErrorDetail(err)),
-    });
-
-    const updateTimesMutation = useMutation({
-        mutationFn: (payload: UpdateTimesPayload) =>
-            reservationsApi.updateTimes(id!, payload),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: qk.reservations.detail(id) });
-            queryClient.invalidateQueries({ queryKey: qk.reservations.list() });
-            queryClient.invalidateQueries({ queryKey: qk.calendar.events() });
-            setTimesDialogOpen(false);
-            showToast('Horas actualizadas correctamente.');
-        },
-        onError: (err) => {
-            const message =
-                axios.isAxiosError(err) && err.response?.status === 409
-                    ? 'Conflicto de horarios (traslape detectado)'
-                    : getErrorMessage(err);
-            showToast(message, 'error');
-        },
-    });
-
-    const changeStatusMutation = useMutation({
-        mutationFn: (status: string) =>
-            reservationsApi.changeStatus(id!, status),
-        onSuccess: (_, status) => {
-            queryClient.invalidateQueries({ queryKey: qk.reservations.detail(id) });
-            queryClient.invalidateQueries({ queryKey: qk.reservations.list() });
-            queryClient.invalidateQueries({ queryKey: qk.dashboard.todayAvailability() });
-            queryClient.refetchQueries({ queryKey: qk.dashboard.todayAvailability() });
-            queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
-            queryClient.invalidateQueries({ queryKey: qk.calendar.events() });
-            setStatusDialogOpen(false);
-            const label = status === 'CANCELADA' ? 'cancelada' : status === 'CONFIRMADA' ? 'confirmada' : status === 'COMPLETADA' ? 'completada' : 'actualizada';
-            showToast(`Reservación ${label} correctamente.`);
-        },
-        onError: (err) => setError(getErrorMessage(err)),
     });
 
     const resetPaymentForm = () => {
@@ -243,39 +201,15 @@ export default function ReservationDetailPage() {
                     color={statusChipColor(reserva.estatus_reserva_code)}
                     sx={{ fontSize: '0.9rem', px: 1 }}
                 />
-                {['PENDIENTE', 'CONFIRMADA'].includes(reserva.estatus_reserva_code) && (
+                {!['CANCELADA', 'COMPLETADA', 'FINALIZADA', 'NO_SHOW'].includes(reserva.estatus_reserva_code) && (
                     <Button
                         variant="outlined"
                         size="small"
-                        disabled={updateTimesMutation.isPending}
-                        onClick={() => {
-                            setTimesForm({
-                                checkinTime: dayjs(reserva.checkin_datetime).format('HH:mm'),
-                                checkoutTime: dayjs(reserva.checkout_datetime).format('HH:mm'),
-                            });
-                            setTimesDialogOpen(true);
-                        }}
+                        onClick={() => navigate(`/reservaciones/${reserva.reserva_id}/editar`)}
                     >
-                        Editar horas
+                        Editar Información
                     </Button>
                 )}
-                {(() => {
-                    const transitions = allowedStatusTransitions(reserva.estatus_reserva_code)
-                        .filter((code) => isAdmin || code !== 'CANCELADA');
-                    return transitions.length > 0 && (
-                        <Button
-                            variant="outlined"
-                            size="small"
-                            disabled={changeStatusMutation.isPending}
-                            onClick={() => {
-                                setNewStatus(transitions[0] ?? '');
-                                setStatusDialogOpen(true);
-                            }}
-                        >
-                            Cambiar Estatus
-                        </Button>
-                    );
-                })()}
             </Box>
 
             {error && (
@@ -625,132 +559,6 @@ export default function ReservationDetailPage() {
                         }
                     >
                         {createPaymentMutation.isPending ? 'Guardando...' : 'Registrar'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Edit Times Dialog */}
-            <Dialog
-                open={timesDialogOpen}
-                onClose={() => { if (!updateTimesMutation.isPending) setTimesDialogOpen(false); }}
-                maxWidth="xs"
-                fullWidth
-            >
-                <DialogTitle>Editar horas</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary">
-                                Fecha Check-in (fija)
-                            </Typography>
-                            <Typography variant="body2" fontWeight={600}>
-                                {dayjs(reserva.checkin_datetime).format('DD/MM/YYYY')}
-                            </Typography>
-                            <TextField
-                                label="Hora Check-in"
-                                type="time"
-                                value={timesForm.checkinTime}
-                                onChange={(e) =>
-                                    setTimesForm((prev) => ({ ...prev, checkinTime: e.target.value }))
-                                }
-                                fullWidth
-                                sx={{ mt: 1 }}
-                                slotProps={{ inputLabel: { shrink: true } }}
-                            />
-                        </Box>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary">
-                                Fecha Check-out (fija)
-                            </Typography>
-                            <Typography variant="body2" fontWeight={600}>
-                                {dayjs(reserva.checkout_datetime).format('DD/MM/YYYY')}
-                            </Typography>
-                            <TextField
-                                label="Hora Check-out"
-                                type="time"
-                                value={timesForm.checkoutTime}
-                                onChange={(e) =>
-                                    setTimesForm((prev) => ({ ...prev, checkoutTime: e.target.value }))
-                                }
-                                fullWidth
-                                sx={{ mt: 1 }}
-                                slotProps={{ inputLabel: { shrink: true } }}
-                            />
-                        </Box>
-                    </Box>
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        onClick={() => setTimesDialogOpen(false)}
-                        disabled={updateTimesMutation.isPending}
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        variant="contained"
-                        disabled={!timesForm.checkinTime || !timesForm.checkoutTime || updateTimesMutation.isPending}
-                        onClick={() => {
-                            if (updateTimesMutation.isPending) return;
-                            const checkinDate = dayjs(reserva.checkin_datetime).format('YYYY-MM-DD');
-                            const checkoutDate = dayjs(reserva.checkout_datetime).format('YYYY-MM-DD');
-                            updateTimesMutation.mutate({
-                                checkin_datetime: new Date(`${checkinDate}T${timesForm.checkinTime}`).toISOString(),
-                                checkout_datetime: new Date(`${checkoutDate}T${timesForm.checkoutTime}`).toISOString(),
-                            });
-                        }}
-                    >
-                        {updateTimesMutation.isPending ? 'Guardando...' : 'Guardar'}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Change Status Dialog */}
-            <Dialog
-                open={statusDialogOpen}
-                onClose={() => { if (!changeStatusMutation.isPending) setStatusDialogOpen(false); }}
-                maxWidth="xs"
-                fullWidth
-            >
-                <DialogTitle>Cambiar Estatus</DialogTitle>
-                <DialogContent>
-                    <TextField
-                        select
-                        label="Nuevo Estatus"
-                        value={newStatus}
-                        onChange={(e) => setNewStatus(e.target.value)}
-                        fullWidth
-                        sx={{ mt: 1 }}
-                    >
-                        {allowedStatusTransitions(reserva.estatus_reserva_code)
-                            .filter((code) => isAdmin || code !== 'CANCELADA')
-                            .map((code) => (
-                            <MenuItem key={code} value={code}>
-                                {statusLabel(code)}
-                            </MenuItem>
-                        ))}
-                    </TextField>
-                    {newStatus === 'CANCELADA' && (
-                        <Alert severity="warning" sx={{ mt: 2 }}>
-                            Al cancelar la reservación, se liberarán las fechas en el calendario. Esta acción no se puede deshacer fácilmente.
-                        </Alert>
-                    )}
-                </DialogContent>
-                <DialogActions>
-                    <Button
-                        onClick={() => setStatusDialogOpen(false)}
-                        disabled={changeStatusMutation.isPending}
-                    >
-                        Cancelar
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => {
-                            if (changeStatusMutation.isPending) return;
-                            changeStatusMutation.mutate(newStatus);
-                        }}
-                        disabled={changeStatusMutation.isPending}
-                    >
-                        {changeStatusMutation.isPending ? 'Confirmando...' : 'Confirmar'}
                     </Button>
                 </DialogActions>
             </Dialog>

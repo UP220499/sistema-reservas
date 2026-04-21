@@ -26,6 +26,7 @@ import { clientsApi } from '../../api/clients';
 import { getErrorMessage } from '../../utils/error';
 import ConfirmDialog from '../common/ConfirmDialog';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
+import { allowedStatusTransitions, statusLabel } from '../../utils/reservationStatus';
 
 interface ReservationFormProps {
     initialData?: Reserva;
@@ -106,9 +107,28 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                 checkin_datetime: new Date(payload.checkin_datetime).toISOString(),
                 checkout_datetime: new Date(payload.checkout_datetime).toISOString(),
             };
-            return isEditing
-                ? reservationsApi.update(reservationId!, data)
-                : reservationsApi.create(data);
+
+            if (isEditing && initialData) {
+                const diff: Partial<CreateReservationPayload> = {};
+                if (payload.cliente_id !== initialData.cliente_id) diff.cliente_id = payload.cliente_id;
+                if (payload.ubicacion_id !== initialData.ubicacion_id) diff.ubicacion_id = payload.ubicacion_id;
+                if (payload.origen_reserva_code !== initialData.origen_reserva_code) diff.origen_reserva_code = payload.origen_reserva_code;
+                if (payload.estatus_reserva_code !== initialData.estatus_reserva_code) diff.estatus_reserva_code = payload.estatus_reserva_code;
+                if (payload.notas !== (initialData.notas || '')) diff.notas = payload.notas;
+                
+                const currentTotal = payload.total_reserva !== undefined ? Number(payload.total_reserva) : undefined;
+                const initialTotal = initialData.total_reserva !== null ? Number(initialData.total_reserva) : undefined;
+                if (currentTotal !== initialTotal) diff.total_reserva = currentTotal;
+
+                const initCheckin = new Date(initialData.checkin_datetime).toISOString();
+                const initCheckout = new Date(initialData.checkout_datetime).toISOString();
+                if (data.checkin_datetime !== initCheckin) diff.checkin_datetime = data.checkin_datetime;
+                if (data.checkout_datetime !== initCheckout) diff.checkout_datetime = data.checkout_datetime;
+                
+                return reservationsApi.update(reservationId!, diff);
+            }
+            
+            return reservationsApi.create(data);
         },
         onSuccess: (result) => {
             queryClient.invalidateQueries({ queryKey: qk.reservations.list() });
@@ -255,8 +275,20 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                             }
                             fullWidth
                         >
-                            <MenuItem value="PENDIENTE">Pendiente</MenuItem>
-                            <MenuItem value="CONFIRMADA">Confirmada</MenuItem>
+                            {isEditing && initialData ? (
+                                allowedStatusTransitions(initialData.estatus_reserva_code)
+                                    .filter((code) => isAdmin || code !== 'CANCELADA')
+                                    .map((code) => (
+                                        <MenuItem key={code} value={code}>
+                                            {statusLabel(code)}
+                                        </MenuItem>
+                                    ))
+                            ) : (
+                                [
+                                    <MenuItem key="PENDIENTE" value="PENDIENTE">Pendiente</MenuItem>,
+                                    <MenuItem key="CONFIRMADA" value="CONFIRMADA">Confirmada</MenuItem>,
+                                ]
+                            )}
                         </TextField>
 
                         <TextField
