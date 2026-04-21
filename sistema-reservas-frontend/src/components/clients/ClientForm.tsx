@@ -31,13 +31,11 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
 
     const [form, setForm] = useState<CreateClientPayload>({
         nombre: initialData?.nombre || '',
-        correo: initialData?.correo || '',
-        phones: initialData
-            ? []
-            : [{ telefono: '', es_principal: true }],
+        correo: initialData?.correo ?? null,
+        phones: [],
     });
     const [error, setError] = useState('');
-    const [phoneErrors, setPhoneErrors] = useState<string[]>(isEditing ? [] : ['']);
+    const [phoneErrors, setPhoneErrors] = useState<string[]>([]);
 
     const mutation = useMutation({
         mutationFn: (payload: CreateClientPayload) => {
@@ -69,11 +67,7 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
             setError('El nombre es obligatorio');
             return;
         }
-        if (!isEditing) {
-            if (form.phones.length === 0) {
-                setError('Debes agregar al menos un teléfono');
-                return;
-            }
+        if (!isEditing && form.phones.length > 0) {
             const errs = form.phones.map((p) => validatePhone(p.telefono));
             if (errs.some((e) => e !== '')) {
                 setPhoneErrors(errs);
@@ -199,6 +193,11 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
                                         Agregar
                                     </Button>
                                 </Box>
+                                {form.phones.length === 0 && (
+                                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                        Puedes agregar teléfonos ahora o después desde el detalle del cliente.
+                                    </Typography>
+                                )}
                                 {form.phones.map((phone, index) => (
                                     <Box
                                         key={index}
@@ -210,7 +209,6 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
                                             onChange={(e) => updatePhone(index, e.target.value)}
                                             fullWidth
                                             size="small"
-                                            required={index === 0}
                                             error={!!phoneErrors[index]}
                                             helperText={phoneErrors[index] || 'Ingresa 10 dígitos (México)'}
                                             slotProps={{
@@ -218,15 +216,13 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
                                                 htmlInput: { inputMode: 'numeric', pattern: '\\d*', maxLength: 12 },
                                             }}
                                         />
-                                        {index > 0 && (
-                                            <IconButton
-                                                size="small"
-                                                color="error"
-                                                onClick={() => removePhone(index)}
-                                            >
-                                                <DeleteIcon fontSize="small" />
-                                            </IconButton>
-                                        )}
+                                        <IconButton
+                                            size="small"
+                                            color="error"
+                                            onClick={() => removePhone(index)}
+                                        >
+                                            <DeleteIcon fontSize="small" />
+                                        </IconButton>
                                     </Box>
                                 ))}
                             </Box>

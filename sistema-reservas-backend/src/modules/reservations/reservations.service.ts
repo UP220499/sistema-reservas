@@ -130,18 +130,16 @@ export class ReservationsService {
       );
     }
 
-    // Defensive presence check — DTO validation should catch this first.
-    if (dto.total_reserva == null) {
-      throw new BadRequestException('total_reserva is required');
-    }
+    let totalReservaDecimal: Prisma.Decimal | null = null;
+    if (dto.total_reserva != null) {
+      totalReservaDecimal = this.parseDecimal(
+        dto.total_reserva,
+        'total_reserva',
+      );
 
-    const totalReservaDecimal = this.parseDecimal(
-      dto.total_reserva,
-      'total_reserva',
-    );
-
-    if (totalReservaDecimal.lte(new Prisma.Decimal(0))) {
-      throw new BadRequestException('total_reserva must be greater than 0');
+      if (totalReservaDecimal.lte(new Prisma.Decimal(0))) {
+        throw new BadRequestException('total_reserva must be greater than 0');
+      }
     }
 
     const prisma = this.reservationsRepository.prismaClient;

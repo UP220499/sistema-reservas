@@ -96,11 +96,7 @@ export class ClientsService {
   }
 
   async create(dto: CreateClientDto) {
-    if (!dto.phones?.length) {
-      throw new BadRequestException('At least one phone number is required');
-    }
-
-    const normalizedPhones = dto.phones.map((phone) => ({
+    const normalizedPhones = (dto.phones ?? []).map((phone) => ({
       telefono: this.normalizeAndValidatePhone(phone.telefono),
       es_principal: phone.es_principal ?? false,
     }));
@@ -205,18 +201,6 @@ export class ClientsService {
                 'Client has active reservations and cannot be deactivated',
               active_reservations_count: activeReservationsCount,
             });
-          }
-        }
-
-        if (active) {
-          const activePhones = await tx.cliente_telefono.count({
-            where: { cliente_id: id, activo: true },
-          });
-
-          if (activePhones === 0) {
-            throw new BadRequestException(
-              'Active clients must have at least one active phone',
-            );
           }
         }
 
@@ -399,12 +383,6 @@ export class ClientsService {
           where: { cliente_id: clientIdParsed, activo: true },
           orderBy: [{ es_principal: 'desc' }, { cliente_telefono_id: 'asc' }],
         });
-
-        if (!activePhones.length && client.activo) {
-          throw new BadRequestException(
-            'Active clients must have at least one active phone',
-          );
-        }
 
         const hasPrincipal = activePhones.some((item) => item.es_principal);
 

@@ -1,6 +1,5 @@
 import { Type } from 'class-transformer';
 import {
-  ArrayMinSize,
   IsArray,
   IsEmail,
   IsOptional,
@@ -19,9 +18,9 @@ export class CreateClientDto {
   @IsEmail()
   correo?: string | null;
 
+  @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => AddPhoneDto)
-  phones!: AddPhoneDto[];
+  phones?: AddPhoneDto[];
 }
