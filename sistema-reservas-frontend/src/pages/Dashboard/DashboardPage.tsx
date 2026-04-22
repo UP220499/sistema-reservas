@@ -1,6 +1,6 @@
 import { Box, Container, Grid, Typography, Paper, Skeleton, useTheme } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { reportsApi, type OccupancyPoint, type RevenuePoint } from '../../api/reports';
+import { reportsApi, type OccupancyPoint, type RevenuePoint, type ReservationCounts } from '../../api/reports';
 import { qk } from '../../utils/queryKeys';
 import StatsCard from '../../components/dashboard/StatsCard';
 import EmptyState from '../../components/common/EmptyState';
@@ -10,6 +10,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import EventNoteIcon from '@mui/icons-material/EventNote';
 import {
     LineChart,
     Line,
@@ -49,6 +50,12 @@ export default function DashboardPage() {
         queryKey: qk.dashboard.revenue(),
         queryFn: reportsApi.getRevenue,
         enabled: isAdmin,
+    });
+
+    const { data: reservationCounts, isLoading: countsLoading } = useQuery<ReservationCounts>({
+        queryKey: qk.dashboard.reservationCounts(),
+        queryFn: reportsApi.getReservationCounts,
+        refetchInterval: 30000,
     });
 
     return (
@@ -129,6 +136,37 @@ export default function DashboardPage() {
                         )}
                     </Grid>
                 )}
+            </Grid>
+
+            {/* ── Reservation counts ── */}
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid size={{ xs: 12 }}>
+                    <Typography variant="subtitle1" fontWeight={600} color="text.secondary" sx={{ mb: 1 }}>
+                        Reservaciones
+                    </Typography>
+                </Grid>
+                {(['esta_semana', 'este_mes', 'este_anio', 'total'] as const).map((key) => {
+                    const labels: Record<typeof key, string> = {
+                        esta_semana: 'Esta semana',
+                        este_mes: 'Este mes',
+                        este_anio: 'Este año',
+                        total: 'Total histórico',
+                    };
+                    return (
+                        <Grid key={key} size={{ xs: 6, sm: 3 }}>
+                            {countsLoading ? (
+                                <Skeleton variant="rectangular" height={96} sx={{ borderRadius: 2 }} />
+                            ) : (
+                                <StatsCard
+                                    title={labels[key]}
+                                    value={reservationCounts?.[key] ?? '—'}
+                                    icon={<EventNoteIcon />}
+                                    color="secondary"
+                                />
+                            )}
+                        </Grid>
+                    );
+                })}
             </Grid>
 
             {/* ── Charts ── */}

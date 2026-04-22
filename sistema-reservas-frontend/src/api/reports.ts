@@ -31,6 +31,13 @@ interface RevenuePointRaw {
     revenue: string;
 }
 
+export interface ReservationCounts {
+    esta_semana: number;
+    este_mes: number;
+    este_anio: number;
+    total: number;
+}
+
 export interface TodayAvailability {
     ubicacion_id: string;
     nombre: string;
@@ -54,6 +61,10 @@ export const reportsApi = {
     },
     getTodayAvailability: async (): Promise<TodayAvailability[] | { items: TodayAvailability[]; total: number }> => {
         const { data } = await api.get<TodayAvailability[] | { items: TodayAvailability[]; total: number }>('/reports/availability/today');
+        return data;
+    },
+    getReservationCounts: async (): Promise<ReservationCounts> => {
+        const { data } = await api.get<ReservationCounts>('/reports/reservation-counts');
         return data;
     },
 };
