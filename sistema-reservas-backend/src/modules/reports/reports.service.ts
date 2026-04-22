@@ -154,6 +154,8 @@ export class ReportsService {
       this.prisma.reserva.count({
         where: {
           estatus_reserva_code: { in: [...ACTIVE_STATS_STATUSES] },
+          checkin_datetime: { lte: todayEnd },
+          checkout_datetime: { gt: todayStart },
         },
       }),
       // Sum of total_reserva for bookings whose check-in falls in the current
