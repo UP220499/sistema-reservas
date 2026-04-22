@@ -184,7 +184,7 @@ export default function LoginPage() {
                         variant="h5"
                         sx={{ fontWeight: 700, mb: 0.75, color: 'text.primary' }}
                     >
-                        Bienvenida
+                        Bienvenido
                     </Typography>
                     <Typography
                         variant="body2"
