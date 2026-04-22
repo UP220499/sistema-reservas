@@ -465,18 +465,8 @@ export class ClientsService {
   }
 
   private normalizeAndValidatePhone(phone: string): string {
-    const digits = this.normalizePhone(phone);
-    // Strip MX country code when provided (52 + 10 digits = 12 digits total).
-    const national =
-      digits.length === 12 && digits.startsWith('52')
-        ? digits.slice(2)
-        : digits;
-
-    if (national.length !== 10) {
-      throw new BadRequestException('phone must have 10 digits');
-    }
-
-    return national;
+    if (/^\+\d{7,15}$/.test(phone)) return phone;
+    throw new BadRequestException('Número de teléfono inválido (formato internacional requerido)');
   }
 
   private ensureUniquePhones(phones: string[]): void {
