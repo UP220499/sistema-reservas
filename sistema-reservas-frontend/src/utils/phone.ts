@@ -1,30 +1,34 @@
-/** Returns an error message, or '' if the value is valid (exactly 10 digits). */
+/** Validates the local part of a phone number (digits only, 4–15 chars). */
 export function validatePhone(value: string): string {
     if (!value) return 'El teléfono es requerido';
     if (!/^\d+$/.test(value)) return 'Solo se permiten dígitos';
-    if (value.length !== 10) return `Ingresa exactamente 10 dígitos (${value.length}/10)`;
+    if (value.length < 4) return 'Número demasiado corto';
+    if (value.length > 15) return 'Número demasiado largo';
     return '';
 }
 
 /**
- * Formats a stored phone string as "+52 XXX XXX XXXX".
- * Handles 10-digit local numbers and 12-digit numbers starting with "52".
- * Falls back to the raw value if it cannot be parsed.
+ * Formats a stored phone string for display.
+ * Handles E.164 format (+521234567890) and legacy 10-digit MX numbers.
  */
-export function formatMxPhone(raw: string): string {
+export function formatPhone(raw: string): string {
+    if (!raw) return raw;
+    if (raw.startsWith('+')) return raw;
+    // Legacy: bare 10-digit number → assume Mexico
     const digits = raw.replace(/\D/g, '');
-    const local =
-        digits.length === 12 && digits.startsWith('52') ? digits.slice(2) : digits;
-    if (local.length === 10) {
-        return `+52 ${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`;
+    if (digits.length === 10) {
+        return `+52 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
     }
     return raw;
 }
 
+/** Legacy alias kept for components that haven't been updated yet. */
+export const formatMxPhone = formatPhone;
+
 /** Maps known backend 400 phone error messages to user-friendly Spanish strings. */
 export function friendlyPhoneError(raw: string): string {
     if (/telefono.*required|phone.*required/i.test(raw)) return 'El teléfono es requerido';
-    if (/telefono.*invalid|phone.*invalid/i.test(raw)) return 'Número de teléfono inválido';
+    if (/telefono.*invalid|phone.*invalid|internacional/i.test(raw)) return 'Número de teléfono inválido';
     if (/already.*exist|duplicate/i.test(raw)) return 'Este teléfono ya está registrado';
     return raw;
 }

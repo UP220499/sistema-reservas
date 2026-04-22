@@ -24,6 +24,9 @@ import {
     TextField,
     Stack,
     Paper,
+    Select,
+    MenuItem,
+    FormControl,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import StarIcon from '@mui/icons-material/Star';
@@ -35,7 +38,21 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { clientsApi, type AddPhonePayload } from '../../api/clients';
 import { qk } from '../../utils/queryKeys';
 import { type ClienteTelefono, type LoyaltyInfo } from '../../types';
-import { validatePhone, formatMxPhone, friendlyPhoneError } from '../../utils/phone';
+import { validatePhone, formatPhone, friendlyPhoneError } from '../../utils/phone';
+import { COUNTRY_PHONE_CODES, DEFAULT_COUNTRY } from '../../utils/countryPhoneCodes';
+
+function parseStoredPhone(telefono: string): { dialCode: string; localNumber: string } {
+    if (telefono.startsWith('+')) {
+        const sorted = [...COUNTRY_PHONE_CODES].sort((a, b) => b.dial_code.length - a.dial_code.length);
+        for (const c of sorted) {
+            if (telefono.startsWith(c.dial_code)) {
+                return { dialCode: c.dial_code, localNumber: telefono.slice(c.dial_code.length) };
+            }
+        }
+    }
+    const digits = telefono.replace(/\D/g, '');
+    return { dialCode: DEFAULT_COUNTRY.dial_code, localNumber: digits };
+}
 import { displayCurrency } from '../../utils/display';
 
 const LOYALTY_COLOR: Record<string, 'default' | 'warning' | 'success' | 'secondary'> = {
@@ -106,6 +123,7 @@ export default function ClientDetailPage() {
     const queryClient = useQueryClient();
     const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
     const [newPhone, setNewPhone] = useState('');
+    const [newPhoneCountryCode, setNewPhoneCountryCode] = useState(DEFAULT_COUNTRY.dial_code);
     const [phoneError, setPhoneError] = useState('');
     const [editingPhone, setEditingPhone] = useState<ClienteTelefono | null>(null);
     const [error, setError] = useState('');
@@ -141,6 +159,7 @@ export default function ClientDetailPage() {
             queryClient.invalidateQueries({ queryKey: qk.clients.list() });
             setPhoneDialogOpen(false);
             setNewPhone('');
+            setNewPhoneCountryCode(DEFAULT_COUNTRY.dial_code);
             setPhoneError('');
         },
         onError: (err) => setError(friendlyPhoneError(getErrorMessage(err))),
@@ -155,6 +174,7 @@ export default function ClientDetailPage() {
             setPhoneDialogOpen(false);
             setEditingPhone(null);
             setNewPhone('');
+            setNewPhoneCountryCode(DEFAULT_COUNTRY.dial_code);
             setPhoneError('');
         },
         onError: (err) => setError(friendlyPhoneError(getErrorMessage(err))),
@@ -311,7 +331,7 @@ export default function ClientDetailPage() {
                                             sx={{ mr: 1.5, color: 'text.secondary', fontSize: 20 }}
                                         />
                                         <ListItemText
-                                            primary={formatMxPhone(phone.telefono)}
+                                            primary={formatPhone(phone.telefono)}
                                             secondary={
                                                 !phone.activo ? 'Inactivo' : undefined
                                             }
@@ -322,9 +342,9 @@ export default function ClientDetailPage() {
                                                 disabled={anyPhonePending}
                                                 onClick={() => {
                                                     setEditingPhone(phone);
-                                                    const digits = phone.telefono.replace(/\D/g, '');
-                                                    const local = digits.length === 12 && digits.startsWith('52') ? digits.slice(2) : digits;
-                                                    setNewPhone(local.slice(0, 10));
+                                                    const { dialCode, localNumber } = parseStoredPhone(phone.telefono);
+                                                    setNewPhoneCountryCode(dialCode);
+                                                    setNewPhone(localNumber);
                                                     setPhoneError('');
                                                     setPhoneDialogOpen(true);
                                                 }}
@@ -398,27 +418,40 @@ export default function ClientDetailPage() {
             >
                 <DialogTitle>{editingPhone ? 'Editar Teléfono' : 'Agregar Teléfono'}</DialogTitle>
                 <DialogContent>
-                    <TextField
-                        label="Número de teléfono"
-                        value={newPhone}
-                        onChange={(e) => {
-                            const stripped = e.target.value.replace(/\D/g, '');
-                            const digits = stripped.length === 12 && stripped.startsWith('52')
-                                ? stripped.slice(2)
-                                : stripped.slice(0, 10);
-                            setNewPhone(digits);
-                            setPhoneError(validatePhone(digits));
-                        }}
-                        required
-                        error={!!phoneError}
-                        helperText={phoneError || 'Ingresa 10 dígitos (México)'}
-                        fullWidth
-                        sx={{ mt: 1 }}
-                        slotProps={{
-                            input: { startAdornment: <span>+52&nbsp;</span> },
-                            htmlInput: { inputMode: 'numeric', pattern: '\\d*', maxLength: 12 },
-                        }}
-                    />
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                        <FormControl size="small" sx={{ minWidth: 110, flexShrink: 0 }}>
+                            <Select
+                                value={newPhoneCountryCode}
+                                onChange={(e) => setNewPhoneCountryCode(e.target.value as string)}
+                                renderValue={(val) => {
+                                    const country = COUNTRY_PHONE_CODES.find((c) => c.dial_code === val);
+                                    return `${country?.flag ?? ''} ${val}`;
+                                }}
+                            >
+                                {COUNTRY_PHONE_CODES.map((c) => (
+                                    <MenuItem key={`${c.code}-${c.dial_code}`} value={c.dial_code}>
+                                        {c.flag} {c.name} ({c.dial_code})
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            label="Número de teléfono"
+                            value={newPhone}
+                            onChange={(e) => {
+                                const digits = e.target.value.replace(/\D/g, '');
+                                setNewPhone(digits);
+                                setPhoneError(validatePhone(digits));
+                            }}
+                            required
+                            error={!!phoneError}
+                            helperText={phoneError || 'Solo dígitos, sin código de país'}
+                            fullWidth
+                            slotProps={{
+                                htmlInput: { inputMode: 'numeric', pattern: '\\d*', maxLength: 15 },
+                            }}
+                        />
+                    </Box>
                 </DialogContent>
                 <DialogActions>
                     <Button
@@ -428,6 +461,7 @@ export default function ClientDetailPage() {
                             setPhoneDialogOpen(false);
                             setEditingPhone(null);
                             setNewPhone('');
+                            setNewPhoneCountryCode(DEFAULT_COUNTRY.dial_code);
                             setPhoneError('');
                         }}
                     >
@@ -437,20 +471,21 @@ export default function ClientDetailPage() {
                         variant="contained"
                         onClick={() => {
                             if (anyPhonePending) return;
+                            const fullNumber = newPhoneCountryCode + newPhone;
                             if (editingPhone) {
                                 editPhoneMutation.mutate({
                                     id: editingPhone.cliente_telefono_id,
-                                    telefono: newPhone,
+                                    telefono: fullNumber,
                                 });
                             } else {
                                 addPhoneMutation.mutate({
-                                    telefono: newPhone,
+                                    telefono: fullNumber,
                                     es_principal: false,
                                 });
                             }
                         }}
                         disabled={
-                            newPhone.length !== 10 ||
+                            !newPhone ||
                             !!phoneError ||
                             anyPhonePending
                         }

@@ -1,21 +1,25 @@
 import { Transform } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString, Matches } from 'class-validator';
 
-/** Strip all non-digit characters and normalise the MX country prefix. */
-function normalizeMxPhone(value: unknown): unknown {
+/** Normalize to E.164 format: strip spaces, keep leading +. */
+function normalizePhone(value: unknown): unknown {
   if (typeof value !== 'string') return value;
-  const digits = value.replace(/\D/g, '');
-  // 52 + 10 digits = 12 digits → strip country code
-  if (digits.length === 12 && digits.startsWith('52')) {
-    return digits.slice(2);
+  const trimmed = value.trim();
+  if (trimmed.startsWith('+')) {
+    return '+' + trimmed.slice(1).replace(/\D/g, '');
   }
+  const digits = trimmed.replace(/\D/g, '');
+  // Legacy: bare 10-digit MX number → add +52 prefix
+  if (digits.length === 10) return `+52${digits}`;
+  // Legacy: 12-digit with 52 prefix
+  if (digits.length === 12 && digits.startsWith('52')) return `+${digits}`;
   return digits;
 }
 
 export class AddPhoneDto {
-  @Transform(({ value }: { value: unknown }) => normalizeMxPhone(value))
+  @Transform(({ value }: { value: unknown }) => normalizePhone(value))
   @IsString()
-  @Matches(/^\d{10}$/, { message: 'phone must have 10 digits' })
+  @Matches(/^\+\d{7,15}$/, { message: 'Número de teléfono inválido (formato internacional requerido)' })
   telefono!: string;
 
   @IsOptional()

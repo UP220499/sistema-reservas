@@ -12,12 +12,16 @@ import {
     Alert,
     IconButton,
     Divider,
+    Select,
+    MenuItem,
+    FormControl,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { clientsApi, type CreateClientPayload, type Client } from '../../api/clients';
 import { validatePhone } from '../../utils/phone';
+import { COUNTRY_PHONE_CODES, DEFAULT_COUNTRY } from '../../utils/countryPhoneCodes';
 
 interface ClientFormProps {
     initialData?: Client;
@@ -36,6 +40,7 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
     });
     const [error, setError] = useState('');
     const [phoneErrors, setPhoneErrors] = useState<string[]>([]);
+    const [phoneCountryCodes, setPhoneCountryCodes] = useState<string[]>([]);
 
     const mutation = useMutation({
         mutationFn: (payload: CreateClientPayload) => {
@@ -75,7 +80,15 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
                 return;
             }
         }
-        mutation.mutate(form);
+        // Combine country code + local number before sending
+        const payload: CreateClientPayload = {
+            ...form,
+            phones: form.phones.map((p, i) => ({
+                ...p,
+                telefono: (phoneCountryCodes[i] ?? DEFAULT_COUNTRY.dial_code) + p.telefono,
+            })),
+        };
+        mutation.mutate(payload);
     };
 
     const addPhone = () => {
@@ -84,6 +97,7 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
             phones: [...prev.phones, { telefono: '', es_principal: false }],
         }));
         setPhoneErrors((prev) => [...prev, '']);
+        setPhoneCountryCodes((prev) => [...prev, DEFAULT_COUNTRY.dial_code]);
     };
 
     const removePhone = (index: number) => {
@@ -92,13 +106,11 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
             phones: prev.phones.filter((_, i) => i !== index),
         }));
         setPhoneErrors((prev) => prev.filter((_, i) => i !== index));
+        setPhoneCountryCodes((prev) => prev.filter((_, i) => i !== index));
     };
 
     const updatePhone = (index: number, value: string) => {
-        const stripped = value.replace(/\D/g, '');
-        const digits = stripped.length === 12 && stripped.startsWith('52')
-            ? stripped.slice(2)
-            : stripped.slice(0, 10);
+        const digits = value.replace(/\D/g, '');
         setForm((prev) => ({
             ...prev,
             phones: prev.phones.map((p, i) =>
@@ -108,6 +120,14 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
         setPhoneErrors((prev) => {
             const next = [...prev];
             next[index] = validatePhone(digits);
+            return next;
+        });
+    };
+
+    const updateCountryCode = (index: number, dialCode: string) => {
+        setPhoneCountryCodes((prev) => {
+            const next = [...prev];
+            next[index] = dialCode;
             return next;
         });
     };
@@ -201,8 +221,24 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
                                 {form.phones.map((phone, index) => (
                                     <Box
                                         key={index}
-                                        sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center' }}
+                                        sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'flex-start' }}
                                     >
+                                        <FormControl size="small" sx={{ minWidth: 100, flexShrink: 0 }}>
+                                            <Select
+                                                value={phoneCountryCodes[index] ?? DEFAULT_COUNTRY.dial_code}
+                                                onChange={(e) => updateCountryCode(index, e.target.value as string)}
+                                                renderValue={(val) => {
+                                                    const country = COUNTRY_PHONE_CODES.find((c) => c.dial_code === val);
+                                                    return `${country?.flag ?? ''} ${val}`;
+                                                }}
+                                            >
+                                                {COUNTRY_PHONE_CODES.map((c) => (
+                                                    <MenuItem key={`${c.code}-${c.dial_code}`} value={c.dial_code}>
+                                                        {c.flag} {c.name} ({c.dial_code})
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
                                         <TextField
                                             label={index === 0 ? 'Teléfono principal' : `Teléfono ${index + 1}`}
                                             value={phone.telefono}
@@ -210,15 +246,15 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
                                             fullWidth
                                             size="small"
                                             error={!!phoneErrors[index]}
-                                            helperText={phoneErrors[index] || 'Ingresa 10 dígitos (México)'}
+                                            helperText={phoneErrors[index] || 'Solo dígitos, sin código de país'}
                                             slotProps={{
-                                                input: { startAdornment: <span>+52&nbsp;</span> },
-                                                htmlInput: { inputMode: 'numeric', pattern: '\\d*', maxLength: 12 },
+                                                htmlInput: { inputMode: 'numeric', pattern: '\\d*', maxLength: 15 },
                                             }}
                                         />
                                         <IconButton
                                             size="small"
                                             color="error"
+                                            sx={{ mt: 0.5 }}
                                             onClick={() => removePhone(index)}
                                         >
                                             <DeleteIcon fontSize="small" />
