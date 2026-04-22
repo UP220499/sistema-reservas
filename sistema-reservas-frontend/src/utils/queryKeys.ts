@@ -56,6 +56,8 @@ export const qk = {
         revenue: () => ['dashboard-revenue'] as const,
         /** ['today-availability'] */
         todayAvailability: () => ['today-availability'] as const,
+        /** ['dashboard-reservation-counts'] */
+        reservationCounts: () => ['dashboard-reservation-counts'] as const,
     },
 
     /** ['ubicaciones'] — location catalog used in forms */

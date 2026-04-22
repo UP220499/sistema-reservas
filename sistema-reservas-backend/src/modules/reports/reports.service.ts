@@ -401,4 +401,32 @@ export class ReportsService {
       return { month: key, revenue: revenue.toString() };
     });
   }
+
+  // ── /reports/reservation-counts ─────────────────────────────────────────────
+
+  async getReservationCounts() {
+    const { todayStart } = todayBoundsMx();
+    const { year, month } = mxLocalDate(todayStart);
+
+    const weekStart = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
+    const monthStart = mxMidnightUtc(year, month, 1);
+    const yearStart = mxMidnightUtc(year, 1, 1);
+
+    const [esta_semana, este_mes, este_anio, total] = await Promise.all([
+      this.prisma.reserva.count({
+        where: { created_at: { gte: weekStart } },
+      }),
+      this.prisma.reserva.count({
+        where: { created_at: { gte: monthStart } },
+      }),
+      this.prisma.reserva.count({
+        where: { created_at: { gte: yearStart } },
+      }),
+      this.prisma.reserva.count({
+        where: { estatus_reserva_code: { notIn: [...EXCLUDED_REVENUE_STATUSES] } },
+      }),
+    ]);
+
+    return { esta_semana, este_mes, este_anio, total };
+  }
 }

@@ -56,4 +56,15 @@ export class ReportsController {
   getRevenue() {
     return this.reportsService.getRevenue();
   }
+
+  @Get('reservation-counts')
+  @Header(
+    'Cache-Control',
+    'no-store, no-cache, must-revalidate, proxy-revalidate',
+  )
+  @Header('Pragma', 'no-cache')
+  @Header('Expires', '0')
+  getReservationCounts() {
+    return this.reportsService.getReservationCounts();
+  }
 }
