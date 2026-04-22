@@ -4,7 +4,6 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { qk } from '../../utils/queryKeys';
 import {
     Box,
-    Typography,
     Card,
     CardContent,
     TextField,
@@ -184,9 +183,6 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                 <IconButton onClick={() => navigate('/reservaciones')}>
                     <ArrowBackIcon />
                 </IconButton>
-                <Typography variant="h5" fontWeight={700}>
-                    {isEditing ? 'Editar Reservación' : 'Nueva Reservación'}
-                </Typography>
             </Box>
 
             {prefill?.fromBlock && prefill.origenBloqueoCode === 'AIRBNB' && (
