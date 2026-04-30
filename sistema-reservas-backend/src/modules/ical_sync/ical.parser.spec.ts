@@ -1,7 +1,7 @@
 import { parseIcalEvents } from './ical.parser';
 
 describe('parseIcalEvents', () => {
-  it('parses all-day Airbnb events as [inicio, fin) without timezone drift', () => {
+  it('parses all-day Airbnb events as [inicio, fin) with 15:00 checkin and 12:00 checkout in local MX time', () => {
     const ics = `BEGIN:VCALENDAR
 BEGIN:VEVENT
 UID:airbnb-123
@@ -14,8 +14,10 @@ END:VCALENDAR`;
 
     expect(events).toHaveLength(1);
     expect(events[0].uid).toBe('airbnb-123');
-    expect(events[0].start.toISOString()).toBe('2026-03-10T00:00:00.000Z');
-    expect(events[0].end.toISOString()).toBe('2026-03-12T00:00:00.000Z');
+    // March 10th 2026 is CST (UTC-6). 15:00 CST = 21:00 UTC
+    expect(events[0].start.toISOString()).toBe('2026-03-10T21:00:00.000Z');
+    // March 12th 2026 is CST (UTC-6). 12:00 CST = 18:00 UTC
+    expect(events[0].end.toISOString()).toBe('2026-03-12T18:00:00.000Z');
     expect(events[0].end.getTime()).toBeGreaterThan(events[0].start.getTime());
   });
 
