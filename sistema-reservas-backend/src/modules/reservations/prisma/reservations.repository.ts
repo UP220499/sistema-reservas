@@ -52,6 +52,14 @@ export class ReservationsRepository {
     });
   }
 
+  findAllWithRelations(where: Prisma.reservaWhereInput) {
+    return this.prisma.reserva.findMany({
+      where,
+      orderBy: { checkin_datetime: 'asc' },
+      include: reservationInclude,
+    });
+  }
+
   count(where: Prisma.reservaWhereInput) {
     return this.prisma.reserva.count({ where });
   }

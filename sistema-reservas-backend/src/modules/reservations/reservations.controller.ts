@@ -33,6 +33,14 @@ export class ReservationsController {
     return this.reservationsService.findAll(query);
   }
 
+  @Get('reminders/pending-balances')
+  getPendingBalancesReminders(@Query('days') days?: string) {
+    const daysNumber = days ? parseInt(days, 10) : 3;
+    return this.reservationsService.getPendingBalancesReminders(
+      isNaN(daysNumber) ? 3 : daysNumber,
+    );
+  }
+
   @Get(':reservation_id')
   findOne(@Param('reservation_id') reservationId: string) {
     return this.reservationsService.findOne(reservationId);

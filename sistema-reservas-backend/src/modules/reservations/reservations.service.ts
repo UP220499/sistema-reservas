@@ -797,6 +797,30 @@ export class ReservationsService {
       });
     }
   }
+  async getPendingBalancesReminders(
+    daysBeforeCheckin: number = 3,
+  ): Promise<ReservationSummary[]> {
+    const now = new Date();
+    const targetDate = new Date();
+    targetDate.setDate(now.getDate() + daysBeforeCheckin);
+
+    const reservations =
+      await this.reservationsRepository.findAllWithRelations({
+        estatus_reserva_code: 'CONFIRMADA',
+        checkin_datetime: {
+          gte: now,
+          lte: targetDate,
+        },
+      });
+
+    const summaries = reservations.map((res) => toReservationSummary(res));
+
+    // Return only those that have pending balances
+    return summaries.filter(
+      (res) => res.estatus_pago === 'PENDIENTE' || res.estatus_pago === 'PARCIAL',
+    );
+  }
+
 }
 
 /*
