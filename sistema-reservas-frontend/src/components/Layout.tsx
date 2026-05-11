@@ -35,6 +35,7 @@ const PAGE_INFO: Array<{ test: (p: string) => boolean; title: string; subtitle?:
     { test: (p) => /^\/clientes\/[^/]+$/.test(p), title: 'Detalle de Cliente', subtitle: 'Clientes' },
     { test: (p) => p === '/clientes', title: 'Clientes' },
     { test: (p) => p === '/bloqueos', title: 'Bloqueos' },
+    { test: (p) => p === '/pagos', title: 'Pagos' },
     { test: (p) => p === '/calendario', title: 'Calendario' },
 ];
 

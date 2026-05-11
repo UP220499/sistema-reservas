@@ -78,6 +78,10 @@ export interface PagoMovimiento {
     referencia: string | null;
     notas: string | null;
     created_at: string;
+    reserva?: {
+        cliente_id: string;
+        ubicacion_id: string;
+    };
 }
 
 export interface Bloqueo {

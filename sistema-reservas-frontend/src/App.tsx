@@ -16,6 +16,7 @@ import ClientDetailPage from './pages/Clients/ClientDetailPage';
 import ClientFormPage from './pages/Clients/ClientFormPage';
 import CalendarPage from './pages/Calendar/CalendarPage';
 import BlocksListPage from './pages/Blocks/BlocksListPage';
+import PaymentsListPage from './pages/Payments/PaymentsListPage';
 import AdminRoute from './components/AdminRoute';
 
 const queryClient = new QueryClient({
@@ -65,6 +66,9 @@ export default function App() {
                 {/* Calendario & Bloqueos */}
                 <Route path="/calendario" element={<CalendarPage />} />
                 <Route path="/bloqueos" element={<AdminRoute><BlocksListPage /></AdminRoute>} />
+                
+                {/* Pagos */}
+                <Route path="/pagos" element={<AdminRoute><PaymentsListPage /></AdminRoute>} />
               </Route>
             </Routes>
           </AuthProvider>
