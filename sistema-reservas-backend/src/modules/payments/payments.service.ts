@@ -4,10 +4,14 @@ import { PaymentsRepository } from './prisma/payments.repository';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { PaymentQueryDto } from './dto/payment-query.dto';
 import { PaymentResponse, toPaymentResponse } from './mappers/payment.mapper';
+import { PdfService } from './pdf.service';
 
 @Injectable()
 export class PaymentsService {
-  constructor(private readonly paymentsRepository: PaymentsRepository) {}
+  constructor(
+    private readonly paymentsRepository: PaymentsRepository,
+    private readonly pdfService: PdfService,
+  ) {}
 
   async create(
     reservationId: string,
@@ -157,5 +161,28 @@ export class PaymentsService {
         cause: normalizedError,
       });
     }
+  }
+
+  async generateReceipt(paymentId: string): Promise<Buffer> {
+    const parsedId = this.parseId(paymentId, 'payment_id');
+    const payment = await this.paymentsRepository.findByIdWithNames(parsedId);
+
+    if (!payment) {
+      throw new BadRequestException('Payment not found');
+    }
+
+    const folio = `PAG-${payment.pago_movimiento_id.toString().padStart(6, '0')}`;
+
+    return this.pdfService.generatePaymentReceipt({
+      folio,
+      date: payment.fecha_pago.toISOString().split('T')[0], // YYYY-MM-DD
+      type: payment.tipo_pago_mov_code,
+      method: payment.metodo_pago_code,
+      amount: Number(payment.monto),
+      reference: payment.referencia ?? 'N/A',
+      notes: payment.notas ?? '',
+      clientName: payment.reserva.cliente.nombre,
+      locationName: payment.reserva.ubicacion.nombre,
+    });
   }
 }

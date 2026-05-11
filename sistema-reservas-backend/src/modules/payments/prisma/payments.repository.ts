@@ -185,6 +185,20 @@ export class PaymentsRepository {
       },
     });
   }
+
+  async findByIdWithNames(pago_movimiento_id: bigint) {
+    return this.prisma.pago_movimiento.findUnique({
+      where: { pago_movimiento_id },
+      include: {
+        reserva: {
+          include: {
+            cliente: { select: { nombre: true } },
+            ubicacion: { select: { nombre: true } },
+          },
+        },
+      },
+    });
+  }
 }
 
 /*
