@@ -151,6 +151,40 @@ export class PaymentsRepository {
       },
     });
   }
+
+  async count(where: Prisma.pago_movimientoWhereInput): Promise<number> {
+    return this.prisma.pago_movimiento.count({ where });
+  }
+
+  async findManyPaged(
+    skip: number,
+    take: number,
+    where: Prisma.pago_movimientoWhereInput,
+  ): Promise<PaymentWithReservation[]> {
+    return this.prisma.pago_movimiento.findMany({
+      where,
+      skip,
+      take,
+      orderBy: { fecha_pago: 'desc' },
+      select: {
+        pago_movimiento_id: true,
+        reserva_id: true,
+        tipo_pago_mov_code: true,
+        metodo_pago_code: true,
+        monto: true,
+        fecha_pago: true,
+        referencia: true,
+        notas: true,
+        created_at: true,
+        reserva: {
+          select: {
+            ubicacion_id: true,
+            cliente_id: true,
+          },
+        },
+      },
+    });
+  }
 }
 
 /*

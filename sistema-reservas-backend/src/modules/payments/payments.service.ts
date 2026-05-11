@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PaymentsRepository } from './prisma/payments.repository';
 import { CreatePaymentDto } from './dto/create-payment.dto';
+import { PaymentQueryDto } from './dto/payment-query.dto';
 import { PaymentResponse, toPaymentResponse } from './mappers/payment.mapper';
 
 @Injectable()
@@ -63,6 +64,63 @@ export class PaymentsService {
       await this.paymentsRepository.findPaymentsByReservation(reservaId);
 
     return payments.map((payment) => toPaymentResponse(payment));
+  }
+
+  async findAll(query: PaymentQueryDto): Promise<{
+    data: PaymentResponse[];
+    total: number;
+    page: number;
+    page_size: number;
+    total_pages: number;
+  }> {
+    const { page, page_size, ...filters } = query;
+    const skip = (page - 1) * page_size;
+    const take = page_size;
+
+    const where: Prisma.pago_movimientoWhereInput = {};
+
+    if (filters.tipo_pago_mov_code) {
+      where.tipo_pago_mov_code = filters.tipo_pago_mov_code;
+    }
+    if (filters.metodo_pago_code) {
+      where.metodo_pago_code = filters.metodo_pago_code;
+    }
+
+    if (filters.ubicacion_id || filters.cliente_id) {
+      where.reserva = {};
+      if (filters.ubicacion_id) {
+        where.reserva.ubicacion_id = BigInt(filters.ubicacion_id);
+      }
+      if (filters.cliente_id) {
+        where.reserva.cliente_id = BigInt(filters.cliente_id);
+      }
+    }
+
+    if (filters.from || filters.to) {
+      where.fecha_pago = {};
+      if (filters.from) {
+        where.fecha_pago.gte = this.parseDate(filters.from, 'from');
+      }
+      if (filters.to) {
+        where.fecha_pago.lte = this.parseDate(filters.to, 'to');
+      }
+    }
+
+    const [total, items] = await Promise.all([
+      this.paymentsRepository.count(where),
+      this.paymentsRepository.findManyPaged(skip, take, where),
+    ]);
+
+    const data = items.map((payment) => toPaymentResponse(payment));
+    const total_pages = Math.ceil(total / page_size);
+
+    return {
+      data,
+      total,
+      page,
+      page_size,
+      total_pages,
+    };
   }
 
   private parseId(value: string, field: string): bigint {

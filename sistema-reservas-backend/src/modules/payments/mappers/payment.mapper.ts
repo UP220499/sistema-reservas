@@ -12,11 +12,18 @@ export type PaymentWithReservation = Prisma.pago_movimientoGetPayload<{
     notas: true;
     created_at: true;
   };
-}>;
+}> & {
+  reserva?: {
+    ubicacion_id: bigint;
+    cliente_id: bigint;
+  };
+};
 
 export interface PaymentResponse {
   pago_movimiento_id: string;
   reserva_id: string;
+  ubicacion_id?: string;
+  cliente_id?: string;
   tipo_pago_mov_code: string;
   metodo_pago_code: string;
   monto: string;
@@ -32,6 +39,8 @@ export function toPaymentResponse(
   return {
     pago_movimiento_id: payment.pago_movimiento_id.toString(),
     reserva_id: payment.reserva_id.toString(),
+    ubicacion_id: payment.reserva?.ubicacion_id?.toString(),
+    cliente_id: payment.reserva?.cliente_id?.toString(),
     tipo_pago_mov_code: payment.tipo_pago_mov_code,
     metodo_pago_code: payment.metodo_pago_code,
     monto: payment.monto.toString(),
