@@ -71,7 +71,7 @@ export class PaymentsService {
   }
 
   async findAll(query: PaymentQueryDto): Promise<{
-    data: PaymentResponse[];
+    items: PaymentResponse[];
     total: number;
     page: number;
     page_size: number;
@@ -115,11 +115,11 @@ export class PaymentsService {
       this.paymentsRepository.findManyPaged(skip, take, where),
     ]);
 
-    const data = items.map((payment) => toPaymentResponse(payment));
+    const itemsList = items.map((payment) => toPaymentResponse(payment));
     const total_pages = Math.ceil(total / page_size);
 
     return {
-      data,
+      items: itemsList,
       total,
       page,
       page_size,
