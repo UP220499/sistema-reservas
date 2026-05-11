@@ -29,6 +29,14 @@ export const qk = {
         detail: (id: string | undefined) => ['reservation', id] as const,
         /** ['payments', reservationId] */
         payments: (reservationId: string | undefined) => ['payments', reservationId] as const,
+        /** Pending balance reminders */
+        reminders: (days?: number) => days !== undefined ? ['reservations-reminders', days] as const : ['reservations-reminders'] as const,
+    },
+
+    paymentsGlobal: {
+        /** Prefix → ['payments-global'] | Exact → ['payments-global', filters] */
+        list: (filters?: unknown) =>
+            filters !== undefined ? (['payments-global', filters] as const) : (['payments-global'] as const),
     },
 
     blocks: {

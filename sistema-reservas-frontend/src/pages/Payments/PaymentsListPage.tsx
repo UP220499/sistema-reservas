@@ -22,6 +22,8 @@ import { paymentsApi, type GetPaymentsParams } from '../../api/payments';
 import EmptyState from '../../components/common/EmptyState';
 import type { PagoMovimiento } from '../../types';
 
+import { qk } from '../../utils/queryKeys';
+
 export default function PaymentsListPage() {
     const [filters, setFilters] = useState<GetPaymentsParams>({
         page: 1,
@@ -29,7 +31,7 @@ export default function PaymentsListPage() {
     });
 
     const { data, isLoading } = useQuery({
-        queryKey: ['payments', filters],
+        queryKey: qk.paymentsGlobal.list(filters),
         queryFn: () => paymentsApi.getAll(filters),
     });
 

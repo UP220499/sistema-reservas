@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 
 import AvailabilityWidget from '../../components/dashboard/AvailabilityWidget';
+import PaymentRemindersWidget from '../../components/dashboard/PaymentRemindersWidget';
 import { useIsAdmin } from '../../hooks/useIsAdmin';
 
 function fmtCurrency(v: string | number | null | undefined): string {
@@ -138,10 +139,16 @@ export default function DashboardPage() {
                 )}
             </Grid>
 
-            {/* ── Reservation counts ── */}
+            {/* ── Reservation counts & Reminders ── */}
             <Grid container spacing={3} sx={{ mb: 4 }}>
+                {isAdmin && (
+                    <Grid size={{ xs: 12 }}>
+                        <PaymentRemindersWidget />
+                    </Grid>
+                )}
+                
                 <Grid size={{ xs: 12 }}>
-                    <Typography variant="subtitle1" fontWeight={600} color="text.secondary" sx={{ mb: 1 }}>
+                    <Typography variant="subtitle1" fontWeight={600} color="text.secondary" sx={{ mb: 1, mt: 2 }}>
                         Reservaciones
                     </Typography>
                 </Grid>

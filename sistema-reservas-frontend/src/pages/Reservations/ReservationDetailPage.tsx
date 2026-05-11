@@ -119,6 +119,7 @@ export default function ReservationDetailPage() {
             queryClient.invalidateQueries({ queryKey: qk.reservations.detail(id) });
             queryClient.invalidateQueries({ queryKey: qk.reservations.list() });
             queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
+            queryClient.invalidateQueries({ queryKey: qk.paymentsGlobal.list() });
             setPaymentDialogOpen(false);
             resetPaymentForm();
             showToast('Pago registrado correctamente.');

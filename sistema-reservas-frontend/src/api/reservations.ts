@@ -107,6 +107,11 @@ export const reservationsApi = {
         );
         return data;
     },
+
+    getPendingBalancesReminders: async (days?: number): Promise<Reserva[]> => {
+        const { data } = await api.get('/reservations/reminders/pending-balances', { params: { days } });
+        return data;
+    },
 };
 
 // Catalogs & Locations (reusable)
