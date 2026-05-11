@@ -20,6 +20,12 @@ const reservationInclude = {
       nombre: true,
     },
   },
+  pago_movimiento: {
+    select: {
+      monto: true,
+      tipo_pago_mov_code: true,
+    },
+  },
 } as const;
 
 const historyInclude = {
