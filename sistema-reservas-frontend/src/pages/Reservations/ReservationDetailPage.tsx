@@ -82,6 +82,13 @@ function getPaymentErrorDetail(err: unknown): PaymentErrorDetail {
 export default function ReservationDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const handleBack = () => {
+        if (window.history.length > 2) {
+            navigate(-1);
+        } else {
+            navigate('/reservaciones');
+        }
+    };
     const queryClient = useQueryClient();
     const { showToast } = useToast();
     const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
@@ -177,7 +184,7 @@ export default function ReservationDetailPage() {
                 <Typography color="text.secondary">
                     Reservación no encontrada
                 </Typography>
-                <Button onClick={() => navigate('/reservaciones')} sx={{ mt: 2 }}>
+                <Button onClick={handleBack} sx={{ mt: 2 }}>
                     Volver
                 </Button>
             </Box>
@@ -188,7 +195,7 @@ export default function ReservationDetailPage() {
         <Box>
             {/* Header */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                <IconButton onClick={() => navigate('/reservaciones')}>
+                <IconButton onClick={handleBack}>
                     <ArrowBackIcon />
                 </IconButton>
                 <Box sx={{ flexGrow: 1 }}>

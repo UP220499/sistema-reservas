@@ -33,6 +33,14 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
     const queryClient = useQueryClient();
     const isEditing = !!clientId;
 
+    const handleBack = () => {
+        if (window.history.length > 2) {
+            navigate(-1);
+        } else {
+            navigate(isEditing ? `/clientes/${clientId}` : '/clientes');
+        }
+    };
+
     const [form, setForm] = useState<CreateClientPayload>({
         nombre: initialData?.nombre || '',
         correo: initialData?.correo ?? null,
@@ -60,7 +68,7 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
                 queryClient.invalidateQueries({ queryKey: qk.clients.detail(clientId) });
                 queryClient.refetchQueries({ queryKey: qk.clients.detail(clientId) });
             }
-            navigate(`/clientes/${result.cliente_id}`);
+            navigate(`/clientes/${result.cliente_id}`, { replace: true });
         },
         onError: () => setError('Error al guardar el cliente'),
     });
@@ -135,7 +143,7 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
     return (
         <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                <IconButton onClick={() => navigate('/clientes')}>
+                <IconButton onClick={handleBack}>
                     <ArrowBackIcon />
                 </IconButton>
                 <Typography variant="h5" fontWeight={700}>
@@ -280,7 +288,7 @@ export default function ClientForm({ initialData, clientId }: ClientFormProps) {
                         >
                             <Button
                                 variant="outlined"
-                                onClick={() => navigate(isEditing ? `/clientes/${clientId}` : '/clientes')}
+                                onClick={handleBack}
                             >
                                 Cancelar
                             </Button>

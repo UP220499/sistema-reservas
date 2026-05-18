@@ -43,6 +43,13 @@ interface ReservationFormProps {
 export default function ReservationForm({ initialData, reservationId, prefill }: ReservationFormProps) {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const handleBack = () => {
+        if (window.history.length > 2) {
+            navigate(-1);
+        } else {
+            navigate('/reservaciones');
+        }
+    };
     const isEditing = !!reservationId;
     const isAdmin = useIsAdmin();
 
@@ -137,7 +144,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
             if (isEditing) {
                 queryClient.invalidateQueries({ queryKey: qk.reservations.detail(reservationId) });
             }
-            navigate(`/reservaciones/${result.reserva_id}`);
+            navigate(`/reservaciones/${result.reserva_id}`, { replace: true });
         },
         onError: (err) => setError(friendlyReservationError(getErrorMessage(err))),
     });
@@ -180,7 +187,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
     return (
         <Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                <IconButton onClick={() => navigate('/reservaciones')}>
+                <IconButton onClick={handleBack}>
                     <ArrowBackIcon />
                 </IconButton>
             </Box>
@@ -357,7 +364,7 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                         >
                             <Button
                                 variant="outlined"
-                                onClick={() => navigate('/reservaciones')}
+                                onClick={handleBack}
                             >
                                 Cancelar
                             </Button>

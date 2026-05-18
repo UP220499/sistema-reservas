@@ -120,6 +120,13 @@ import { useIsAdmin } from '../../hooks/useIsAdmin';
 export default function ClientDetailPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const handleBack = () => {
+        if (window.history.length > 2) {
+            navigate(-1);
+        } else {
+            navigate('/clientes');
+        }
+    };
     const queryClient = useQueryClient();
     const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
     const [newPhone, setNewPhone] = useState('');
@@ -221,7 +228,7 @@ export default function ClientDetailPage() {
         return (
             <Box sx={{ textAlign: 'center', py: 6 }}>
                 <Typography color="text.secondary">Cliente no encontrado</Typography>
-                <Button onClick={() => navigate('/clientes')} sx={{ mt: 2 }}>
+                <Button onClick={handleBack} sx={{ mt: 2 }}>
                     Volver
                 </Button>
             </Box>
@@ -232,7 +239,7 @@ export default function ClientDetailPage() {
         <Box>
             {/* Header */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
-                <IconButton onClick={() => navigate('/clientes')}>
+                <IconButton onClick={handleBack}>
                     <ArrowBackIcon />
                 </IconButton>
                 <Box sx={{ flexGrow: 1 }}>
