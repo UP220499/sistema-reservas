@@ -19,7 +19,21 @@ export default function PaymentRemindersWidget() {
     }
 
     if (!reminders || reminders.length === 0) {
-        return null; // Don't show the widget if there are no pending reminders to save space
+        return (
+            <Card sx={{ borderLeft: '4px solid', borderColor: 'success.main', height: '100%' }}>
+                <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
+                        <WarningAmberIcon color="success" />
+                        <Typography variant="h6" fontWeight={600}>
+                            Avisos de Pagos Pendientes
+                        </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                        ¡Todo al día! No hay reservas con check-in próximo que tengan saldo pendiente.
+                    </Typography>
+                </CardContent>
+            </Card>
+        );
     }
 
     return (

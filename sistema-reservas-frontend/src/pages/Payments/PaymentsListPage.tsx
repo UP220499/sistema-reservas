@@ -19,6 +19,7 @@ import {
 import DownloadIcon from '@mui/icons-material/Download';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import { paymentsApi, type GetPaymentsParams } from '../../api/payments';
+import { catalogsApi } from '../../api/reservations';
 import EmptyState from '../../components/common/EmptyState';
 import type { PagoMovimiento } from '../../types';
 
@@ -30,9 +31,16 @@ export default function PaymentsListPage() {
         page_size: 10,
     });
 
+    const { data: ubicaciones } = useQuery({
+        queryKey: qk.ubicaciones(),
+        queryFn: catalogsApi.getUbicaciones,
+        staleTime: Infinity,
+    });
+
     const { data, isLoading } = useQuery({
         queryKey: qk.paymentsGlobal.list(filters),
         queryFn: () => paymentsApi.getAll(filters),
+        staleTime: 0,
     });
 
     const handlePageChange = (_: unknown, newPage: number) => {
@@ -81,7 +89,7 @@ export default function PaymentsListPage() {
                             <TableRow>
                                 <TableCell>Folio</TableCell>
                                 <TableCell>Fecha</TableCell>
-                                <TableCell>Cliente</TableCell>
+                                <TableCell>Ubicación</TableCell>
                                 <TableCell>Monto</TableCell>
                                 <TableCell>Tipo</TableCell>
                                 <TableCell>Método</TableCell>
@@ -114,7 +122,9 @@ export default function PaymentsListPage() {
                                             })}
                                         </TableCell>
                                         <TableCell>
-                                            {payment.reserva?.cliente_id ? `Cliente #${payment.reserva.cliente_id}` : '—'}
+                                            {payment.ubicacion_id 
+                                                ? ubicaciones?.find(u => u.ubicacion_id === payment.ubicacion_id)?.nombre || `Ubicación #${payment.ubicacion_id}`
+                                                : '—'}
                                         </TableCell>
                                         <TableCell>
                                             <Typography variant="body2" fontWeight="bold" color="success.main">

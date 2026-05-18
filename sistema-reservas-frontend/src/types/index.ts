@@ -71,6 +71,8 @@ export interface Ubicacion {
 export interface PagoMovimiento {
     pago_movimiento_id: string;
     reserva_id: string;
+    ubicacion_id?: string;
+    cliente_id?: string;
     monto: string;
     metodo_pago_code: string;
     tipo_pago_mov_code: string;

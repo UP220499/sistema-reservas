@@ -36,19 +36,19 @@ export class PdfService {
         });
 
         // Background / Header accent
-        doc.rect(0, 0, doc.page.width, 100).fill(this.primaryColor);
+        doc.rect(0, 0, doc.page.width, 100).fill('white');
 
         // Logo
         if (fs.existsSync(this.logoPath)) {
           doc.image(this.logoPath, 50, 20, { height: 60 });
         } else {
           // Fallback if logo is missing
-          doc.fillColor('white').fontSize(24).text('Cielito', 50, 40);
+          doc.fillColor(this.primaryColor).fontSize(24).text('Cielito', 50, 40);
         }
 
         // Header Text
         doc
-          .fillColor('white')
+          .fillColor(this.primaryColor)
           .fontSize(28)
           .font('Helvetica-Bold')
           .text('RECIBO DE PAGO', 200, 40, { align: 'right' });
