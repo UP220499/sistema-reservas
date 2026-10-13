@@ -235,19 +235,19 @@ const theme = createTheme({
                     fontSize: '0.75rem',
                     borderRadius: 8,
                 },
-                filledSuccess: {
+                colorSuccess: {
                     backgroundColor: '#E8F5E9',
                     color: '#1B5E20',
                 },
-                filledError: {
+                colorError: {
                     backgroundColor: '#FFEBEE',
                     color: '#B71C1C',
                 },
-                filledWarning: {
+                colorWarning: {
                     backgroundColor: '#FFF3E0',
                     color: '#E65100',
                 },
-                filledInfo: {
+                colorInfo: {
                     backgroundColor: '#E3F2FD',
                     color: '#0D47A1',
                 },

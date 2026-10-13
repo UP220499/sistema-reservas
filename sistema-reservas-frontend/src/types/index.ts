@@ -40,6 +40,8 @@ export interface Reserva {
     estatus_reserva?: { nombre: string };
     ubicacion_nombre?: string;
     cliente_nombre?: string;
+    saldo_pendiente?: number | string | null;
+    estatus_pago_code?: string;
 }
 
 export interface Cliente {

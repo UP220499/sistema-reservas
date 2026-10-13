@@ -59,9 +59,8 @@ export default function PaymentRemindersWidget() {
                         else if (daysUntil === 1) timeText = 'Check-in mañana';
                         else timeText = `Check-in en ${daysUntil} días`;
 
-                        // We can parse the any extra fields sent from the backend if available
                         // The backend might be injecting "saldo_pendiente" directly as a property
-                        const saldo = (reserva as any).saldo_pendiente;
+                        const saldo = reserva.saldo_pendiente;
 
                         return (
                             <Box key={reserva.reserva_id}>
