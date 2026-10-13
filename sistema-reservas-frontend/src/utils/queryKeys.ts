@@ -31,6 +31,8 @@ export const qk = {
         payments: (reservationId: string | undefined) => ['payments', reservationId] as const,
         /** Pending balance reminders */
         reminders: (days?: number) => days !== undefined ? ['reservations-reminders', days] as const : ['reservations-reminders'] as const,
+        /** ['reservation-history', id] */
+        history: (id: string | undefined) => ['reservation-history', id] as const,
     },
 
     paymentsGlobal: {

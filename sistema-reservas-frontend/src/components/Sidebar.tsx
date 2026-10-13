@@ -21,6 +21,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import HomeIcon from '@mui/icons-material/Home';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import PlaceIcon from '@mui/icons-material/Place';
 import { useIsAdmin } from '../hooks/useIsAdmin';
 
 export const DRAWER_WIDTH = 260;
@@ -52,6 +53,7 @@ const menuItems = [
     { label: 'Dashboard', icon: <DashboardIcon />, path: '/', adminOnly: false },
     { label: 'Reservaciones', icon: <EventNoteIcon />, path: '/reservaciones', adminOnly: false },
     { label: 'Clientes', icon: <PeopleIcon />, path: '/clientes', adminOnly: false },
+    { label: 'Ubicaciones', icon: <PlaceIcon />, path: '/ubicaciones', adminOnly: true },
     { label: 'Pagos', icon: <AttachMoneyIcon />, path: '/pagos', adminOnly: true },
     { label: 'Bloqueos', icon: <BlockIcon />, path: '/bloqueos', adminOnly: true },
     { label: 'Calendario', icon: <CalendarMonthIcon />, path: '/calendario', adminOnly: false },

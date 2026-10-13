@@ -5,6 +5,7 @@ import type {
     PagoMovimiento,
     Ubicacion,
     CatalogoItem,
+    ReservaEvento,
 } from '../types';
 
 export type { Reserva };
@@ -20,7 +21,12 @@ export interface ReservationFilters {
 }
 
 export interface CreateReservationPayload {
-    cliente_id: string;
+    cliente_id?: string;
+    cliente_nuevo?: {
+        nombre: string;
+        correo?: string;
+        telefono?: string;
+    };
     ubicacion_id: string;
     origen_reserva_code: string;
     estatus_reserva_code?: string;
@@ -110,6 +116,15 @@ export const reservationsApi = {
 
     getPendingBalancesReminders: async (days?: number): Promise<Reserva[]> => {
         const { data } = await api.get('/reservations/reminders/pending-balances', { params: { days } });
+        return data;
+    },
+
+    delete: async (id: string): Promise<void> => {
+        await api.delete(`/reservations/${id}`);
+    },
+
+    getHistory: async (id: string, page = 1, page_size = 20): Promise<PaginatedResponse<ReservaEvento>> => {
+        const { data } = await api.get(`/reservations/${id}/history`, { params: { page, page_size } });
         return data;
     },
 };

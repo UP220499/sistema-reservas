@@ -66,6 +66,7 @@ export interface Ubicacion {
     ubicacion_id: string;
     nombre: string;
     activa: boolean;
+    airbnb_ical_url?: string;
 }
 
 export interface PagoMovimiento {
@@ -143,4 +144,14 @@ export interface CalendarResponse {
     page: number;
     page_size: number;
     total: number;
+}
+
+export interface ReservaEvento {
+    historial_reserva_evento_id: string;
+    reserva_id: string;
+    usuario_id: string | null;
+    accion: string;
+    detalles: string | null;
+    created_at: string;
+    usuario?: { nombre: string };
 }

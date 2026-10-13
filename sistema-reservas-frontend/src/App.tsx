@@ -17,14 +17,16 @@ import ClientFormPage from './pages/Clients/ClientFormPage';
 import CalendarPage from './pages/Calendar/CalendarPage';
 import BlocksListPage from './pages/Blocks/BlocksListPage';
 import PaymentsListPage from './pages/Payments/PaymentsListPage';
+import UbicacionesListPage from './pages/Ubicaciones/UbicacionesListPage';
 import AdminRoute from './components/AdminRoute';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: true,
+      refetchOnMount: true,
+      staleTime: 10 * 1000, // 10 seconds for near-instant updates
     },
   },
 });
@@ -69,6 +71,9 @@ export default function App() {
                 
                 {/* Pagos */}
                 <Route path="/pagos" element={<AdminRoute><PaymentsListPage /></AdminRoute>} />
+
+                {/* Ubicaciones */}
+                <Route path="/ubicaciones" element={<AdminRoute><UbicacionesListPage /></AdminRoute>} />
               </Route>
             </Routes>
           </AuthProvider>

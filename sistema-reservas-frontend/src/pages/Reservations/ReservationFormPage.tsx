@@ -5,7 +5,7 @@ import { Box, CircularProgress, Alert, Button } from '@mui/material';
 import { reservationsApi } from '../../api/reservations';
 import ReservationForm from '../../components/reservations/ReservationForm';
 
-const TERMINAL_STATUSES = new Set(['CANCELADA', 'COMPLETADA', 'FINALIZADA', 'NO_SHOW']);
+const TERMINAL_STATUSES = new Set(['CANCELADA', 'FINALIZADA', 'NO_SHOW']);
 
 export default function ReservationFormPage() {
     const { id } = useParams<{ id: string }>();

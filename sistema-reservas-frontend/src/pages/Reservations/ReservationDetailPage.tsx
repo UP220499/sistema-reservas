@@ -30,6 +30,14 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
+import Timeline from '@mui/lab/Timeline';
+import TimelineItem from '@mui/lab/TimelineItem';
+import TimelineSeparator from '@mui/lab/TimelineSeparator';
+import TimelineConnector from '@mui/lab/TimelineConnector';
+import TimelineContent from '@mui/lab/TimelineContent';
+import TimelineDot from '@mui/lab/TimelineDot';
+import TimelineOppositeContent, { timelineOppositeContentClasses } from '@mui/lab/TimelineOppositeContent';
 import dayjs from 'dayjs';
 import {
     reservationsApi,
@@ -117,6 +125,35 @@ export default function ReservationDetailPage() {
         queryFn: () => reservationsApi.getPayments(id!),
         enabled: !!id,
     });
+
+    const { data: historyData, isLoading: historyLoading } = useQuery({
+        queryKey: qk.reservations.history(id),
+        queryFn: () => reservationsApi.getHistory(id!),
+        enabled: !!id,
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: () => reservationsApi.delete(id!),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: qk.reservations.list() });
+            queryClient.invalidateQueries({ queryKey: qk.dashboard.stats() });
+            showToast('Reservación eliminada correctamente.');
+            navigate('/reservaciones');
+        },
+        onError: (err) => {
+            if (axios.isAxiosError(err) && err.response?.status === 409) {
+                setError('No se puede eliminar la reservación porque tiene pagos registrados. Por favor, cancela la reserva o reembolsa los pagos primero.');
+            } else {
+                setError(getErrorMessage(err));
+            }
+        },
+    });
+
+    const handleDelete = () => {
+        if (window.confirm('¿Estás seguro de que deseas eliminar esta reservación? Esta acción no se puede deshacer.')) {
+            deleteMutation.mutate();
+        }
+    };
 
     const createPaymentMutation = useMutation({
         mutationFn: (payload: CreatePaymentPayload) =>
@@ -210,13 +247,25 @@ export default function ReservationDetailPage() {
                     color={statusChipColor(reserva.estatus_reserva_code)}
                     sx={{ fontSize: '0.9rem', px: 1 }}
                 />
-                {!['CANCELADA', 'COMPLETADA', 'FINALIZADA', 'NO_SHOW'].includes(reserva.estatus_reserva_code) && (
+                {!['CANCELADA', 'FINALIZADA', 'NO_SHOW'].includes(reserva.estatus_reserva_code) && (
                     <Button
                         variant="outlined"
                         size="small"
                         onClick={() => navigate(`/reservaciones/${reserva.reserva_id}/editar`)}
                     >
                         Editar Información
+                    </Button>
+                )}
+                {isAdmin && (
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        startIcon={<DeleteIcon />}
+                        onClick={handleDelete}
+                        disabled={deleteMutation.isPending}
+                    >
+                        Eliminar
                     </Button>
                 )}
             </Box>
@@ -381,6 +430,60 @@ export default function ReservationDetailPage() {
                     </CardContent>
                 </Card>
             )}
+
+            {/* History Section */}
+            <Card sx={{ mt: 3 }}>
+                <CardContent>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                        Historial de Cambios
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    {historyLoading ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                            <Skeleton variant="circular" width={40} height={40} />
+                        </Box>
+                    ) : historyData?.items && historyData.items.length > 0 ? (
+                        <Timeline
+                            sx={{
+                                [`& .${timelineOppositeContentClasses.root}`]: {
+                                    flex: 0.2,
+                                    minWidth: 120,
+                                    pl: 0
+                                },
+                            }}
+                        >
+                            {historyData.items.map((evento) => (
+                                <TimelineItem key={evento.historial_reserva_evento_id}>
+                                    <TimelineOppositeContent color="text.secondary" variant="body2">
+                                        {dayjs(evento.created_at).format('DD/MM/YYYY HH:mm')}
+                                    </TimelineOppositeContent>
+                                    <TimelineSeparator>
+                                        <TimelineDot color={evento.accion === 'CREAR' ? 'success' : evento.accion === 'ACTUALIZAR' ? 'info' : 'primary'} />
+                                        <TimelineConnector />
+                                    </TimelineSeparator>
+                                    <TimelineContent>
+                                        <Typography variant="body2" component="span" fontWeight={600}>
+                                            {evento.accion}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" component="span" sx={{ ml: 1 }}>
+                                            por {evento.usuario?.nombre || 'Sistema'}
+                                        </Typography>
+                                        {evento.detalles && (
+                                            <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
+                                                {evento.detalles}
+                                            </Typography>
+                                        )}
+                                    </TimelineContent>
+                                </TimelineItem>
+                            ))}
+                        </Timeline>
+                    ) : (
+                        <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 4 }}>
+                            No hay historial registrado para esta reservación.
+                        </Typography>
+                    )}
+                </CardContent>
+            </Card>
 
             {/* Add Payment Dialog */}
             <Dialog

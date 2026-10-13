@@ -47,7 +47,7 @@ export class ReservationsRepository {
       where,
       skip,
       take,
-      orderBy: { checkin_datetime: 'asc' },
+      orderBy: { created_at: 'desc' },
       include: reservationInclude,
     });
   }
@@ -55,7 +55,7 @@ export class ReservationsRepository {
   findAllWithRelations(where: Prisma.reservaWhereInput) {
     return this.prisma.reserva.findMany({
       where,
-      orderBy: { checkin_datetime: 'asc' },
+      orderBy: { created_at: 'desc' },
       include: reservationInclude,
     });
   }
@@ -107,7 +107,7 @@ export class ReservationsRepository {
     });
   }
 
-  findOverlappingReservation(
+  async findOverlapping(
     prismaClient: PrismaClientOrTx,
     params: {
       ubicacionId: bigint;
@@ -115,7 +115,7 @@ export class ReservationsRepository {
       checkout: Date;
       excludeReservationId?: bigint;
     },
-  ) {
+  ): Promise<{ type: 'RESERVA' | 'BLOQUEO'; id: bigint } | null> {
     const { ubicacionId, checkin, checkout, excludeReservationId } = params;
 
     const where: Prisma.reservaWhereInput = {
@@ -130,10 +130,30 @@ export class ReservationsRepository {
         : {}),
     };
 
-    return prismaClient.reserva.findFirst({
+    const overlappingReserva = await prismaClient.reserva.findFirst({
       where,
       select: { reserva_id: true },
     });
+
+    if (overlappingReserva) {
+      return { type: 'RESERVA', id: overlappingReserva.reserva_id };
+    }
+
+    const overlappingBlock = await prismaClient.bloqueo_calendario.findFirst({
+      where: {
+        ubicacion_id: ubicacionId,
+        estatus_bloqueo: 'ACTIVO',
+        inicio_datetime: { lt: checkout },
+        fin_datetime: { gt: checkin },
+      },
+      select: { bloqueo_id: true },
+    });
+
+    if (overlappingBlock) {
+      return { type: 'BLOQUEO', id: overlappingBlock.bloqueo_id };
+    }
+
+    return null;
   }
 
   createReservation(

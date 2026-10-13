@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     Box,
     AppBar,
@@ -215,8 +216,19 @@ export default function Layout() {
                     </Toolbar>
                 </AppBar>
 
-                <Box sx={{ p: { xs: 2, sm: 3 }, flexGrow: 1 }}>
-                    <Outlet />
+                <Box sx={{ p: { xs: 2, sm: 3 }, flexGrow: 1, position: 'relative' }}>
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={location.pathname}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            style={{ width: '100%', height: '100%' }}
+                        >
+                            <Outlet />
+                        </motion.div>
+                    </AnimatePresence>
                 </Box>
             </Box>
         </Box>
