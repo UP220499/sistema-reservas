@@ -179,6 +179,7 @@ model reserva {
 model ubicacion {
   ubicacion_id        BigInt                @id @default(autoincrement())
   nombre              String                @unique(map: "uq_ubicacion_nombre")
+  airbnb_ical_url     String?
   activa              Boolean               @default(true)
   bloqueo_calendario  bloqueo_calendario[]
   ocupacion_ubicacion ocupacion_ubicacion[]

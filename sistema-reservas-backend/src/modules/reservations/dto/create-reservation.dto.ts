@@ -7,15 +7,36 @@ import {
   IsOptional,
   IsString,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import {
   ALL_RESERVATION_ORIGINS,
   ALL_RESERVATION_STATUSES,
 } from '../../../shared/reservation-statuses';
 
-export class CreateReservationDto {
+export class CreateClienteNuevoDto {
   @IsString()
-  cliente_id!: string;
+  nombre!: string;
+
+  @IsOptional()
+  @IsString()
+  correo?: string;
+
+  @IsOptional()
+  @IsString()
+  telefono?: string;
+}
+
+export class CreateReservationDto {
+  @IsOptional()
+  @IsString()
+  cliente_id?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateClienteNuevoDto)
+  cliente_nuevo?: CreateClienteNuevoDto;
 
   @IsString()
   ubicacion_id!: string;

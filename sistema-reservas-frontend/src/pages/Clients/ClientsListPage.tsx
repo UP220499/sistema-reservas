@@ -81,11 +81,9 @@ export default function ClientsListPage() {
         const items = data?.items ?? [];
         return items.filter((c) => {
             if (loyaltyFilter && (c.loyalty?.nivel_loyalty ?? '') !== loyaltyFilter) return false;
-            if (estadoFilter === 'activo' && !c.activo) return false;
-            if (estadoFilter === 'inactivo' && c.activo) return false;
             return true;
         });
-    }, [data?.items, loyaltyFilter, estadoFilter]);
+    }, [data?.items, loyaltyFilter]);
 
     const deactivateMutation = useMutation({
         mutationFn: (id: string) => clientsApi.changeStatus(id, false),
@@ -113,6 +111,15 @@ export default function ClientsListPage() {
 
     const handleSearch = (value: string) => {
         setFilters((prev) => ({ ...prev, search: value, page: 1 }));
+    };
+
+    const handleEstadoChange = (value: string) => {
+        setEstadoFilter(value);
+        setFilters((prev) => ({
+            ...prev,
+            page: 1,
+            active: value === 'activo' ? true : value === 'inactivo' ? false : undefined,
+        }));
     };
 
     const handlePageChange = (_: unknown, newPage: number) => {
@@ -180,7 +187,7 @@ export default function ClientsListPage() {
                         label="Estado"
                         size="small"
                         value={estadoFilter}
-                        onChange={(e) => setEstadoFilter(e.target.value)}
+                        onChange={(e) => handleEstadoChange(e.target.value)}
                         sx={{ minWidth: 140 }}
                     >
                         <MenuItem value="">Todos</MenuItem>

@@ -39,8 +39,7 @@ export class IcalSyncService {
         throw new NotFoundException('Location not found');
       }
 
-      const envKey = `AIRBNB_ICAL_URL_${ubicacionId.toString()}`;
-      const icalUrl = process.env[envKey];
+      const icalUrl = (location as any).airbnb_ical_url;
       if (!icalUrl) {
         throw new BadRequestException(
           'Airbnb iCal URL is not configured for this location',

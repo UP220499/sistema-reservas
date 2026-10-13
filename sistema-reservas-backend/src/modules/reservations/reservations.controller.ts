@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   Param,
@@ -148,5 +149,18 @@ export class ReservationsController {
       dto,
       auditUserId,
     );
+  }
+
+  /*
+    Sample request: DELETE /reservations/1
+    Required header: x-user-id: 42
+  */
+  @Delete(':reservation_id')
+  @RequireUser()
+  remove(
+    @Param('reservation_id') reservationId: string,
+    @AuditUserId() auditUserId?: bigint,
+  ) {
+    return this.reservationsService.remove(reservationId, auditUserId);
   }
 }

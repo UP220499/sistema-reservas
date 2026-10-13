@@ -12,6 +12,8 @@ import {
     Alert,
     IconButton,
     Chip,
+    FormControlLabel,
+    Switch,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import dayjs from 'dayjs';
@@ -72,6 +74,8 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
     const [totalError, setTotalError] = useState('');
     const [dateRangeError, setDateRangeError] = useState('');
     const [confirmHistoricOpen, setConfirmHistoricOpen] = useState(false);
+    const [isNewClient, setIsNewClient] = useState(false);
+    const [newClientData, setNewClientData] = useState({ nombre: '', correo: '', telefono: '' });
 
     function validateDateRange(checkin: string, checkout: string): string {
         if (checkin && checkout && new Date(checkout) <= new Date(checkin)) {
@@ -152,8 +156,17 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        if (!form.cliente_id || !form.ubicacion_id) {
-            setError('Selecciona un cliente y una ubicación');
+        
+        if (!isNewClient && !form.cliente_id) {
+            setError('Selecciona un cliente existente o crea uno nuevo');
+            return;
+        }
+        if (isNewClient && !newClientData.nombre.trim()) {
+            setError('El nombre del nuevo cliente es requerido');
+            return;
+        }
+        if (!form.ubicacion_id) {
+            setError('Selecciona una ubicación');
             return;
         }
 
@@ -174,7 +187,12 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
             return;
         }
 
-        mutation.mutate(form);
+        const payloadToSubmit: CreateReservationPayload = { ...form };
+        if (isNewClient) {
+            delete payloadToSubmit.cliente_id;
+            payloadToSubmit.cliente_nuevo = newClientData;
+        }
+        mutation.mutate(payloadToSubmit);
     };
 
     const updateField = <K extends keyof CreateReservationPayload>(
@@ -216,30 +234,69 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                             gap: 2.5,
                         }}
                     >
-                        <TextField
-                            select
-                            label="Cliente"
-                            value={form.cliente_id}
-                            onChange={(e) => updateField('cliente_id', e.target.value)}
-                            required
-                            fullWidth
-                        >
-                            {clientsData?.items?.map((client) => (
-                                <MenuItem key={client.cliente_id} value={client.cliente_id}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        {client.nombre}
-                                        {(client.loyalty?.reservas_completadas_count ?? 0) >= 3 && (
-                                            <Chip
-                                                label="Frecuente"
-                                                color="secondary"
-                                                size="small"
-                                                sx={{ height: 20, fontSize: '0.65rem' }}
-                                            />
-                                        )}
-                                    </Box>
-                                </MenuItem>
-                            ))}
-                        </TextField>
+                        <Box sx={{ gridColumn: { sm: '1 / -1' } }}>
+                            {!isEditing && (
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={isNewClient}
+                                            onChange={(e) => setIsNewClient(e.target.checked)}
+                                        />
+                                    }
+                                    label="Crear cliente nuevo en lugar de seleccionar uno existente"
+                                    sx={{ mb: 1 }}
+                                />
+                            )}
+                            {isNewClient ? (
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 2 }}>
+                                    <TextField
+                                        label="Nombre del cliente"
+                                        value={newClientData.nombre}
+                                        onChange={(e) => setNewClientData({ ...newClientData, nombre: e.target.value })}
+                                        required
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        label="Correo (opcional)"
+                                        type="email"
+                                        value={newClientData.correo}
+                                        onChange={(e) => setNewClientData({ ...newClientData, correo: e.target.value })}
+                                        fullWidth
+                                    />
+                                    <TextField
+                                        label="Teléfono (opcional)"
+                                        value={newClientData.telefono}
+                                        onChange={(e) => setNewClientData({ ...newClientData, telefono: e.target.value })}
+                                        fullWidth
+                                    />
+                                </Box>
+                            ) : (
+                                <TextField
+                                    select
+                                    label="Cliente"
+                                    value={form.cliente_id}
+                                    onChange={(e) => updateField('cliente_id', e.target.value)}
+                                    required
+                                    fullWidth
+                                >
+                                    {clientsData?.items?.map((client) => (
+                                        <MenuItem key={client.cliente_id} value={client.cliente_id}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                {client.nombre}
+                                                {(client.loyalty?.reservas_completadas_count ?? 0) >= 3 && (
+                                                    <Chip
+                                                        label="Frecuente"
+                                                        color="secondary"
+                                                        size="small"
+                                                        sx={{ height: 20, fontSize: '0.65rem' }}
+                                                    />
+                                                )}
+                                            </Box>
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            )}
+                        </Box>
 
                         <TextField
                             select
@@ -391,7 +448,12 @@ export default function ReservationForm({ initialData, reservationId, prefill }:
                 confirmText="Registrar"
                 onClose={() => setConfirmHistoricOpen(false)}
                 onConfirm={() => {
-                    mutation.mutate(form);
+                    const payloadToSubmit: CreateReservationPayload = { ...form };
+                    if (isNewClient) {
+                        delete payloadToSubmit.cliente_id;
+                        payloadToSubmit.cliente_nuevo = newClientData;
+                    }
+                    mutation.mutate(payloadToSubmit);
                     setConfirmHistoricOpen(false);
                 }}
             />

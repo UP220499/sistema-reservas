@@ -118,7 +118,7 @@ export class ReservationsService {
       throw new BadRequestException('Audit user is required');
     }
 
-    const clienteId = this.parseId(dto.cliente_id, 'cliente_id');
+
     const ubicacionId = this.parseId(dto.ubicacion_id, 'ubicacion_id');
 
     const checkin = this.parseDate(dto.checkin_datetime, 'checkin_datetime');
@@ -145,13 +145,36 @@ export class ReservationsService {
     const prisma = this.reservationsRepository.prismaClient;
 
     const created = await prisma.$transaction(async (tx) => {
-      const client = await this.reservationsRepository.findActiveClient(
-        tx,
-        clienteId,
-      );
-
-      if (!client || !client.activo) {
-        throw new NotFoundException('Active client not found');
+      let finalClienteId: bigint;
+      if (dto.cliente_id) {
+        finalClienteId = this.parseId(dto.cliente_id, 'cliente_id');
+        const client = await this.reservationsRepository.findActiveClient(
+          tx,
+          finalClienteId,
+        );
+        if (!client || !client.activo) {
+          throw new NotFoundException('Active client not found');
+        }
+      } else if (dto.cliente_nuevo) {
+        const nuevoClient = await tx.cliente.create({
+          data: {
+            nombre: dto.cliente_nuevo.nombre,
+            correo: dto.cliente_nuevo.correo || null,
+            ...(dto.cliente_nuevo.telefono
+              ? {
+                  cliente_telefono: {
+                    create: {
+                      telefono: dto.cliente_nuevo.telefono,
+                      es_principal: true,
+                    },
+                  },
+                }
+              : {}),
+          },
+        });
+        finalClienteId = nuevoClient.cliente_id;
+      } else {
+        throw new BadRequestException('Either cliente_id or cliente_nuevo must be provided');
       }
 
       const location = await this.reservationsRepository.findActiveLocation(
@@ -193,7 +216,7 @@ export class ReservationsService {
       }
 
       const overlapping =
-        await this.reservationsRepository.findOverlappingReservation(tx, {
+        await this.reservationsRepository.findOverlapping(tx, {
           ubicacionId,
           checkin,
           checkout,
@@ -201,14 +224,14 @@ export class ReservationsService {
 
       if (overlapping) {
         throw new BadRequestException(
-          'The selected location is already booked for the given period',
+          `The selected location is already booked for the given period (Conflict with ${overlapping.type})`,
         );
       }
 
       const reservation = await this.reservationsRepository.createReservation(
         tx,
         {
-          cliente_id: clienteId,
+          cliente_id: finalClienteId,
           ubicacion_id: ubicacionId,
           checkin_datetime: checkin,
           checkout_datetime: checkout,
@@ -273,11 +296,7 @@ export class ReservationsService {
         throw new NotFoundException('Reservation not found');
       }
 
-      if (BLOCKED_PAYMENT_STATUSES.has(existing.estatus_reserva_code)) {
-        throw new ConflictException(
-          'Reservation cannot be edited in its current status',
-        );
-      }
+
 
       const providedCheckin = dto.checkin_datetime
         ? this.parseDate(dto.checkin_datetime, 'checkin_datetime')
@@ -331,7 +350,7 @@ export class ReservationsService {
         (checkinChanged || checkoutChanged || statusChanged)
       ) {
         const overlapping =
-          await this.reservationsRepository.findOverlappingReservation(tx, {
+          await this.reservationsRepository.findOverlapping(tx, {
             ubicacionId: existing.ubicacion_id,
             checkin: nextCheckin,
             checkout: nextCheckout,
@@ -340,7 +359,7 @@ export class ReservationsService {
 
         if (overlapping) {
           throw new BadRequestException(
-            'The selected location is already booked for the given period',
+            `The selected location is already booked for the given period (Conflict with ${overlapping.type})`,
           );
         }
       }
@@ -661,7 +680,7 @@ export class ReservationsService {
       }
 
       const overlapping =
-        await this.reservationsRepository.findOverlappingReservation(tx, {
+        await this.reservationsRepository.findOverlapping(tx, {
           ubicacionId: existing.ubicacion_id,
           checkin,
           checkout,
@@ -670,7 +689,7 @@ export class ReservationsService {
 
       if (overlapping) {
         throw new BadRequestException(
-          'The selected location is already booked for the given period',
+          `The selected location is already booked for the given period (Conflict with ${overlapping.type})`,
         );
       }
 
@@ -716,6 +735,43 @@ export class ReservationsService {
     }
 
     return toReservationDetail(reservation);
+  }
+
+  async remove(reservationId: string, auditUserId?: bigint): Promise<void> {
+    if (auditUserId === undefined) {
+      throw new BadRequestException('Audit user is required');
+    }
+
+    const reservaId = this.parseId(reservationId, 'reservation_id');
+    const prisma = this.reservationsRepository.prismaClient;
+
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.reserva.findUnique({
+        where: { reserva_id: reservaId },
+        include: { pago_movimiento: true },
+      });
+
+      if (!existing) {
+        throw new NotFoundException('Reservation not found');
+      }
+
+      const hasPayments = existing.pago_movimiento.some(p => p.monto.gt(0));
+      if (hasPayments) {
+        throw new ConflictException('Cannot delete a reservation that has registered payments. Please cancel it instead.');
+      }
+
+      await tx.historial_reserva_evento.deleteMany({
+        where: { reserva_id: reservaId },
+      });
+
+      await tx.pago_movimiento.deleteMany({
+        where: { reserva_id: reservaId },
+      });
+
+      await tx.reserva.delete({
+        where: { reserva_id: reservaId },
+      });
+    });
   }
 
   private buildWhere(query: ReservationQueryDto): Prisma.reservaWhereInput {
